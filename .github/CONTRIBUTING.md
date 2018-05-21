@@ -1,16 +1,17 @@
+
 # How to contribute
 
 I'm really glad you're reading this, thanks.
 
-The following is a set of guidelines for contributing to Way of the Developer. 
+The following is a set of guidelines for contributing to shTTP. 
 Use your best judgment, and feel free to propose changes to this document or 
 any other community document in a pull request.
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the Way of the Developer
+This project and everyone participating in it is governed by the shTTP
 [Code of Conduct](./CODE_OF_CONDUCT.md). Please report any unacceptable behavior 
-to giovanni.fb@hotmail.com.
+to @gfarfanb.
 
 ## Getting started
 
@@ -19,7 +20,47 @@ To start using this repository right away,
 
 ### How to install it
 
-> Description is not available yet
+#### Windows approach
+
+* Check jq installation in command line by `jq --version`. If you do not have jq,
+download it from [jq](https://stedolan.github.io/jq/download/#windows). Then
+setup `Path` environment variable in:
+```
+Windows > This PC > Properties > Advanced system settings > Environment Variables... > System variables
+```
+```
+# Whatever location that makes sense
+JQ_HOME=C:\dist\jq-1.5
+Path=%Pah%; %JQ_HOME%
+```
+> In order to use `jq` as command, is preferably to rename the executable `jq-[win64 | win32].exe`
+> to `jq.exe`
+
+* Check installation `jq --version`, output must be similar to:
+```bash
+jq-1.5
+```
+
+#### Ubuntu approach
+
+* Check jq installation in command line by `jq --version`. If you do not have jq,
+install it by:
+```bash
+sudo apt-get update
+sudo apt-get install jq
+```
+
+* Check installation `jq --version`, output must be similar to:
+```bash
+jq-1.5-1-a5b5cbe
+```
+
+## Script plugin
+
+Add execution permissions to script file:
+```bash
+git update-index --add --chmod=+x script_file.sh
+```
 
 ## How can I contribute in a different way?
 
@@ -30,7 +71,7 @@ To start using this repository right away,
 - The description must be concise.
 - It is important the indicate environment you are testing.
 - Do not make support questions or comments, there are specific
-channels for this: [chat room](https://gitter.im/shTTP/api-dev)
+channels for [this chat room](https://gitter.im/shTTP/api-dev)
 or post discussion (at the end of posts).
 - Include screenshots and animated GIFs in your pull request whenever possible.
 
@@ -56,7 +97,10 @@ contributors at this point.
 
 ## Copyright
 
-shTTP core is licensed under MIT license, with a few exceptions in bundled classes.
-We consider all contributions as MIT unless it's explicitly stated otherwise. 
-MIT-incompatible code contributions will be rejected. Contributions under MIT-compatible
-licenses may be also rejected if they are not ultimately necessary.
+shTTP core is licensed under [MIT License][mit_license], with a few exceptions
+in bundled classes. We consider all contributions as [MIT][mit_license] unless
+it's explicitly stated otherwise. [MIT][mit_license]-incompatible code contributions
+will be rejected. Contributions under [MIT][mit_license]-compatible licenses
+may be also rejected if they are not ultimately necessary.
+
+[mit_license]: https://opensource.org/licenses/MIT

@@ -43,13 +43,61 @@ if ! [ -d ws ]; then
     mkdir ws || _fatal "Imposible to create 'ws' dorectory"
 fi
 #  Config JSON file
-if ! [ -d ws/config.json ]; then 
+if ! [ -f ws/config.json ]; then 
     echo "{}" > ws/config.json
 fi
 
 
 # ---------- External functions ----------
 
+#  Save key-value config to 'config.json'.
+#  If only key is sent, function will take it
+#+ as 'jq' query for current JSON result.
+_put() {
+	local _name="$1"
+	local _val=${2:-''}
+	if [ -z "$_val" ]; then
+        local _has_key=$( cat "$OUTPUT.output" | jq "has(\"$_name\")" )
+        if [ "$_has_key" == "true" ]; then
+    	   _val=$( cat "$OUTPUT.output" | jq ".$_name" )
+    	else
+    	   _val="null"
+    	fi
+	fi
+	jq ". + { \"$_name\": $_val }" ws/config.json \
+		> ws/config.$$.json.tmp \
+		&& mv ws/config.$$.json.tmp ws/config.json
+	_info "Saved [$_name] with value [$_val] to workspace config"
+}
+
+#  Get value from declared variable, if variable
+#+ does not exist value will be obtained from
+#+ 'config.json' by key (it can be a 'jq' query).
+#  Result will be translated to string
+#+ and the quotes will be removed.
+_get() {
+	local _name="$1"
+	local _val=""
+	if [[ "$_name" =~ ^[a-zA-Z]*$ ]]; then
+		_val=$( eval "echo \${$_name:-''}" )
+	fi
+	if [ -n "$_val" ]; then
+	    echo $_val
+	else
+        echo $( jq ".$_name | tostring" ws/config.json ) \
+		    | sed -e 's/^"//' -e 's/"$//'
+	fi
+}
+
+#  Remove key-value from 'config.json' by key
+#+ (it can be a 'jq' query).
+_remove() {
+	local _name="$1"
+	jq "del(.$1)" ws/config.json \
+		> ws/config.$$.json.tmp \
+		&& mv ws/config.$$.json.tmp ws/config.json
+	_info "Removed [$_name] from workspace config"
+}
 
 
 # ---------- Internal functions ----------
@@ -57,8 +105,7 @@ fi
 #  Cleanup and error catching function.
 _cleanup() {
     if [ -d ws ]; then
-        find "ws" -name "*.json.tmp" -type f
-    	rm -rf *.json.tmp
+        rm -rf ws/*.json.tmp
     fi
 }
 

@@ -1,39 +1,74 @@
 #!/usr/bin/env bash
 
 oneTimeSetUp() {
-  . ../api.sh
+    . ../api.sh    
+}
+
+oneTimeTearDown() {
+    rm -rf output
+    rm -rf ws
 }
 
 
 # ---------- Initialization ----------
 
-test_exists_output_dir() {
+testExistsOutputDir() {
     if ! [ -d output ]; then
-	   fail "Output directory is not found"
-	fi
+        fail "Output directory is not found"
+    fi
 }
 
-test_exists_ws_dir() {
+testExistsWsDir() {
     if ! [ -d ws ]; then
-	   fail "Workspace directory is not found"
-	fi
+        fail "Workspace directory is not found"
+    fi
 }
 
-test_exists_config_json() {
+testExistsConfigJson() {
     if ! [ -f ws/config.json ]; then
-	   fail "Config JSON is not found"
-	fi
+        fail "Config JSON is not found"
+    fi
 }
 
 
 # ---------- External functions ----------
 
+testPut() {
+    OUTPUT="output/output.$$"
+    echo '{"id":"5s43u-323we"}' > "$OUTPUT.output"
 
+    _put id '.id'
+    _put name 'test_put'
+
+    local _id=$( cat "$OUTPUT.output" | jq ".id" )
+    local _name=$( cat "$OUTPUT.output" | jq ".name" )
+
+    assertEquals "ID not put on config" "\"5s43u-323we\"" "$_id"
+    assertEquals "Name not put on config" "\"test_put\"" "$_name"
+}
+
+testGet() {
+    OUTPUT="output/output.$$"
+    echo '{"id":"5s43u-323we"}' > "$OUTPUT.output"
+    
+    local _id=$( _get id )
+    assertEquals "ID does not exist" "\"5s43u-323we\"" "$_id":
+}
+
+testRemove() {
+    OUTPUT="output/output.$$"
+    echo '{"id":"5s43u-323we"}' > "$OUTPUT.output"
+    
+    _remove id
+    
+    local _id=$( cat "$OUTPUT.output" | jq ".id" )
+    assertEquals "ID must not exist" "\"null\"" "$_id":
+}
 
 
 # ---------- Internal functions ----------
 
-test_cleanup() {
+testCleanup() {
     echo '{}' > ws/cleanable_config.json.tmp
 	_cleanup
 	if [ -f ws/cleanable_config.json.tmp ]; then
@@ -44,7 +79,7 @@ test_cleanup() {
 
 # ---------- Option functions ----------
 
-test_list() {
+testList() {
     local _list=$( _list )
     local _found=0
     for _i in ${_list[@]}; do
@@ -53,7 +88,7 @@ test_list() {
 	assertEquals "Function not found" 1 "$_found"
 }
 
-test_clean() {
+testClean() {
     echo '{}' > output/cleanable_output.json
 	_clean
 	if [ -f output/cleanable_output.json ]; then

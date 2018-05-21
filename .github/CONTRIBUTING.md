@@ -55,11 +55,26 @@ sudo apt-get install jq
 jq-1.5-1-a5b5cbe
 ```
 
+* Install a [shUnit2](https://github.com/kward/shunit2) unit test framework.
+```
+sudo apt-get install shunit2
+```
+
 ## Script plugin
 
-Add execution permissions to script file:
+Export execution permissions to script file:
 ```bash
-git update-index --add --chmod=+x script_file.sh
+git update-index --add --chmod=+x ./script_file.sh
+```
+
+From source apply execution permissions:
+```
+sudo chmod +x ./script_file.sh
+```
+
+Avoid errors because Windows-style '\r' line ending by:
+```
+sed -i 's/\r$//' ./script_file.sh
 ```
 
 ## How can I contribute in a different way?

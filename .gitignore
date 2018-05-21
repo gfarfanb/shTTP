@@ -1,0 +1,10 @@
+
+output/
+ws/
+*.json
+
+tmp/
+log/
+*.log
+
+.DS_Store

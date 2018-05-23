@@ -39,6 +39,14 @@ testPut() {
 
     _put id '.id'
     _put name 'test_put'
+    
+    # _put '.id'
+    # _put 'jqId' '.id'
+    # _put 'rawId' '"4jj43-34mdwe"'
+    # _put 'idx' 5
+    # _put 'flag' true
+    # _put 'null' null
+    # _put 'object' '{}'
 
     local _id=$( cat "$OUTPUT.output" | jq ".id" )
     local _name=$( cat "$OUTPUT.output" | jq ".name" )

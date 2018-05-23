@@ -28,6 +28,11 @@ _fatal() { echo "`date '+%Y-%m-%d %T.%N'` [FATAL]   $*" | tee -a "$_log_file" >&
 
 # ---------- Initialization ----------
 
+# 'cURL' is required
+readonly _curl_version=$( curl --version )
+if [ -z "$_curl_version" ]; then
+    _fatal "'curl' is not installed yet"
+fi
 #  'jq' (command-line JSON processor) is required
 #+ https://github.com/stedolan/jq
 readonly _jq_version=$( jq --version )
@@ -50,23 +55,39 @@ fi
 
 # ---------- External functions ----------
 
+#  Update a JSON file using 'jq'.
+#
+#  $1 JSON file
+#  $2 Change by 'jq'
+_update() {
+    local _json=${1:-''}
+    local _jq=${2:-''}
+    jq "$_jq" "$_json" \
+		> ws/config.$$.json.tmp \
+		&& mv ws/config.$$.json.tmp "$_json"
+}
+
 #  Save key-value config to 'config.json'.
-#  If only key is sent, function will take it
-#+ as 'jq' query for current JSON result.
+#  This function has three different forms:
+#  1) Only 'jq' query: _put '.jq'
+#  2) Name and 'jq' query: _put 'name' '.jq'
+#  3) Name and value: _put 'name' 'value'
+#  If 'jq' query is found, the function will
+#+ use JSON result to take the value.
+#
+#  $1 Name of the entry or 'jq' for value
+#  $2 Value of the entry or 'jq' for value
 _put() {
-	local _name="$1"
+    local _name="$1"
 	local _val=${2:-''}
 	if [ -z "$_val" ]; then
-        local _has_key=$( cat "$OUTPUT.output" | jq "has(\"$_name\")" )
-        if [ "$_has_key" == "true" ]; then
-    	   _val=$( cat "$OUTPUT.output" | jq ".$_name" )
-    	else
-    	   _val="null"
-    	fi
+	    local _jq="$_name"
+	    _name=${_name//[0-9^\[\]]/}
+	else
+	    local _jq="$_val"
 	fi
-	jq ". + { \"$_name\": $_val }" ws/config.json \
-		> ws/config.$$.json.tmp \
-		&& mv ws/config.$$.json.tmp ws/config.json
+	_val=$( cat "$OUTPUT.output" | jq "try $_jq catch null" )
+	_update "ws/config.json" ". + { \"$_name\": $_val }"
 	_info "Saved [$_name] with value [$_val] to workspace config"
 }
 
@@ -76,10 +97,10 @@ _put() {
 #  Result will be translated to string
 #+ and the quotes will be removed.
 _get() {
-	local _name="$1"
+    local _name="$1"
 	local _val=""
 	if [[ "$_name" =~ ^[a-zA-Z]*$ ]]; then
-		_val=$( eval "echo \${$_name:-''}" )
+	    _val=$( eval "echo \${$_name:-''}" )
 	fi
 	if [ -n "$_val" ]; then
 	    echo $_val
@@ -93,9 +114,7 @@ _get() {
 #+ (it can be a 'jq' query).
 _remove() {
 	local _name="$1"
-	jq "del(.$1)" ws/config.json \
-		> ws/config.$$.json.tmp \
-		&& mv ws/config.$$.json.tmp ws/config.json
+	_update "ws/config.json" "del(.$1)"
 	_info "Removed [$_name] from workspace config"
 }
 
@@ -116,13 +135,13 @@ _cleanup() {
 #  All named functions start with '_' 
 #+ will be discarded from the list.
 _list() {
-	declare -a _functions=(
-		$( declare -F )
+    declare -a _functions=(
+	    $( declare -F )
 	)
 	for _function in ${_functions[@]}; do
 		local _name=$( echo "$_function" | cut -d ' ' -f 3 )
 		if ! [[ "$_name" == "_"* ]]; then
-			echo $_name
+		    echo $_name
 		fi
 	done
 }
@@ -146,5 +165,14 @@ expr "$*" : ".*--clean" > /dev/null && _clean \
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 	trap _cleanup EXIT
 
+    OUTPUT="output/output.$$"
+    echo '{"id":"5s43u-323we"}' > "$OUTPUT.output"
     
+    _put '.id'
+    _put 'jqId' '.id'
+    _put 'rawId' '"4jj43-34mdwe"'
+    _put 'idx' 5
+    _put 'flag' true
+    _put 'null' null
+    _put 'object' '{}'
 fi

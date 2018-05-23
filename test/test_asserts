@@ -1,14 +1,11 @@
 #  Assert functions for unit tests.
 #  This is imported by 'test_runner'.
-
-_fail() {
-    echo ">>>   [FAILED]   $*"
-    _failures=$(( _failures+1 ))
-}
+#  Functions '_fail' and '_inc_asserts'
+#+ are visible because 'test_runner'.
 
 fail() {
     _fail "$*"
-    _assertions=$(( _assertions+1 ))
+    _inc_asserts
 }
 
 assertTrue() {
@@ -19,7 +16,7 @@ assertTrue() {
     if [ $_ok = 0 ]; then
         _fail "[ $_condition ]: $_message"
     fi
-    _assertions=$(( _assertions+1 ))
+    _inc_asserts
 }
 
 assertFalse() {
@@ -30,7 +27,7 @@ assertFalse() {
     if [ $_ok = 0 ]; then
         _fail "! [ $_condition ]: $_message"
     fi
-    _assertions=$(( _assertions+1 ))
+    _inc_asserts
 }
 
 assertEquals() {
@@ -52,5 +49,5 @@ assertNotEquals() {
     if [ "$_expected" = "$_input" ]; then
         _fail "[ "$_expected" != "$_input" ]: $_message"
     fi
-    _assertions=$(( _assertions+1 ))
+    _inc_asserts
 }

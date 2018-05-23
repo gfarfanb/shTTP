@@ -3,27 +3,93 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-_failures=0
-_assertions=0
+#  Show the help content.
+_help_test_runner() { 
+	local _content=(
+	    " Test runner for unit tests."
+		""
+		" Usage: ./test_runner <test> [--list] [--help]"
+		""
+		" Options:"
+		"   --list:  Display the <test> list. Test files must follow"
+		"              the next rules:"
+		"                1. Filename with pattern '<name>_test'"
+		"                2. File in where 'test_runner' is"
+		"   --help:  Display this help message"
+	)
+	echo "${_content[*]}"
+}
+expr "$*" : ".*--help" > /dev/null && _help_test_runner \
+    && exit 0
 
-. ./test_before_tests
-. ./test_asserts
-
-readonly _single=${1:-''}
-
-if [ -n "$_single" ]; then
-    eval '. ./${_single}_test'
-else
+#  List the names of the executable
+#+ tests. A valid test filename must
+#+ follow the pattern '<name>_test'.
+#  The test files must be in the same
+#+ directory where 'test_runner' is.
+_list_tests() {
     declare -a _tests=$( ls *_test )
 	for _test in ${_tests[@]}; do
-		eval '. ./$_test'
+        echo $( echo "$_test" | cut -d '_' -f 1 )
 	done
-fi
+}
+expr "$*" : ".*--list" > /dev/null && _list_tests \
+    && exit 0
 
-if [ $_failures = 0 ]; then
-    echo "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
-else
-    echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
-fi
+#  Assertions count.
+_assertions=0
+#  Failed assertions count.
+_failures=0
 
-. ./test_after_tests
+#  Increase by 1 the '_assertions' count.
+_inc_asserts() {
+    _assertions=$(( _assertions+1 ))
+}
+
+#  Print the failed test message and 
+#+ increase the '_failures' count.
+_fail() {
+    echo ">>>   [FAILED]   $*"
+    _failures=$(( _failures+1 ))
+}
+
+#  Print the test results and execute
+#+ the global after-tests script.
+#  This function is called after 
+#+ execute the main code or after
+#+ get an error.
+_finally_test_runner() {
+    if [ $_failures = 0 ]; then
+        echo "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
+    else
+        echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
+    fi
+
+    . ./test_after_tests
+}
+
+#  Main code.
+#    1. Execute the global before-tests
+#+      script.
+#    2. Import the asserts functions.
+#    3. Verify the kind of execution:
+#+      single test or all tests.
+#    4. Execute test(s).
+#    5. Finally function is executed.
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+	trap _finally_test_runner EXIT
+	
+    . ./test_before_tests
+    . ./test_asserts
+    
+    readonly _single=${1:-''}
+    
+    if [ -n "$_single" ]; then
+        eval '. ./${_single}_test'
+    else
+        declare -a _tests=$( ls *_test )
+    	for _test in ${_tests[@]}; do
+    		eval '. ./$_test'
+    	done
+    fi
+fi

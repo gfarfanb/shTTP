@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-#  Tests for 'http_api' external functions.
+#  Tests for 'http_api' public functions.
 set -euo pipefail
 IFS=$'\n\t'
 
 
 #  -beforeTest
-OUTPUT="output/external-output.$$"
+OUTPUT="output/public-output.$$"
 echo '{"id":"5s43u-323we"}' > "$OUTPUT.output"
 
 

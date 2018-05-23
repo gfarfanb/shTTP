@@ -7,6 +7,6 @@ IFS=$'\n\t'
 #  -test Script clean-up
 echo '{}' > ws/cleanable_config.json.tmp
 
-_cleanup
+_finally_http_api
 
 assertFalse "Workspace file is currently exists" "-f ws/cleanable_config.json.tmp"

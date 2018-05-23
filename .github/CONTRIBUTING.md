@@ -73,6 +73,20 @@ Avoid errors because Windows-style '\r' line ending by:
 sed -i 's/\r$//' ./script_file.sh
 ```
 
+Internal functions convention:
+```
+_name_of_internal_function() {
+    :
+}
+```
+
+Public function convention:
+```
+nameOfPublicFunction() {
+    :
+}
+```
+
 ## How can I contribute in a different way?
 
 ### Reporting bugs

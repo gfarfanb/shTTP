@@ -61,7 +61,7 @@ if ! [ -f ws/config.json ]; then
 fi
 
 
-# ---------- External functions ----------
+# ---------- Public functions ----------
 
 #  Update a JSON file using 'jq'.
 #
@@ -77,9 +77,9 @@ _update() {
 
 #  Save key-value config to 'config.json'.
 #  This function has three different forms:
-#    1) Only 'jq' query: _put '.jq'
-#    2) Name and 'jq' query: _put 'name' '.jq'
-#    3) Name and value: _put 'name' 'value'
+#    1. Only 'jq' query: _put '.jq'
+#    2. Name and 'jq' query: _put 'name' '.jq'
+#    3. Name and value: _put 'name' 'value'
 #  If 'jq' query is found, the function will
 #+ use JSON result to take the value.
 #
@@ -134,7 +134,7 @@ _remove() {
 # ---------- Internal functions ----------
 
 #  Cleanup and error catching function.
-_cleanup() {
+_finally_http_api() {
     if [ -d ws ]; then
         rm -rf ws/*.json.tmp
     fi
@@ -178,7 +178,7 @@ expr "$*" : ".*--clean" > /dev/null && _clean \
 # ---------- Main code ----------
 
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
-	trap _cleanup EXIT
+	trap _finally_http_api EXIT
 
     
 fi

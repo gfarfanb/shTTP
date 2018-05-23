@@ -1,7 +1,4 @@
-#!/usr/bin/env bash
 #  Tests for 'http_api' initialization.
-set -euo pipefail
-IFS=$'\n\t'
 
 
 #  -test Output directory exists

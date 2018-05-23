@@ -3,11 +3,23 @@
 #  Functions '_fail' and '_inc_asserts'
 #+ are visible because 'test_runner'.
 
+
+#  Fails the test immediately.
+#  Increase the '_failures' and
+#+ '_assertions' counts.
+#
+#  -param $1 Fail message
 fail() {
     _fail "$*"
     _inc_asserts
 }
 
+#  Asserts that a given shell test
+#+ condition is true.
+#
+#  -param $1 Fail message
+#  -param $2 Test condition content:
+#+             '[ <$2> ]'
 assertTrue() {
     local _message=${1:-''}
     local _condition=${2:-''}
@@ -19,6 +31,12 @@ assertTrue() {
     _inc_asserts
 }
 
+#  Asserts that a given shell test.
+#+ condition is false.
+#
+#  -param $1 Fail message
+#  -param $2 Test condition content:
+#+             '! [ <$2> ]'
 assertFalse() {
     local _message=${1:-''}
     local _condition=${2:-''}
@@ -30,24 +48,36 @@ assertFalse() {
     _inc_asserts
 }
 
+#  Asserts that expected and actual
+#+ are equal to one another.
+#
+#  -param $1 Fail message
+#  -param $2 Expected value
+#  -param $3 Actual value
 assertEquals() {
     local _message=${1:-''}
     local _expected=${2:-''}
-    local _input=${3:-''}
+    local _actual=${3:-''}
     local _ok=1
-    if [ "$_expected" != "$_input" ]; then
-        _fail "[ "$_expected" = "$_input" ]: $_message"
+    if [ "$_expected" != "$_actual" ]; then
+        _fail "[ "$_expected" = "$_actual" ]: $_message"
     fi
-    _assertions=$(( _assertions+1 ))
+    _inc_asserts
 }
 
+#  Asserts that unexpected and actual
+#+ are not equal to one another.
+#
+#  -param $1 Fail message
+#  -param $2 Expected value
+#  -param $3 Actual value
 assertNotEquals() {
     local _message=${1:-''}
     local _expected=${2:-''}
-    local _input=${3:-''}
+    local _actual=${3:-''}
     local _ok=1
-    if [ "$_expected" = "$_input" ]; then
-        _fail "[ "$_expected" != "$_input" ]: $_message"
+    if [ "$_expected" = "$_actual" ]; then
+        _fail "[ "$_expected" != "$_actual" ]: $_message"
     fi
     _inc_asserts
 }

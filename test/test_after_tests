@@ -1,5 +1,8 @@
 #  Global after tests.
 #  This is imported by 'test_runner'.
 
+
+#  Clean-up generated directories
+#+ because 'http_api'
 rm -rf output
 rm -rf ws

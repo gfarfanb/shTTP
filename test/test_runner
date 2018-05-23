@@ -13,9 +13,11 @@ _help_test_runner() {
 		" Options:"
 		"   --list:  Display the <test> list. Test files must follow"
 		"              the next rules:"
-		"                1. Filename with pattern '<name>_test'"
-		"                2. File in where 'test_runner' is"
-		"   --help:  Display this help message"
+		"                1. Test filename with pattern '<name>_test'."
+		"                2. Test file in where 'test_runner' is."
+		"                3. No execution permissions are required"
+		"                   for test files."
+		"   --help:  Display this help message."
 	)
 	echo "${_content[*]}"
 }

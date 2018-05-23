@@ -1,7 +1,4 @@
-#!/usr/bin/env bash
 #  Tests for 'http_api' internal functions.
-set -euo pipefail
-IFS=$'\n\t'
 
 
 #  -test Script clean-up

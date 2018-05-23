@@ -87,6 +87,13 @@ nameOfPublicFunction() {
 }
 ```
 
+Conventions:
+1. Comments
+    1. Spaces
+    1. Identifiers: -param, -test, -beforeTest, -afterTest, -author
+    1. Identation
+
+
 ## How can I contribute in a different way?
 
 ### Reporting bugs

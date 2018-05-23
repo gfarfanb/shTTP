@@ -1,0 +1,5 @@
+#  Global after tests.
+#  This is imported by 'test_runner'.
+
+rm -rf output
+rm -rf ws

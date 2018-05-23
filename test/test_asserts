@@ -1,10 +1,5 @@
-#!/usr/bin/env bash
-#  Common functions for unit tests.
-set -euo pipefail
-IFS=$'\n\t'
-
-_failures=0
-_assertions=0
+#  Assert functions for unit tests.
+#  This is imported by 'test_runner'.
 
 _fail() {
     echo ">>>   [FAILED]   $*"
@@ -58,12 +53,4 @@ assertNotEquals() {
         _fail "[ "$_expected" != "$_input" ]: $_message"
     fi
     _assertions=$(( _assertions+1 ))
-}
-
-results() {
-    if [ $_failures = 0 ]; then
-        echo "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
-    else
-        echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
-    fi
 }

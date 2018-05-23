@@ -1,0 +1,4 @@
+#  Global before tests.
+#  This is imported by 'test_runner'.
+
+. ../http_api

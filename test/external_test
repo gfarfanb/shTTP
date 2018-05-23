@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
-#  Tests for 'api.sh' external functions.
+#  Tests for 'http_api' external functions.
 set -euo pipefail
 IFS=$'\n\t'
 
-# ---------- Set-up ----------
 
-. ../api.sh
-. ./base_test.sh
-
-OUTPUT="output/output.$$"
+#  -beforeTest
+OUTPUT="output/external-output.$$"
 echo '{"id":"5s43u-323we"}' > "$OUTPUT.output"
 
-
-# ---------- Tests ----------
 
 #  -test Put key-value config
 _put '.id'
@@ -102,13 +97,3 @@ assertEquals "'object' was found" "null" "$_object"
 _remove unknown
 _unknown=$( _get unknown )
 assertEquals "'unknown' was found" "null" "$_unknown"
-
-
-#  Tests results
-results
-
-
-# ---------- Clean-up ----------
-
-rm -rf output
-rm -rf ws

@@ -163,7 +163,10 @@ expr "$*" : ".*--list" > /dev/null && _list \
 #  Clean output files.
 _clean() {
     if [ -d output ]; then
-        find "output" -name "*" -type f
+        local _selected=$( find "output" -name "*" -type f )
+        for _file in ${_selected[@]}; do
+            _info "Removed [$_file] output"
+        done
     	rm -rf output/*
 	fi
 }

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#  Test runner for unit tests.
+set -euo pipefail
+IFS=$'\n\t'
+
+_failures=0
+_assertions=0
+
+. ./test_before_tests
+. ./test_asserts
+
+readonly _single=${1:-''}
+
+if [ -n "$_single" ]; then
+    eval '. ./${_single}_test'
+else
+    declare -a _tests=$( ls *_test )
+	for _test in ${_tests[@]}; do
+		eval '. ./$_test'
+	done
+fi
+
+if [ $_failures = 0 ]; then
+    echo "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
+else
+    echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
+fi
+
+. ./test_after_tests

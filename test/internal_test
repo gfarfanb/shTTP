@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#  Tests for 'http_api' internal functions.
+set -euo pipefail
+IFS=$'\n\t'
+
+
+#  -test Script clean-up
+echo '{}' > ws/cleanable_config.json.tmp
+
+_cleanup
+
+assertFalse "Workspace file is currently exists" "-f ws/cleanable_config.json.tmp"

@@ -15,23 +15,23 @@ readonly _log_file="/tmp/shTTP_${_basename%.*}.`date '+%Y-%m-%d'`.log"
 #  Log a message object with the INFO level.
 #
 #  -param $* Log message
-_info() { echo "`date '+%Y-%m-%d %T.%N'` [INFO]    $*" | tee -a "$_log_file" >&2 ; }
+info() { echo "`date '+%Y-%m-%d %T.%N'` [INFO]    $*" | tee -a "$_log_file" >&2 ; }
 
 #  Log a message object with the WARNING level.
 #
 #  -param $* Log message
-_warning() { echo "`date '+%Y-%m-%d %T.%N'` [WARNING] $*" | tee -a "$_log_file" >&2 ; }
+warning() { echo "`date '+%Y-%m-%d %T.%N'` [WARNING] $*" | tee -a "$_log_file" >&2 ; }
 
 #  Log a message object with the ERROR level.
 #
 #  -param $* Log message
-_error() { echo "`date '+%Y-%m-%d %T.%N'` [ERROR]   $*" | tee -a "$_log_file" >&2 ; }
+error() { echo "`date '+%Y-%m-%d %T.%N'` [ERROR]   $*" | tee -a "$_log_file" >&2 ; }
 
 #  Log a message object with the FATAL level, 
 #+ exit execution with 1.
 #
 #  -param $* Log message
-_fatal() { echo "`date '+%Y-%m-%d %T.%N'` [FATAL]   $*" | tee -a "$_log_file" >&2 ; exit 1 ; }
+fatal() { echo "`date '+%Y-%m-%d %T.%N'` [FATAL]   $*" | tee -a "$_log_file" >&2 ; exit 1 ; }
 
 
 # ---------- Initialization ----------
@@ -39,21 +39,21 @@ _fatal() { echo "`date '+%Y-%m-%d %T.%N'` [FATAL]   $*" | tee -a "$_log_file" >&
 # 'cURL' is required
 readonly _curl_version=$( curl --version )
 if [ -z "$_curl_version" ]; then
-    _fatal "'curl' is not installed yet"
+    fatal "'curl' is not installed yet"
 fi
 #  'jq' (command-line JSON processor) is required
 #+ https://github.com/stedolan/jq
 readonly _jq_version=$( jq --version )
 if [ -z "$_jq_version" ]; then
-    _fatal "'jq' is not installed yet"
+    fatal "'jq' is not installed yet"
 fi
 #  Output directory for trace and results files
 if ! [ -d output ]; then 
-    mkdir output || _fatal "Imposible to create 'output' dorectory"
+    mkdir output || fatal "Imposible to create 'output' dorectory"
 fi
 #  Workspace directory for data execution
 if ! [ -d ws ]; then 
-    mkdir ws || _fatal "Imposible to create 'ws' dorectory"
+    mkdir ws || fatal "Imposible to create 'ws' dorectory"
 fi
 #  Config JSON file
 if ! [ -f ws/config.json ]; then 
@@ -67,7 +67,7 @@ fi
 #
 #  -param $1 JSON file
 #  -param $2 Change by 'jq'
-_update() {
+update() {
     local _json=${1:-''}
     local _jq=${2:-''}
     jq "$_jq" "$_json" \
@@ -75,17 +75,17 @@ _update() {
 		&& mv ws/config.$$.json.tmp "$_json"
 }
 
-#  Save key-value config to 'config.json'.
+#  Save key-value config to 'ws/config.json'.
 #  This function has three different forms:
-#    1. Only 'jq' query: _put '.jq'
-#    2. Name and 'jq' query: _put 'name' '.jq'
-#    3. Name and value: _put 'name' 'value'
+#    1. Only 'jq' query: put '.jq'
+#    2. Name and 'jq' query: put 'name' '.jq'
+#    3. Name and value: put 'name' 'value'
 #  If 'jq' query is found, the function will
 #+ use JSON result to take the value.
 #
 #  -param $1 Name of the entry or 'jq' for value
 #  -param $2 Value of the entry or 'jq' for value
-_put() {
+put() {
     local _name="$1"
 	local _val=${2:-''}
 	if [ -z "$_val" ]; then
@@ -96,16 +96,16 @@ _put() {
 	    local _jq="$_val"
 	fi
 	_val=$( cat "$OUTPUT.output" | jq "try $_jq catch null" )
-	_update "ws/config.json" ". + { \"$_name\": $_val }"
-	_info "Saved [$_name] with value [$_val] to workspace config"
+	update "ws/config.json" ". + { \"$_name\": $_val }"
+	info "Saved [$_name] with value [$_val] to workspace config"
 }
 
 #  Get value from declared variable, if variable
 #+ does not exist value will be obtained from
-#+ 'config.json' by key (it can be a 'jq' query).
+#+ 'ws/config.json' by key (it can be a 'jq' query).
 #  Result will be translated to string
 #+ and the quotes will be removed.
-_get() {
+get() {
     local _name="$1"
 	local _val=""
 	if [[ "$_name" =~ ^[a-zA-Z]*$ ]]; then
@@ -119,21 +119,37 @@ _get() {
 	fi
 }
 
-#  Remove key-value from 'config.json' by key
-#+ (it can be a 'jq' query).
-_remove() {
-	local _name="$1"
-	local _found=$( jq "has(\"$_name\")" "ws/config.json" )
-	if [ "$_found" = "true" ]; then
-	    _update "ws/config.json" "del(.$1)"
-	    _info "Removed [$_name] from workspace config"
+#  Remove key-value from 'ws/config.json'.
+#  This function has two different forms:
+#    1. 'jq' query: remove '.jq'
+#    2. Field name: remove 'name'
+#
+#  -param $1 Name of the entry or 'jq' for entry
+remove() {
+	local _name=${1:-''}
+	if [[ "$_name" = \.* ]]; then
+	    local _val=$( jq "try $_name catch null" "ws/config.json" )
+	    if [ "$_val" != "null" ]; then
+	        update "ws/config.json" "del($_name)"
+	        info "Removed [$_name] from workspace config"
+	    fi
+	else
+	    local _found=$( jq "has(\"$_name\")" "ws/config.json" )
+	    if [ "$_found" = "true" ]; then
+	        update "ws/config.json" "del(.$_name)"
+	        info "Removed [$_name] from workspace config"
+	    fi
 	fi
 }
 
 
 # ---------- Internal functions ----------
 
-#  Cleanup and error catching function.
+#  Cleanup all temp JSON files from
+#+ workspace.
+#  This function is called after 
+#+ execute the main code or after
+#+ get an error.
 _finally_http_api() {
     if [ -d ws ]; then
         rm -rf ws/*.json.tmp
@@ -146,7 +162,7 @@ _finally_http_api() {
 #  List the names of available functions.
 #  All named functions start with '_' 
 #+ will be discarded from the list.
-_list() {
+_list_commands() {
     declare -a _functions=(
 	    $( declare -F )
 	)
@@ -157,26 +173,25 @@ _list() {
 		fi
 	done
 }
-expr "$*" : ".*--list" > /dev/null && _list \
+expr "$*" : ".*--list" > /dev/null && _list_commands \
     && exit 0
 
 #  Clean output files.
-_clean() {
+_clean_output_files() {
     if [ -d output ]; then
         local _selected=$( find "output" -name "*" -type f )
         for _file in ${_selected[@]}; do
-            _info "Removed [$_file] output"
+            info "Removed [$_file] output"
         done
     	rm -rf output/*
 	fi
 }
-expr "$*" : ".*--clean" > /dev/null && _clean \
-    && _info "Cleaning completed" \
+expr "$*" : ".*--clean" > /dev/null && _clean_output_files \
+    && info "Cleaning completed" \
     && exit 0
 
 
-# ---------- Main code ----------
-
+#  Main code.
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 	trap _finally_http_api EXIT
 

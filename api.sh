@@ -13,16 +13,24 @@ readonly _basename=$( basename "$0" )
 readonly _log_file="/tmp/shTTP_${_basename%.*}.`date '+%Y-%m-%d'`.log"
 
 #  Log a message object with the INFO level.
+#
+#  -param $* Log message
 _info() { echo "`date '+%Y-%m-%d %T.%N'` [INFO]    $*" | tee -a "$_log_file" >&2 ; }
 
 #  Log a message object with the WARNING level.
+#
+#  -param $* Log message
 _warning() { echo "`date '+%Y-%m-%d %T.%N'` [WARNING] $*" | tee -a "$_log_file" >&2 ; }
 
 #  Log a message object with the ERROR level.
+#
+#  -param $* Log message
 _error() { echo "`date '+%Y-%m-%d %T.%N'` [ERROR]   $*" | tee -a "$_log_file" >&2 ; }
 
 #  Log a message object with the FATAL level, 
 #+ exit execution with 1.
+#
+#  -param $* Log message
 _fatal() { echo "`date '+%Y-%m-%d %T.%N'` [FATAL]   $*" | tee -a "$_log_file" >&2 ; exit 1 ; }
 
 
@@ -57,8 +65,8 @@ fi
 
 #  Update a JSON file using 'jq'.
 #
-#  $1 JSON file
-#  $2 Change by 'jq'
+#  -param $1 JSON file
+#  -param $2 Change by 'jq'
 _update() {
     local _json=${1:-''}
     local _jq=${2:-''}
@@ -69,20 +77,21 @@ _update() {
 
 #  Save key-value config to 'config.json'.
 #  This function has three different forms:
-#  1) Only 'jq' query: _put '.jq'
-#  2) Name and 'jq' query: _put 'name' '.jq'
-#  3) Name and value: _put 'name' 'value'
+#    1) Only 'jq' query: _put '.jq'
+#    2) Name and 'jq' query: _put 'name' '.jq'
+#    3) Name and value: _put 'name' 'value'
 #  If 'jq' query is found, the function will
 #+ use JSON result to take the value.
 #
-#  $1 Name of the entry or 'jq' for value
-#  $2 Value of the entry or 'jq' for value
+#  -param $1 Name of the entry or 'jq' for value
+#  -param $2 Value of the entry or 'jq' for value
 _put() {
     local _name="$1"
 	local _val=${2:-''}
 	if [ -z "$_val" ]; then
 	    local _jq="$_name"
 	    _name=${_name//[0-9^\[\]]/}
+	    _name=$( echo "$_name" | rev | cut -d '.' -f 1 | rev )
 	else
 	    local _jq="$_val"
 	fi
@@ -114,8 +123,11 @@ _get() {
 #+ (it can be a 'jq' query).
 _remove() {
 	local _name="$1"
-	_update "ws/config.json" "del(.$1)"
-	_info "Removed [$_name] from workspace config"
+	local _found=$( jq "has(\"$_name\")" "ws/config.json" )
+	if [ "$_found" = "true" ]; then
+	    _update "ws/config.json" "del(.$1)"
+	    _info "Removed [$_name] from workspace config"
+	fi
 }
 
 
@@ -165,14 +177,5 @@ expr "$*" : ".*--clean" > /dev/null && _clean \
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 	trap _cleanup EXIT
 
-    OUTPUT="output/output.$$"
-    echo '{"id":"5s43u-323we"}' > "$OUTPUT.output"
     
-    _put '.id'
-    _put 'jqId' '.id'
-    _put 'rawId' '"4jj43-34mdwe"'
-    _put 'idx' 5
-    _put 'flag' true
-    _put 'null' null
-    _put 'object' '{}'
 fi

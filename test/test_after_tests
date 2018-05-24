@@ -1,3 +1,4 @@
+#! /usr/bin/env bash
 #  Global after tests.
 #  This is imported by 'test_runner'.
 

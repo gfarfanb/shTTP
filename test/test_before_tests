@@ -1,6 +1,10 @@
+#! /usr/bin/env bash
 #  Global before tests.
 #  This is imported by 'test_runner'.
 
+
+#  Mark as skip 'http_api' main code
+SKIP_HTTP_API=true
 
 #  Import 'http_api'
 . ../http_api

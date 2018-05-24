@@ -1,3 +1,4 @@
+#! /usr/bin/env bash
 #  Tests for 'http_api' main code.
 
 

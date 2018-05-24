@@ -1,0 +1,9 @@
+#! /usr/bin/env bash
+#  Tests for 'http_api' util functions.
+
+
+#  -test Reverse util
+_rev_input="reverse"
+_rev_input=$( _rev "$_rev_input" )
+
+assertEquals "Reverse is not working" "esrever" "$_rev_input"

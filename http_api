@@ -1,36 +1,34 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 #  Simple HTTP API development environment.
 set -euo pipefail
 IFS=$'\n\t'
 
 #  Show the help content.
-_help_http_api() { 
-	local _content=(
-		""
-		" Usage: ./<file>.sh <command> [--set <key-name> <value>] [--get <key-name>] [--add <key-name> <value>]"
-		"                              [--remove <key-name>] [--get-keys] [--list] [--clean] [--host <host>]"
-		"                              [--local <port>] [--auth-qparam] [--auth-skip] [--open] [--help]"
-		""
-		" Options:"
-		"   --set <key-name> <value>:  Set a temporal key-value config. This won't saved to 'config.json'"
-		"   --get <key-name>:          Display the value for key from 'config.json'"
-		"   --add <key-name> <value>:  Add new key-value to 'config.json'"
-		"   --remove <key-name>:       Remove the key-value from 'config.json'"
-		"   --get-keys:                Display all keys from 'config.json' file"
-		"   --list:                    Display the <command> list (all functions defined into main script)"
-		"   --clean:                   Clean up all files: HOME/output/* HOME/*.json.tmp."
-		"                                Working directory (HOME) is set into 'config.json'"
-		"                                as 'workingDirectory'"
-		"   --host <host>:             Set host value to 'host' in 'config.json'"
-		"   --local <port>:            Set 'PROTOCOL' and 'DOMAIN' variables to local execution."
-		"                                PROTOCOL: http"
-		"                                DOMAIN:   localhost:<port> (default 8080)"
-		"   --auth-qparam:             Set 'QPARAM' to 'AUTH_MODE' for query params authorization."
-		"   --auth-skip:               Set 'SKIP' to 'AUTH_MODE' for skip to add any kind of authorization."
-		"   --open:                    Set 'EDITOR_COMMAND' with value defined on 'editorCommand' from 'config.json'"
-		"   --help:                    Display this help message"
-	)
-	echo "${_content[*]}"
+_help_http_api() {
+    local _content=(
+        ""
+        " Usage: ./<file>.sh <command> [--set <key-name> <value>] [--get <key-name>] [--add <key-name> <value>]"
+        "                              [--remove <key-name>] [--get-keys] [--list] [--clean] [--host <host>]"
+        "                              [--local <port>] [--auth-qparam] [--auth-skip] [--open] [--help]"
+        ""
+        " Options:"
+        "   --set <key-name> <value>:  Set a temporal key-value config. This won't saved to 'ws/config.json'"
+        "   --get <key-name>:          Display the value for key from 'ws/config.json'"
+        "   --add <key-name> <value>:  Add new key-value to 'ws/config.json'"
+        "   --remove <key-name>:       Remove the key-value from 'ws/config.json'"
+        "   --get-keys:                Display all keys from 'ws/config.json' file"
+        "   --list:                    Display the <command> list (all functions defined into main script)"
+        "   --clean:                   Clean up all output files 'output/*'"
+        "   --host <host>:             Set host value to 'host' in 'ws/config.json'"
+        "   --local <port>:            Set 'PROTOCOL' and 'DOMAIN' variables to local execution."
+        "                                PROTOCOL: http"
+        "                                DOMAIN:   localhost:<port> (default 8080)"
+        "   --auth-qparam:             Set 'QPARAM' to 'AUTH_MODE' for query params authorization."
+        "   --auth-skip:               Set 'SKIP' to 'AUTH_MODE' for skip to add any kind of authorization."
+        "   --open:                    Set 'EDITOR_COMMAND' with value defined on 'editorCommand' from 'ws/config.json'"
+        "   --help:                    Display this help message"
+    )
+    echo "${_content[*]}"
 }
 expr "$*" : ".*--help" > /dev/null \
     && _help_http_api \
@@ -90,12 +88,24 @@ if ! [ -d ws ]; then
     mkdir ws || fatal "Imposible to create 'ws' dorectory"
 fi
 #  Config JSON file
-if ! [ -f "ws/config.json" ]; then 
+if ! [ -f "ws/config.json" ]; then
     echo "{}" > "ws/config.json"
 fi
 
 
-# ---------- Public functions ----------
+# ---------- Util functions
+
+_rev() {
+    local _input=${1:-''}
+    local _rev=""
+    for (( i=${#_input}-1; i>=0; i-- )); do 
+        _rev="$_rev${_input:$i:1}"
+    done
+    echo "$_rev"
+}
+
+
+# ---------- Public functions
 
 #  Update a JSON file using 'jq'.
 #
@@ -105,8 +115,8 @@ update() {
     local _json=${1:-''}
     local _jq=${2:-''}
     jq "$_jq" "$_json" \
-		> "ws/config.$$.json.tmp" \
-		&& mv "ws/config.$$.json.tmp" "$_json"
+        > "ws/config.$$.json.tmp" \
+        && mv "ws/config.$$.json.tmp" "$_json"
 }
 
 #  Save key-value config to 'ws/config.json'.
@@ -121,32 +131,34 @@ update() {
 #  -param $2 Value of the entry or 'jq' for value
 put() {
     local _name="$1"
-	local _val=${2:-''}
-	if [ -z "$_val" ]; then
-	    local _jq="$_name"
-	    _name=${_name//[0-9^\[\]]/}
-	    _name=$( echo "$_name" | rev | cut -d '.' -f 1 | rev )
-	else
-	    local _jq="$_val"
-	fi
-	_val=$( cat "$OUTPUT.output" | jq "try $_jq catch null" )
-	update "ws/config.json" ". + { \"$_name\": $_val }"
-	info "Saved [$_name] with value [$_val] to workspace config"
+    local _val=${2:-''}
+    if [ -z "$_val" ]; then
+        local _jq="$_name"
+        _name=${_name//[0-9^\[\]]/}
+        _name=$( _rev "$_name" )
+        _name=$( echo "$_name" | cut -d '.' -f 1 )
+        _name=$( _rev "$_name" )
+    else
+       local _jq="$_val"
+    fi
+    _val=$( cat "$OUTPUT.output" | jq "try $_jq catch null" )
+    update "ws/config.json" ". + { \"$_name\": $_val }"
+    info "Saved [$_name] with value [$_val] to workspace config"
 }
 
 #  Not documented yet!!
 get() {
     local _name="$1"
-	local _val=""
-	if [[ "$_name" =~ ^[a-zA-Z]*$ ]]; then
-	    _val=$( eval "echo \${$_name:-''}" )
-	fi
-	if [ -n "$_val" ]; then
-	    echo $_val
-	else
+    local _val=""
+    if [[ "$_name" =~ ^[a-zA-Z]*$ ]]; then
+        _val=$( eval "echo \${$_name:-''}" )
+    fi
+    if [ -n "$_val" ]; then
+        echo $_val
+    else
         echo $( jq ".$_name | tostring" "ws/config.json" ) \
-		    | sed -e 's/^"//' -e 's/"$//'
-	fi
+            | sed -e 's/^"//' -e 's/"$//'
+    fi
 }
 
 #  Remove key-value from 'ws/config.json'.
@@ -156,24 +168,24 @@ get() {
 #
 #  -param $1 Name of the entry or 'jq' for entry
 remove() {
-	local _name=${1:-''}
-	if [[ "$_name" = \.* ]]; then
-	    local _val=$( jq "try $_name catch null" "ws/config.json" )
-	    if [ "$_val" != "null" ]; then
-	        update "ws/config.json" "del($_name)"
-	        info "Removed [$_name] from workspace config"
-	    fi
-	else
-	    local _found=$( jq "has(\"$_name\")" "ws/config.json" )
-	    if [ "$_found" = "true" ]; then
-	        update "ws/config.json" "del(.$_name)"
-	        info "Removed [$_name] from workspace config"
-	    fi
-	fi
+    local _name=${1:-''}
+    if [[ "$_name" = \.* ]]; then
+        local _val=$( jq "try $_name catch null" "ws/config.json" )
+        if [ "$_val" != "null" ]; then
+            update "ws/config.json" "del($_name)"
+            info "Removed [$_name] from workspace config"
+        fi
+    else
+        local _found=$( jq "has(\"$_name\")" "ws/config.json" )
+        if [ "$_found" = "true" ]; then
+            update "ws/config.json" "del(.$_name)"
+            info "Removed [$_name] from workspace config"
+        fi
+    fi
 }
 
 
-# ---------- Variables initialization ----------
+# ---------- Variables initialization
 
 #  Default is 'https'".
 #  Documentation review required!!
@@ -221,200 +233,201 @@ AUTH_MODE="HEADER"
 EDITOR_COMMAND=""
 
 
-# ---------- Internal functions ----------
+# ---------- Internal functions
 
 #  Not documented yet!!
 _clean_trace() {
-	local _curl=${1:-''}
-	local _body_file=${2:-''}
-	
-	sed -i -e '/^[*{} ]/d' "$OUTPUT.trace" # Remove unnecessary log lines
-	sed -i -e "/^> $/a> {{body}}\n" "$OUTPUT.trace" # Append body tag 
-	sed -i -e 's/^..//' "$OUTPUT.trace" # Remove first two characters in each line
-	
-	if [ -n "$_body_file" ]; then
-		echo "" | tee -a "$OUTPUT.trace" > /dev/null
-		echo ">>>>> body" | tee -a "$OUTPUT.trace" > /dev/null
-		cat "$_body_file" | tee -a "$OUTPUT.trace" > /dev/null # Append body content
-		rm -rf "$_body_file"
-	fi
+    local _curl=${1:-''}
+    local _body_file=${2:-''}
 
-	echo "" | tee -a "$OUTPUT.trace" > /dev/null
-	echo ">>>>> curl" | tee -a "$OUTPUT.trace" > /dev/null
-	echo "$_curl" | tee -a "$OUTPUT.trace" > /dev/null # Append CURL command
+    sed -i -e '/^[*{} ]/d' "$OUTPUT.trace" # Remove unnecessary log lines
+    sed -i -e "/^> $/a> {{body}}\n" "$OUTPUT.trace" # Append body tag 
+    sed -i -e 's/^..//' "$OUTPUT.trace" # Remove first two characters in each line
+
+    if [ -n "$_body_file" ]; then
+        echo "" | tee -a "$OUTPUT.trace" > /dev/null
+        echo ">>>>> body" | tee -a "$OUTPUT.trace" > /dev/null
+        cat "$_body_file" | tee -a "$OUTPUT.trace" > /dev/null # Append body content
+        rm -rf "$_body_file"
+    fi
+
+    echo "" | tee -a "$OUTPUT.trace" > /dev/null
+    echo ">>>>> curl" | tee -a "$OUTPUT.trace" > /dev/null
+    echo "$_curl" | tee -a "$OUTPUT.trace" > /dev/null # Append CURL command
 }
 
 #  Not documented yet!!
 _request() {
-	eval "URL=\"$URL\""
-	
+    eval "URL=\"$URL\""
+
     OUTPUT="output/$( basename "$0" ).`date '+%Y-%m-%d.%H_%M_%S'`"
-		
-	info "Set METHOD with [$METHOD]"
-	info "Set URL with [$URL]"
-	info "Set OUTPUT with [$OUTPUT]"
-	
-	_append_content_type
-	_append_auth
 
-	local _body_file=$( _append_body_to_file )
-	local _curl=$( _build_curl "$_body_file" )
-	eval "$_curl"
+    info "Set METHOD with [$METHOD]"
+    info "Set URL with [$URL]"
+    info "Set OUTPUT with [$OUTPUT]"
 
-	_clean_trace "$_curl" "$_body_file"
+    _append_content_type
+    _append_auth
 
-	printf '\n' ; cat "$OUTPUT.trace"
-	printf '\n>>>>> response\n' ; cat "$OUTPUT.output"
-	printf '\n\n'
+    local _body_file=$( _append_body_to_file )
+    local _curl=$( _build_curl "$_body_file" )
+    eval "$_curl"
 
-	info "Created $OUTPUT.trace"
-	info "Created $OUTPUT.output"
+    _clean_trace "$_curl" "$_body_file"
+
+    printf '\n' ; cat "$OUTPUT.trace"
+    printf '\n>>>>> response\n' ; cat "$OUTPUT.output"
+    printf '\n\n'
+
+    info "Created $OUTPUT.trace"
+    info "Created $OUTPUT.output"
 }
 
 #  Not documented yet!!
 _append_content_type() {
-	if [[ ${FORM[@]} ]]; then
-		local _value="multipart/form-data"
-	else
-		local _value="application/json"
-	fi
-	_append_if_missing_header "Content-Type" "$_value"
+    if [[ ${FORM[@]} ]]; then
+        local _value="multipart/form-data"
+    else
+        local _value="application/json"
+    fi
+    _append_if_missing_header "Content-Type" "$_value"
 }
 
 #  Not documented yet!!
 _append_auth() {
-	case "$AUTH_MODE" in
-		"HEADER")
-			_append_if_missing_header "Authorization" "Bearer $( get apiToken )"
-			_append_if_missing_Header "Host" "$( get host )"
-		;;
-		"QPARAM")
-			if [[ "$URL" = *\?* ]]; then
-				URL="$URL&token=$( get apiToken )"
-			else
-				URL="$URL?token=$( get apiToken )"
-			fi
-			_append_if_missing_header "Host" "$( get host )"
-		;;
-		"SKIP")
-			:
-		;;
-		*)
-	    fatal "Invalid authorization mode [$AUTH_MODE]"
-	    ;;
-	esac
-	info "Set AUTH_MODE with [$AUTH_MODE]"
+    case "$AUTH_MODE" in
+        "HEADER")
+            _append_if_missing_header "Authorization" "Bearer $( get apiToken )"
+            _append_if_missing_header "Host" "$( get host )"
+        ;;
+        "QPARAM")
+            if [[ "$URL" = *\?* ]]; then
+                URL="$URL&token=$( get apiToken )"
+            else
+                URL="$URL?token=$( get apiToken )"
+            fi
+            _append_if_missing_header "Host" "$( get host )"
+        ;;
+        "SKIP")
+            :
+        ;;
+        *)
+        fatal "Invalid authorization mode [$AUTH_MODE]"
+        ;;
+    esac
+    info "Set AUTH_MODE with [$AUTH_MODE]"
 }
 
 #  Not documented yet!!
 _append_body_to_file() {
-	local _body_file="ws/body.$$.json.tmp"
-	if [[ "$(declare -p BODY)" =~ "declare -a"* ]]; then
-		if [[ ${BODY[@]} ]]; then
-			for _line in ${BODY[@]}; do
-				if [ "$_line" = "\n" ]; then
-					echo | tee -a "$_body_file" > /dev/null 
-				else
-					echo "$_line" | tee -a "$_body_file" > /dev/null 
-				fi
-			done
-		else
-			_body_file=''
-		fi
-	else
-		if [ -n "$BODY" ]; then
-			echo "$BODY" | tee -a "$_body_file" > /dev/null 
-		else
-			_body_file=''
-		fi
-	fi
-	echo "$_body_file"
+    local _body_file="ws/body.$$.json.tmp"
+    if [[ "$(declare -p BODY)" =~ "declare -a"* ]]; then
+        if [[ ${BODY[@]} ]]; then
+            for _line in ${BODY[@]}; do
+                if [ "$_line" = "\n" ]; then
+                    echo | tee -a "$_body_file" > /dev/null
+                else
+                    echo "$_line" | tee -a "$_body_file" > /dev/null
+                fi
+            done
+        else
+            _body_file=''
+        fi
+    else
+        if [ -n "$BODY" ]; then
+            echo "$BODY" | tee -a "$_body_file" > /dev/null
+        else
+        _body_file=''
+        fi
+    fi
+    echo "$_body_file"
 }
 
 #  Not documented yet!!
 _build_curl() {
-	local _body_file=${1:-''}
-	local _curl=(
-		"curl -X $METHOD -s -v -o \"$OUTPUT.output\" \\"
-	)
-	for _header in ${HEADERS[@]}; do
-		_curl+=( "-H \"$_header\" \\" )
-	done
-	for _form in ${FORM[@]}; do
-		_curl+=( "-F \"$_form\" \\" )
-	done
-	if [ -n "$_body_file" ]; then
-		_curl+=( "--data-binary '@$_body_file' \\" )
-	fi
-	_curl+=( "$PROTOCOL://$URL > \"$OUTPUT.trace\" 2>&1" )
-	echo "${_curl[*]}"
+    local _body_file=${1:-''}
+    local _curl=(
+        "curl -X $METHOD -s -v -o \"$OUTPUT.output\" \\"
+    )
+    for _header in ${HEADERS[@]}; do
+        _curl+=( "-H \"$_header\" \\" )
+    done
+    for _form in ${FORM[@]}; do
+        _curl+=( "-F \"$_form\" \\" )
+    done
+    if [ -n "$_body_file" ]; then
+        _curl+=( "--data-binary '@$_body_file' \\" )
+    fi
+    _curl+=( "$PROTOCOL://$URL > \"$OUTPUT.trace\" 2>&1" )
+    echo "${_curl[*]}"
 }
 
 #  Not documented yet!!
 _after_request() {
-	for _callback in ${AFTER_REQUEST[@]}; do
-		eval "$_callback"
-	done
+    for _callback in ${AFTER_REQUEST[@]}; do
+        eval "$_callback"
+    done
 }
 
 #  Not documented yet!!
 _editor_command() {
-	if [ -n "$EDITOR_COMMAND" ]; then
-		eval "EDITOR_COMMAND=\"$EDITOR_COMMAND\""
-		info "Set EDITOR_COMMAND with [$EDITOR_COMMAND]"
-		eval "$EDITOR_COMMAND"
-	fi
+    if [ -n "$EDITOR_COMMAND" ]; then
+        eval "EDITOR_COMMAND=\"$EDITOR_COMMAND\""
+        info "Set EDITOR_COMMAND with [$EDITOR_COMMAND]"
+        eval "$EDITOR_COMMAND"
+    fi
 }
 
 #  Not documented yet!!
 _set_method() {
-	if [ -z "$METHOD" ]; then
-		shopt -s nocasematch
-		case "$1" in
-			get*)
-				METHOD="GET"
-			;;
-			post*)
-				METHOD="POST"
-			;;
-			put*)
-				METHOD="PUT"
-			;;
-			delete*)
-				METHOD="DELETE"
-			;;
-			head)
-				METHOD="HEAD"
-			;;
-			options*)
-				METHOD="OPTIONS"
-			;;
-		esac
-		shopt -u nocasematch
-	fi
+    if [ -z "$METHOD" ]; then
+        local _command=${1:-''}
+        shopt -s nocasematch
+        case "$_command" in
+            get*)
+                METHOD="GET"
+            ;;
+            post*)
+                METHOD="POST"
+            ;;
+            put*)
+                METHOD="PUT"
+            ;;
+            delete*)
+                METHOD="DELETE"
+            ;;
+            head)
+                METHOD="HEAD"
+            ;;
+            options*)
+                METHOD="OPTIONS"
+            ;;
+        esac
+        shopt -u nocasematch
+    fi
 }
 
 #  Not documented yet!!
 _append_if_missing_header() {
-	local _name=${1:-''}
-	local _value=${2:-''}
-	shopt -s nocasematch
-	local _found=0
-	for _header in ${HEADERS[@]}; do
-		if [[ "$_header" =~ "$_name:"* ]]; then
-			_found=1
-			break
-		fi
-	done
-	shopt -u nocasematch
-	if [ $_found = 0 ]; then
-		HEADERS+=( "$_name:$_value" )
-	fi
+    local _name=${1:-''}
+    local _value=${2:-''}
+    shopt -s nocasematch
+    local _found=0
+    for _header in ${HEADERS[@]}; do
+        if [[ "$_header" =~ "$_name:"* ]]; then
+            _found=1
+            break
+        fi
+    done
+    shopt -u nocasematch
+    if [ $_found = 0 ]; then
+        HEADERS+=( "$_name:$_value" )
+    fi
 }
 
 #  Cleanup all temp JSON files from
 #+ workspace.
-#  This function is called after 
+#  This function is called after
 #+ execute the main code or after
 #+ get an error.
 _finally_http_api() {
@@ -424,20 +437,20 @@ _finally_http_api() {
 }
 
 
-# ---------- Option functions ----------
+# ---------- Option functions
 
 #  List the names of available functions.
 #  More details required!!
 _list_commands() {
     declare -a _functions=(
-	    $( declare -F )
-	)
-	for _function in ${_functions[@]}; do
-		local _name=$( echo "$_function" | cut -d ' ' -f 3 )
-		if ! [[ "$_name" == "_"* ]]; then
-		    echo $_name
-		fi
-	done
+        $( declare -F )
+    )
+    for _function in ${_functions[@]}; do
+        local _name=$( echo "$_function" | cut -d ' ' -f 3 )
+        if ! [[ "$_name" == "_"* ]]; then
+            echo $_name
+        fi
+    done
 }
 expr "$*" : ".*--list" > /dev/null \
     && _list_commands \
@@ -445,35 +458,35 @@ expr "$*" : ".*--list" > /dev/null \
 
 #  Not documented yet!!
 _set_config() {
-	local _name=""
-	local _value=""
-	local _found=0
-	for _i in $@; do
-		if [ $_found = 2 ]; then
-			_value="$_i"
-			_found=3
-			break
-	  	fi
-		if [ $_found = 1 ]; then
-			_name="$_i"
-			_found=2
-	  	fi
-		[ "$_i" == "--set" ] && _found=1	  	
-	done
-	if [ $_found = 3 ]; then
-		eval "$_name=$_value"
-		info "Set temporal [$_name] with value [$_value]"
-	fi
+    local _name=""
+    local _value=""
+    local _found=0
+    for _i in $@; do
+        if [ $_found = 2 ]; then
+            _value="$_i"
+            _found=3
+            break
+        fi
+        if [ $_found = 1 ]; then
+            _name="$_i"
+            _found=2
+        fi
+        [ "$_i" == "--set" ] && _found=1
+    done
+    if [ $_found = 3 ]; then
+        eval "$_name=$_value"
+        info "Set temporal [$_name] with value [$_value]"
+    fi
 }
 expr "$*" : ".*--set" > /dev/null \
     && _set_config "$@"
 
 #  Not document yet!!
 _add_config() {
-	shift
-	local _name=${1:-''}
-	local _val=${2:-''}
-	put "$_name" "$_val"
+    shift
+    local _name=${1:-''}
+    local _val=${2:-''}
+    put "$_name" "$_val"
 }
 expr "$*" : ".*--add" > /dev/null \
     && _add_config "$@" \
@@ -481,11 +494,11 @@ expr "$*" : ".*--add" > /dev/null \
 
 #  Not documented yet!!
 _get_config() {
-	shift
-	local _name=${1:-''}
-	if [ -n "$_name" ]; then
-		echo $( get "$_name" )
-	fi
+    shift
+    local _name=${1:-''}
+    if [ -n "$_name" ]; then
+        echo $( get "$_name" )
+    fi
 }
 expr "$*" : ".*--get" > /dev/null \
     && _get_config "$@" \
@@ -493,9 +506,9 @@ expr "$*" : ".*--get" > /dev/null \
 
 #  Not documented yet!!
 _remove_config() {
-	shift
-	local _name=${1:-''}
-	remove "$_name"
+    shift
+    local _name=${1:-''}
+    remove "$_name"
 }
 expr "$*" : ".*--remove" > /dev/null \
     && _remove_config "$@" \
@@ -503,7 +516,7 @@ expr "$*" : ".*--remove" > /dev/null \
 
 #  Not documented yet!!
 _get_config_keys() {
-	jq "keys" "ws/config.json"
+    jq "keys" "ws/config.json"
 }
 expr "$*" : ".*--get-keys" > /dev/null \
     && _get_config_keys \
@@ -511,64 +524,64 @@ expr "$*" : ".*--get-keys" > /dev/null \
 
 #  Not documented yet!!
 _set_host() {
-	local _host=$( get host )
-	local _found=0
-	for _i in $@; do
-		if [ $_found = 1 ]; then
-			_host="$_i"
-			break
-	  	fi
-		[ "$_i" == "--host" ] && _found=1	  	
-	done
-	local _value=$( get "hosts | .[] | select(.key==\"$_host\") | .value" )
-	if [ "$_value" != "null" ]; then
-		_host="$_value"
-	fi
-	DOMAIN="$_host"
-	put host "\"$_host\""
-	info "Set DOMAIN with [$_host]"
+    local _host=$( get host )
+    local _found=0
+    for _i in $@; do
+        if [ $_found = 1 ]; then
+            _host="$_i"
+            break
+        fi
+        [ "$_i" == "--host" ] && _found=1
+    done
+    local _value=$( get "hosts | .[] | select(.key==\"$_host\") | .value" )
+    if [ "$_value" != "null" ]; then
+        _host="$_value"
+    fi
+    DOMAIN="$_host"
+    put host "\"$_host\""
+    info "Set DOMAIN with [$_host]"
 }
 expr "$*" : ".*--host" > /dev/null \
     && _set_host "$@"
 
 #  Not documented yet!!
 _set_localhost() {
-	local _port="8080"
-	local _found=0
-	for _i in $@; do
-		if [ $_found = 1 ]; then
-			if [[ "$_i" =~ ^[0-9]+$ ]]; then
-				_port="$_i"
-			fi
-			break
-	  	fi
-		[ "$_i" == "--local" ] && _found=1	  	
-	done
-	PROTOCOL="http"
-	DOMAIN="localhost:$_port"
-	info "Set PROTOCOL with [$PROTOCOL]"
-	info "Set DOMAIN with [$DOMAIN]"
+    local _port="8080"
+    local _found=0
+    for _i in $@; do
+        if [ $_found = 1 ]; then
+            if [[ "$_i" =~ ^[0-9]+$ ]]; then
+                _port="$_i"
+            fi
+            break
+        fi
+        [ "$_i" == "--local" ] && _found=1
+    done
+    PROTOCOL="http"
+    DOMAIN="localhost:$_port"
+    info "Set PROTOCOL with [$PROTOCOL]"
+    info "Set DOMAIN with [$DOMAIN]"
 }
 expr "$*" : ".*--local" > /dev/null \
     && _set_localhost "$@"
 
 #  Not documented yet!!
 _auth_qparam() {
-	AUTH_MODE="QPARAM"
+    AUTH_MODE="QPARAM"
 }
 expr "$*" : ".*--auth-qparam" > /dev/null \
     && _auth_qparam "$@"
 
 #  Not documented yet!!
 _auth_skip() {
-	AUTH_MODE="SKIP"
+    AUTH_MODE="SKIP"
 }
 expr "$*" : ".*--auth-skip" > /dev/null \
     && _auth_skip "$@"
 
 #  Not documented yet!!
 _open_editor() {
-	EDITOR_COMMAND="$( get editorCommand )"
+    EDITOR_COMMAND="$( get editorCommand )"
 }
 expr "$*" : ".*--open" > /dev/null \
     && _open_editor "$@"
@@ -581,17 +594,21 @@ _clean_output_files() {
         for _file in ${_selected[@]}; do
             info "Removed [$_file] output"
         done
-    	rm -rf output/*
-	fi
+        rm -rf output/*
+    fi
 }
-expr "$*" : ".*--clean" > /dev/null && _clean_output_files \
+expr "$*" : ".*--clean" > /dev/null \
+    && _clean_output_files \
     && info "Cleaning completed" \
     && exit 0
 
+#  Skip main code flag
+readonly _skip_http_api=${SKIP_HTTP_API:-''}
 
 #  Main code.
-if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
-	trap _finally_http_api EXIT
+#  More details required!!
+if [ "$_skip_http_api" != "true" ]; then
+    trap _finally_http_api EXIT
 
     _command=${1:-''}
     _has_main=$( declare -f main > /dev/null ; echo $? )
@@ -601,22 +618,22 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     info "Init request"
 
     if [ -n "$_command" ]; then
-	    info "Executing [$_command] command"
-	    eval "$_command"
-	    _set_method "$_command"
-	    _request
-	    _after_request
-	    _editor_command
+        info "Executing [$_command] command"
+        eval "$_command"
+        _set_method "$_command"
+        _request
+        _after_request
+        _editor_command
     elif [ $_has_main == 0 ]; then
-	    info "Executing [main] command"
-	    main
-	    _set_method "$_command"
-	    _request
-	    _after_request
-	    _editor_command
+        info "Executing [main] command"
+        main
+        _set_method "$_command"
+        _request
+        _after_request
+        _editor_command
     else
-	    info "No command to execute"
+        info "No command to execute"
     fi
 
-    info "Request completed"    
+    info "Request completed"
 fi

@@ -16,6 +16,56 @@ done
 assertEquals "Command not found" 1 "$_found"
 
 
+#  -test Set option
+# _set_config
+fail "Set option - Not implemented yet"
+
+
+#  -test Add option
+# _add_config
+fail "Add option - Not implemented yet"
+
+
+#  -test Get option
+# _get_config
+fail "Get option - Not implemented yet"
+
+
+#  -test Remove option
+# _remove_config
+fail "Remove option - Not implemented yet"
+
+
+#  -test Get keys option
+# _get_config_keys
+fail "Get keys option - Not implemented yet"
+
+
+#  -test Host option
+# _set_host
+fail "Host option - Not implemented yet"
+
+
+#  -test Local option
+# _set_localhost
+fail "Local option - Not implemented yet"
+
+
+#  -test Authentication by Query Parameters option
+# _auth_qparam
+fail "Authentication by Query Parameters option - Not implemented yet"
+
+
+#  -test Skip authentication option
+# _auth_skip
+fail "Skip authentication option - Not implemented yet"
+
+
+#  -test Open editor option
+# _open_editor
+fail "Open editor option - Not implemented yet"
+
+
 #  -test Clean option
 echo '{}' > output/cleanable_output.json
 

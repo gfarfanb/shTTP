@@ -1,0 +1,10 @@
+
+language: bash
+
+branches:
+  only:
+    - master
+
+script: 
+  - cd test
+  - ./test_runner

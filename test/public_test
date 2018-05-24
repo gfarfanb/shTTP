@@ -71,6 +71,8 @@ assertEquals "'object' not found" "{}" "$_object"
 _unknown=$( get unknown )
 assertEquals "'unknown' was found" "null" "$_unknown"
 
+fail "Get temporal - Not implemented yet"
+
 
 #  -test Remove key-value config
 remove '.id'

@@ -21,7 +21,8 @@ _help_test_runner() {
 	)
 	echo "${_content[*]}"
 }
-expr "$*" : ".*--help" > /dev/null && _help_test_runner \
+expr "$*" : ".*--help" > /dev/null \
+    && _help_test_runner \
     && exit 0
 
 #  List the names of the executable
@@ -35,7 +36,8 @@ _list_tests() {
         echo $( echo "$_test" | cut -d '_' -f 1 )
 	done
 }
-expr "$*" : ".*--list" > /dev/null && _list_tests \
+expr "$*" : ".*--list" > /dev/null \
+    && _list_tests \
     && exit 0
 
 #  Assertions count.
@@ -55,19 +57,18 @@ _fail() {
     _failures=$(( _failures+1 ))
 }
 
-#  Print the test results and execute
-#+ the global after-tests script.
+#  Print the test results.
 #  This function is called after 
 #+ execute the main code or after
 #+ get an error.
 _finally_test_runner() {
     if [ $_failures = 0 ]; then
         echo "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
+        exit 1
     else
         echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
+        exit 0
     fi
-
-    . ./test_after_tests
 }
 
 #  Main code.
@@ -77,7 +78,9 @@ _finally_test_runner() {
 #    3. Verify the kind of execution:
 #+      single test or all tests.
 #    4. Execute test(s).
-#    5. Finally function is executed.
+#    5. Execute the global after-tests
+#+      script.
+#    6. Finally function is executed.
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 	trap _finally_test_runner EXIT
 	
@@ -94,4 +97,6 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     		eval '. ./$_test'
     	done
     fi
+    
+    . ./test_after_tests
 fi

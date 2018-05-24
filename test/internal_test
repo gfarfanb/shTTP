@@ -1,7 +1,59 @@
 #  Tests for 'http_api' internal functions.
 
 
+#  -test Clean trace
+# _clean_trace
+fail "Clean trace - Not implemented yet"
+
+
+#  -test Request execution
+# _request
+fail "Request execution - Not implemented yet"
+
+
+#  -test Append Content-Type
+# _append_content_type
+fail "Append Content-Type - Not implemented yet"
+
+
+#  -test Append Authentication
+# _append_auth
+fail "Append Authentication - Not implemented yet"
+
+
+#  -test Append body to file
+# _append_body_to_file
+fail "Append body to file - Not implemented yet"
+
+
+#  -test Build cURL
+# _build_curl
+fail "Build cURL - Not implemented yet"
+
+
+#  -test After request execution
+# _after_request
+fail "After request execution - Not implemented yet"
+
+
+#  -test Open editor command
+# _editor_command
+fail "Open editor command - Not implemented yet"
+
+
+#  -test Set request method
+# _set_method
+fail "Set request method - Not implemented yet"
+
+
+#  -test Append if missing header
+# _append_if_missing_header
+fail "Append if missing header - Not implemented yet"
+
+
 #  -test Script clean-up
+
+#  -test Script finallly
 echo '{}' > ws/cleanable_config.json.tmp
 
 _finally_http_api

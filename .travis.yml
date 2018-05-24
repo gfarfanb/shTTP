@@ -6,5 +6,5 @@ branches:
     - master
 
 script: 
-  - cd test
-  - ./test_runner
+  - cd test && ./test_runner
+  - shellcheck http_api && shellcheck test/*

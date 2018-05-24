@@ -55,6 +55,15 @@ sudo apt-get install jq
 jq-1.5-1-a5b5cbe
 ```
 
+* Preferably install [ShellCheck](https://github.com/koalaman/shellcheck)
+```
+sudo apt-get install shellcheck
+```
+Usage:
+```
+shellcheck http_api
+```
+
 
 ## Script plugin
 

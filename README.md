@@ -1,5 +1,6 @@
 # shTTP
 
+[![Build Status](https://travis-ci.org/gfarfanb/shTTP.svg?branch=master)](https://travis-ci.org/gfarfanb/shTTP)
 [![Join the chat at https://gitter.im/shTTP/api-dev](https://badges.gitter.im/shTTP/api-dev.svg)](https://gitter.im/shTTP/api-dev?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Simple HTTP API development environment by command line.

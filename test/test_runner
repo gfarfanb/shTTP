@@ -64,10 +64,10 @@ _fail() {
 _finally_test_runner() {
     if [ $_failures = 0 ]; then
         echo "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
-        exit 1
+        exit 0
     else
         echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
-        exit 0
+        exit 1
     fi
 }
 

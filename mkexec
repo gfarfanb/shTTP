@@ -1,0 +1,17 @@
+#! /usr/bin/env bash
+#  Make a script executable.
+#  If '-x' appears in the 
+#+ parameters the execution
+#+ permission is removed.
+
+readonly _script=${1:-''}
+
+if [[ "$*" = *"-x"* ]]; then
+    sudo chmod -x "$_script"
+    git update-index --add --chmod=-x "$_script"
+    sed -i 's/\r$//' "$_script"
+else
+    sudo chmod +x "$_script"
+    git update-index --add --chmod=+x "$_script"
+    sed -i 's/\r$//' "$_script"
+fi

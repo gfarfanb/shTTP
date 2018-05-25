@@ -6,7 +6,5 @@ branches:
     - master
 
 script:
-  - shellcheck http_api
-  - shellcheck test/test_*
-  - shellcheck test/unit/*
-  - cd test && ./test_runner
+  - ./lint
+  - ./runtests

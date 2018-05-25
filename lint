@@ -1,0 +1,10 @@
+#! /usr/bin/env bash
+#  Run 'shellcheck' for project.
+#  https://github.com/koalaman/shellcheck
+
+shellcheck http_api
+shellcheck lint
+shellcheck mkexec
+shellcheck runtests
+shellcheck test/test_*
+shellcheck test/unit/*

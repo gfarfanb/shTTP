@@ -1,0 +1,4 @@
+#! /usr/bin/env bash
+#  Run all tests of the project.
+
+cd test && ./test_runner

@@ -9,41 +9,41 @@ echo '{"id":"5s43u-323we"}' > "$OUTPUT.output"
 
 #  -test Update JSON config file
 update "ws/config.json" ". + { \"update\": \"updated\" }"
-_update=$( cat "ws/config.json" | jq ".update" )
+_update=$( < "ws/config.json" jq ".update" )
 assertEquals "'update' not found" "\"updated\"" "$_update"
 
 update "ws/config.json" "del(.update)"
-_update=$( cat "ws/config.json" | jq ".update" )
+_update=$( < "ws/config.json" jq ".update" )
 assertEquals "'update' was found" "null" "$_update"
 
 
 #  -test Put key-value config
 put '.id'
-_id=$( cat "ws/config.json" | jq ".id" )
+_id=$( < "ws/config.json" jq ".id" )
 assertEquals "'id' not found" "\"5s43u-323we\"" "$_id"
 
 put 'jqId' '.id'
-_jqId=$( cat "ws/config.json" | jq ".jqId" )
+_jqId=$( < "ws/config.json" jq ".jqId" )
 assertEquals "'jqId' not found" "\"5s43u-323we\"" "$_jqId"
 
 put 'rawId' '"4jj43-34mdwe"'
-_rawId=$( cat "ws/config.json" | jq ".rawId" )
+_rawId=$( < "ws/config.json" jq ".rawId" )
 assertEquals "'rawId' not found" "\"4jj43-34mdwe\"" "$_rawId"
 
 put 'idx' 5
-_idx=$( cat "ws/config.json" | jq ".idx" )
+_idx=$( < "ws/config.json" jq ".idx" )
 assertEquals "'idx' not found" "5" "$_idx"
 
 put 'flag' true
-_flag=$( cat "ws/config.json" | jq ".flag" )
+_flag=$( < "ws/config.json" jq ".flag" )
 assertEquals "'flag' not found" "true" "$_flag"
 
 put 'null' null
-_null=$( cat "ws/config.json" | jq ".null" )
+_null=$( < "ws/config.json" jq ".null" )
 assertEquals "'null' not found" "null" "$_null"
 
 put 'object' '{}'
-_object=$( cat "ws/config.json" | jq ".object" )
+_object=$( < "ws/config.json" jq ".object" )
 assertEquals "'object' not found" "{}" "$_object"
 
 

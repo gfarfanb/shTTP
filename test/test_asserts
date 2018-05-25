@@ -61,7 +61,7 @@ assertEquals() {
     local _actual=${3:-''}
     local _ok=1
     if [ "$_expected" != "$_actual" ]; then
-        _fail "[ "$_expected" = "$_actual" ]: $_message"
+        _fail "[ $_expected = $_actual ]: $_message"
     fi
     _inc_asserts
 }
@@ -78,7 +78,7 @@ assertNotEquals() {
     local _actual=${3:-''}
     local _ok=1
     if [ "$_expected" = "$_actual" ]; then
-        _fail "[ "$_expected" != "$_actual" ]: $_message"
+        _fail "[ $_expected != $_actual ]: $_message"
     fi
     _inc_asserts
 }

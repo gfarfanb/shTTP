@@ -3,7 +3,8 @@
 #  This is imported by 'test_runner'.
 
 
-#  Mark as skip 'http_api' main code
+#  Mark as skip 'http_api' main code.
+#  shellcheck disable=SC2034
 SKIP_HTTP_API=true
 
 #  Import 'http_api'

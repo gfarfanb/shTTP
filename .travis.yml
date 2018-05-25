@@ -5,6 +5,6 @@ branches:
   only:
     - master
 
-script: 
-  - cd test && ./test_runner
+script:
   - shellcheck http_api && shellcheck test/*
+  - cd test && ./test_runner

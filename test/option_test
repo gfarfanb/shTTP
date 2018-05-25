@@ -10,7 +10,7 @@ declared_command() {
 _commands=$( _list_commands )
 _found=0
 
-for _i in ${_commands[@]}; do
+for _i in "${_commands[@]}"; do
     [ "$_i" = "declared_command" ] && _found=1
 done
 

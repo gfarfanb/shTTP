@@ -42,28 +42,28 @@ readonly _basename=$( basename "$0" )
 # ---------- Logging functions ----------
 
 #  Log filename.
-readonly _log_file="/tmp/shTTP_${_basename%.*}.`date '+%Y-%m-%d'`.log"
+readonly _log_file="/tmp/shTTP_${_basename%.*}.$( date '+%Y-%m-%d' ).log"
 
 #  Log a message object with the INFO level.
 #
 #  -param $* Log message
-info() { echo "`date '+%Y-%m-%d %T.%N'` [INFO]    $*" | tee -a "$_log_file" >&2 ; }
+info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_log_file" >&2 ; }
 
 #  Log a message object with the WARNING level.
 #
 #  -param $* Log message
-warning() { echo "`date '+%Y-%m-%d %T.%N'` [WARNING] $*" | tee -a "$_log_file" >&2 ; }
+warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_log_file" >&2 ; }
 
 #  Log a message object with the ERROR level.
 #
 #  -param $* Log message
-error() { echo "`date '+%Y-%m-%d %T.%N'` [ERROR]   $*" | tee -a "$_log_file" >&2 ; }
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_log_file" >&2 ; }
 
 #  Log a message object with the FATAL level, 
 #+ exit execution with 1.
 #
 #  -param $* Log message
-fatal() { echo "`date '+%Y-%m-%d %T.%N'` [FATAL]   $*" | tee -a "$_log_file" >&2 ; exit 1 ; }
+fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_log_file" >&2 ; exit 1 ; }
 
 
 # ---------- Initialization ----------
@@ -130,7 +130,7 @@ update() {
 #  -param $1 Name of the entry or 'jq' for value
 #  -param $2 Value of the entry or 'jq' for value
 put() {
-    local _name="$1"
+    local _name=${1:-''}
     local _val=${2:-''}
     if [ -z "$_val" ]; then
         local _jq="$_name"
@@ -141,23 +141,23 @@ put() {
     else
        local _jq="$_val"
     fi
-    _val=$( cat "$OUTPUT.output" | jq "try $_jq catch null" )
+    _val=$( < "$OUTPUT.output" jq "try $_jq catch null" )
     update "ws/config.json" ". + { \"$_name\": $_val }"
     info "Saved [$_name] with value [$_val] to workspace config"
 }
 
 #  Not documented yet!!
 get() {
-    local _name="$1"
+    local _name=${1:-''}
     local _val=""
     if [[ "$_name" =~ ^[a-zA-Z]*$ ]]; then
         _val=$( eval "echo \${$_name:-''}" )
     fi
     if [ -n "$_val" ]; then
-        echo $_val
+        echo "$_val"
     else
-        echo $( jq ".$_name | tostring" "ws/config.json" ) \
-            | sed -e 's/^"//' -e 's/"$//'
+        _val=$( jq ".$_name | tostring" "ws/config.json" )
+        echo "$_val" | sed -e 's/^"//' -e 's/"$//'
     fi
 }
 
@@ -170,13 +170,15 @@ get() {
 remove() {
     local _name=${1:-''}
     if [[ "$_name" = \.* ]]; then
-        local _val=$( jq "try $_name catch null" "ws/config.json" )
+        local _val=""
+        _val=$( jq "try $_name catch null" "ws/config.json" )
         if [ "$_val" != "null" ]; then
             update "ws/config.json" "del($_name)"
             info "Removed [$_name] from workspace config"
         fi
     else
-        local _found=$( jq "has(\"$_name\")" "ws/config.json" )
+        local _found=""
+        _found=$( jq "has(\"$_name\")" "ws/config.json" )
         if [ "$_found" = "true" ]; then
             update "ws/config.json" "del(.$_name)"
             info "Removed [$_name] from workspace config"
@@ -247,7 +249,7 @@ _clean_trace() {
     if [ -n "$_body_file" ]; then
         echo "" | tee -a "$OUTPUT.trace" > /dev/null
         echo ">>>>> body" | tee -a "$OUTPUT.trace" > /dev/null
-        cat "$_body_file" | tee -a "$OUTPUT.trace" > /dev/null # Append body content
+        < "$_body_file" tee -a "$OUTPUT.trace" > /dev/null # Append body content
         rm -rf "$_body_file"
     fi
 
@@ -260,17 +262,20 @@ _clean_trace() {
 _request() {
     eval "URL=\"$URL\""
 
-    OUTPUT="output/$( basename "$0" ).`date '+%Y-%m-%d.%H_%M_%S'`"
+    OUTPUT="output/$( basename "$0" ).$( date '+%Y-%m-%d.%H_%M_%S' )"
 
     info "Set METHOD with [$METHOD]"
+    info "Set ENDPOINT [$ENDPOINT] to URL"
     info "Set URL with [$URL]"
     info "Set OUTPUT with [$OUTPUT]"
 
     _append_content_type
     _append_auth
 
-    local _body_file=$( _append_body_to_file )
-    local _curl=$( _build_curl "$_body_file" )
+    local _body_file=""
+    local _curl=""
+    _body_file=$( _append_body_to_file )
+    _curl=$( _build_curl "$_body_file" )
     eval "$_curl"
 
     _clean_trace "$_curl" "$_body_file"
@@ -321,9 +326,11 @@ _append_auth() {
 #  Not documented yet!!
 _append_body_to_file() {
     local _body_file="ws/body.$$.json.tmp"
-    if [[ "$(declare -p BODY)" =~ "declare -a"* ]]; then
+    local _def=""
+    _def=$( _get_body_def )
+    if [[ "$_def" =~ "declare -a"* ]]; then
         if [[ ${BODY[@]} ]]; then
-            for _line in ${BODY[@]}; do
+            for _line in "${BODY[@]}"; do
                 if [ "$_line" = "\n" ]; then
                     echo | tee -a "$_body_file" > /dev/null
                 else
@@ -331,17 +338,25 @@ _append_body_to_file() {
                 fi
             done
         else
-            _body_file=''
+            _body_file=""
         fi
     else
         if [ -n "$BODY" ]; then
             echo "$BODY" | tee -a "$_body_file" > /dev/null
         else
-        _body_file=''
+            _body_file=""
         fi
     fi
     echo "$_body_file"
 }
+
+# Not documented yet!!
+_get_body_def() {
+    local _def=""
+    _def=$( declare -p BODY )
+    echo "$_def"
+}
+
 
 #  Not documented yet!!
 _build_curl() {
@@ -349,10 +364,10 @@ _build_curl() {
     local _curl=(
         "curl -X $METHOD -s -v -o \"$OUTPUT.output\" \\"
     )
-    for _header in ${HEADERS[@]}; do
+    for _header in "${HEADERS[@]}"; do
         _curl+=( "-H \"$_header\" \\" )
     done
-    for _form in ${FORM[@]}; do
+    for _form in "${FORM[@]}"; do
         _curl+=( "-F \"$_form\" \\" )
     done
     if [ -n "$_body_file" ]; then
@@ -364,7 +379,7 @@ _build_curl() {
 
 #  Not documented yet!!
 _after_request() {
-    for _callback in ${AFTER_REQUEST[@]}; do
+    for _callback in "${AFTER_REQUEST[@]}"; do
         eval "$_callback"
     done
 }
@@ -413,7 +428,7 @@ _append_if_missing_header() {
     local _value=${2:-''}
     shopt -s nocasematch
     local _found=0
-    for _header in ${HEADERS[@]}; do
+    for _header in "${HEADERS[@]}"; do
         if [[ "$_header" =~ "$_name:"* ]]; then
             _found=1
             break
@@ -445,10 +460,11 @@ _list_commands() {
     declare -a _functions=(
         $( declare -F )
     )
-    for _function in ${_functions[@]}; do
-        local _name=$( echo "$_function" | cut -d ' ' -f 3 )
+    for _function in "${_functions[@]}"; do
+        local _name=""
+        _name=$( echo "$_function" | cut -d ' ' -f 3 )
         if ! [[ "$_name" == "_"* ]]; then
-            echo $_name
+            echo "$_name"
         fi
     done
 }
@@ -461,7 +477,7 @@ _set_config() {
     local _name=""
     local _value=""
     local _found=0
-    for _i in $@; do
+    for _i in "$@"; do
         if [ $_found = 2 ]; then
             _value="$_i"
             _found=3
@@ -496,9 +512,11 @@ expr "$*" : ".*--add" > /dev/null \
 _get_config() {
     shift
     local _name=${1:-''}
+    local _val=""
     if [ -n "$_name" ]; then
-        echo $( get "$_name" )
+        _val=$( get "$_name" )
     fi
+    echo "$_val"
 }
 expr "$*" : ".*--get" > /dev/null \
     && _get_config "$@" \
@@ -524,16 +542,18 @@ expr "$*" : ".*--get-keys" > /dev/null \
 
 #  Not documented yet!!
 _set_host() {
-    local _host=$( get host )
+    local _host=""
     local _found=0
-    for _i in $@; do
+    _host=$( get host )
+    for _i in "$@"; do
         if [ $_found = 1 ]; then
             _host="$_i"
             break
         fi
         [ "$_i" == "--host" ] && _found=1
     done
-    local _value=$( get "hosts | .[] | select(.key==\"$_host\") | .value" )
+    local _value=""
+    _value=$( get "hosts | .[] | select(.key==\"$_host\") | .value" )
     if [ "$_value" != "null" ]; then
         _host="$_value"
     fi
@@ -548,7 +568,7 @@ expr "$*" : ".*--host" > /dev/null \
 _set_localhost() {
     local _port="8080"
     local _found=0
-    for _i in $@; do
+    for _i in "$@"; do
         if [ $_found = 1 ]; then
             if [[ "$_i" =~ ^[0-9]+$ ]]; then
                 _port="$_i"
@@ -590,8 +610,9 @@ expr "$*" : ".*--open" > /dev/null \
 #  More details required!!
 _clean_output_files() {
     if [ -d output ]; then
-        local _selected=$( find "output" -name "*" -type f )
-        for _file in ${_selected[@]}; do
+        local _selected=""
+        _selected=$( find "output" -name "*" -type f )
+        for _file in "${_selected[@]}"; do
             info "Removed [$_file] output"
         done
         rm -rf output/*
@@ -611,9 +632,13 @@ if [ "$_skip_http_api" != "true" ]; then
     trap _finally_http_api EXIT
 
     _command=${1:-''}
-    _has_main=$( declare -f main > /dev/null ; echo $? )
 
-    [[ "$_command" == "--"* ]] && _command=''
+    #  shellcheck disable=SC2034
+    _has_main=$( declare -f 'main' > /dev/null ; echo $? )
+
+    if [[ "$_command" == "--"* ]]; then
+        _command=""
+    fi
 
     info "Init request"
 
@@ -624,7 +649,7 @@ if [ "$_skip_http_api" != "true" ]; then
         _request
         _after_request
         _editor_command
-    elif [ $_has_main == 0 ]; then
+    elif (( _has_main == 0 )); then
         info "Executing [main] command"
         main
         _set_method "$_command"

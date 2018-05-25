@@ -1,6 +1,7 @@
 #! /usr/bin/env bash
 #  Run 'shellcheck' for project.
 #  https://github.com/koalaman/shellcheck
+#  -author Giovanni Farfán B.
 
 shellcheck http_api
 shellcheck lint

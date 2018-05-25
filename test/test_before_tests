@@ -1,6 +1,7 @@
 #! /usr/bin/env bash
 #  Global before tests.
 #  This is imported by 'test_runner'.
+#  -author Giovanni Farfán B.
 
 
 #  Mark as skip 'http_api' main code.

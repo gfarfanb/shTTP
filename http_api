@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
 #  Simple HTTP API development environment.
+#  -author Giovanni Farfán B.
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -249,19 +250,27 @@ EDITOR_COMMAND=""
 
 # ---------- Internal functions
 
-#  Function names called internally.
-#  That functions could be defined
-#+ in the main API script.
-readonly _key_func=(
-    'before_api'
-    'after_api'
+#  Key-words used internally like
+#+ function names or field names.
+#  The functions could be defined
+#+ in the main API script if
+#+ they are required during request
+#+ lifecycle.
+readonly _keywords=(
+    'before_api' # Lifecycle function
+    'after_api'  # Lifecycle function
 )
 
-#  Not documented yet!!
-_is_key_func() {
+#  Check if word passed as parameter
+#+ exists in the key-words list.
+#
+#  -param $1 Name of key-word
+#  -return '1' if keyword exist
+#+         otherwise '0'
+_is_keyword() {
     local _name=${1:-''}
     local _found=0
-    for _key in "${_key_func[@]}"; do
+    for _key in "${_keywords[@]}"; do
         if [ "$_key" = "$_name" ]; then
             _found=1
             break
@@ -270,28 +279,64 @@ _is_key_func() {
     echo "$_found"
 }
 
-#  Not documented yet!!
-_clean_trace() {
-    local _curl=${1:-''}
-    local _body_file=${2:-''}
-
-    sed -i -e '/^[*{} ]/d' "$OUTPUT.trace" # Remove unnecessary log lines
-    sed -i -e "/^> $/a> {{body}}\n" "$OUTPUT.trace" # Append body tag 
-    sed -i -e 's/^..//' "$OUTPUT.trace" # Remove first two characters in each line
-
-    if [ -n "$_body_file" ]; then
-        echo "" | tee -a "$OUTPUT.trace" > /dev/null
-        echo ">>>>> body" | tee -a "$OUTPUT.trace" > /dev/null
-        < "$_body_file" tee -a "$OUTPUT.trace" > /dev/null # Append body content
-        rm -rf "$_body_file"
+#  This lifecycle function is called
+#+ before request execution:
+#    1. Check if 'before_api' function
+#+      exists in the main script and
+#+      execute it.
+#    2. Execute each task defined in
+#+      'BEFORE_REQUEST' variable.
+_before_request() {
+    local _has_before=1
+    #  shellcheck disable=SC2034
+    _has_before=$( declare -f 'before_api' > /dev/null ; echo $? )
+    if (( _has_before == 0 )); then
+        before_api
     fi
-
-    echo "" | tee -a "$OUTPUT.trace" > /dev/null
-    echo ">>>>> curl" | tee -a "$OUTPUT.trace" > /dev/null
-    echo "$_curl" | tee -a "$OUTPUT.trace" > /dev/null # Append CURL command
+    local _length=${#BEFORE_REQUEST[@]}
+    if (( _length > 0 )); then
+        for _callback in "${BEFORE_REQUEST[@]}"; do
+            eval "$_callback"
+        done
+    fi
 }
 
-#  Not documented yet!!
+#  This lifecycle function is called
+#+ after request execution:
+#    1. Execute each task defined in
+#+      'AFTER_REQUEST' variable.
+#    2. Check if 'after_api' function
+#+      exists in the main script and
+#+      execute it.
+_after_request() {
+    local _length=${#AFTER_REQUEST[@]}
+    if (( _length > 0 )); then
+        for _callback in "${AFTER_REQUEST[@]}"; do
+            eval "$_callback"
+        done
+    fi
+    local _has_after=1
+    #  shellcheck disable=SC2034
+    _has_after=$( declare -f 'after_api' > /dev/null ; echo $? )
+    if (( _has_after == 0 )); then
+        after_api
+    fi
+}
+
+#  This lifecycle function is called
+#+ for request execution:
+#    1. Set the 'URL' value (no protocol).
+#    2. Set the 'OUTPUT' basename with
+#+      format: 'output/<main-script>.
+#+      yyyy-mm-dd.hh_mm_ss'.
+#    3. Append default 'Content-Type' to
+#+      headers.
+#    4. Append authentication to request.
+#    5. Set body to a body file.
+#    6. Build 'cURL' command.
+#    7. Execute 'cURL' command.
+#    8. Clean and append details into
+#+      'OUTPUT.trace' file.
 _request() {
     eval "URL=\"$URL\""
 
@@ -319,6 +364,59 @@ _request() {
 
     info "Created $OUTPUT.trace"
     info "Created $OUTPUT.output"
+}
+
+#  Not documented yet!!
+_set_method() {
+    if [ -z "$METHOD" ]; then
+        local _command=${1:-''}
+        shopt -s nocasematch
+        case "$_command" in
+            get*)
+                METHOD="GET"
+            ;;
+            post*)
+                METHOD="POST"
+            ;;
+            put*)
+                METHOD="PUT"
+            ;;
+            patch*)
+                METHOD="PATCH"
+            ;;
+            delete*)
+                METHOD="DELETE"
+            ;;
+            head*)
+                METHOD="HEAD"
+            ;;
+            options*)
+                METHOD="OPTIONS"
+            ;;
+        esac
+        shopt -u nocasematch
+    fi
+}
+
+#  Not documented yet!!
+_append_if_missing_header() {
+    local _name=${1:-''}
+    local _value=${2:-''}
+    shopt -s nocasematch
+    local _found=0
+    local _length=${#HEADERS[@]}
+    if (( _length > 0 )); then
+        for _header in "${HEADERS[@]}"; do
+            if [[ "$_header" =~ "$_name:"* ]]; then
+                _found=1
+                break
+            fi
+        done
+    fi
+    shopt -u nocasematch
+    if [ $_found = 0 ]; then
+        HEADERS+=( "$_name: $_value" )
+    fi
 }
 
 #  Not documented yet!!
@@ -408,35 +506,24 @@ _build_curl() {
 }
 
 #  Not documented yet!!
-_before_request() {
-    local _has_before=1
-    #  shellcheck disable=SC2034
-    _has_before=$( declare -f 'before_api' > /dev/null ; echo $? )
-    if (( _has_before == 0 )); then
-        before_api
-    fi
-    local _length=${#BEFORE_REQUEST[@]}
-    if (( _length > 0 )); then
-        for _callback in "${BEFORE_REQUEST[@]}"; do
-            eval "$_callback"
-        done
-    fi
-}
+_clean_trace() {
+    local _curl=${1:-''}
+    local _body_file=${2:-''}
 
-#  Not documented yet!!
-_after_request() {
-    local _length=${#AFTER_REQUEST[@]}
-    if (( _length > 0 )); then
-        for _callback in "${AFTER_REQUEST[@]}"; do
-            eval "$_callback"
-        done
+    sed -i -e '/^[*{} ]/d' "$OUTPUT.trace" # Remove unnecessary log lines
+    sed -i -e "/^> $/a> {{body}}\n" "$OUTPUT.trace" # Append body tag 
+    sed -i -e 's/^..//' "$OUTPUT.trace" # Remove first two characters in each line
+
+    if [ -n "$_body_file" ]; then
+        echo "" | tee -a "$OUTPUT.trace" > /dev/null
+        echo ">>>>> body" | tee -a "$OUTPUT.trace" > /dev/null
+        < "$_body_file" tee -a "$OUTPUT.trace" > /dev/null # Append body content
+        rm -rf "$_body_file"
     fi
-    local _has_after=1
-    #  shellcheck disable=SC2034
-    _hash_after=$( declare -f 'after_api' > /dev/null ; echo $? )
-    if (( _has_after == 0 )); then
-        after_api
-    fi
+
+    echo "" | tee -a "$OUTPUT.trace" > /dev/null
+    echo ">>>>> curl" | tee -a "$OUTPUT.trace" > /dev/null
+    echo "$_curl" | tee -a "$OUTPUT.trace" > /dev/null # Append CURL command
 }
 
 #  Not documented yet!!
@@ -445,59 +532,6 @@ _editor_command() {
         eval "EDITOR_COMMAND=\"$EDITOR_COMMAND\""
         info "Set EDITOR_COMMAND with [$EDITOR_COMMAND]"
         eval "$EDITOR_COMMAND"
-    fi
-}
-
-#  Not documented yet!!
-_set_method() {
-    if [ -z "$METHOD" ]; then
-        local _command=${1:-''}
-        shopt -s nocasematch
-        case "$_command" in
-            get*)
-                METHOD="GET"
-            ;;
-            post*)
-                METHOD="POST"
-            ;;
-            put*)
-                METHOD="PUT"
-            ;;
-            patch*)
-                METHOD="PATCH"
-            ;;
-            delete*)
-                METHOD="DELETE"
-            ;;
-            head)
-                METHOD="HEAD"
-            ;;
-            options*)
-                METHOD="OPTIONS"
-            ;;
-        esac
-        shopt -u nocasematch
-    fi
-}
-
-#  Not documented yet!!
-_append_if_missing_header() {
-    local _name=${1:-''}
-    local _value=${2:-''}
-    shopt -s nocasematch
-    local _found=0
-    local _length=${#HEADERS[@]}
-    if (( _length > 0 )); then
-        for _header in "${HEADERS[@]}"; do
-            if [[ "$_header" =~ "$_name:"* ]]; then
-                _found=1
-                break
-            fi
-        done
-    fi
-    shopt -u nocasematch
-    if [ $_found = 0 ]; then
-        HEADERS+=( "$_name: $_value" )
     fi
 }
 
@@ -529,7 +563,7 @@ _list_commands() {
             local _is_key=0
             _name=$( echo "$_function" | cut -d ' ' -f 3 )
             _belong=$( grep "${_name}\s*()" "$0" )
-            _is_key=$( _is_key_func "$_name" )
+            _is_key=$( _is_keyword "$_name" )
             if [ -n "$_belong" ] \
                    && [[ "$_name" != "_"* ]] \
                    && (( _is_key == 0 )); then
@@ -700,8 +734,34 @@ expr "$*" : ".*--clean" > /dev/null \
 #  Skip main code flag
 readonly _skip_http_api=${SKIP_HTTP_API:-''}
 
-#  Main code.
-#  More details required!!
+#  Main code:
+#    1. Get the 'command' input.
+#    2. Set the exist 'main' function flag.
+#    3. Discard 'command' if has 'option'
+#+      format.
+#    4. If 'command' is present, execute
+#+      the following request lifecycle:
+#       a. Execute the command.
+#       b. Set request method based on
+#+         command name if it was not
+#+         assigned during the command
+#+         execution.
+#       d. Execute before-request tasks.
+#       e. Execute the request.
+#       f. Execute after-request tasks.
+#       g. Execute open editor task.
+#    5. If 'main' is present, execute
+#+      the following request lifecycle:
+#       a. Execute 'main' function.
+#       b. Set request method based on
+#+         command name if it was not
+#+         assigned during the command
+#+         execution.
+#       d. Execute before-request tasks.
+#       e. Execute the request.
+#       f. Execute after-request tasks.
+#       g. Execute open editor task.
+#    6. Finally function is executed.
 if [ "$_skip_http_api" != "true" ]; then
     trap _finally_http_api EXIT
 

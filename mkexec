@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 #  Make a script executable.
-#  If '-x' appears in the 
-#+ parameters the execution
-#+ permission is removed.
+#  If '-x' appears in the parameters
+#+ the execution permission is removed.
+#  -author Giovanni Farfán B.
 
 readonly _script=${1:-''}
 

@@ -1,4 +1,5 @@
 #! /usr/bin/env bash
+#  -author Giovanni Farfán B.
 
 URL='$DOMAIN/gists/$ENDPOINT'
 

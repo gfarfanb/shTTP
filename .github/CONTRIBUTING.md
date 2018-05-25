@@ -99,7 +99,7 @@ nameOfPublicFunction() {
 Conventions:
 1. Comments
     1. Spaces
-    1. Identifiers: -param, -test, -beforeTest, -afterTest, -author
+    1. Identifiers: -param, -return, -test, -beforeTest, -afterTest, -author
     1. Identation
 
 

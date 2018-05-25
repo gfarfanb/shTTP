@@ -1,20 +1,131 @@
 #! /usr/bin/env bash
 #  Tests for 'http_api' internal functions.
+#  -author Giovanni Farfán B.
 
 
 #  -test Is key function
-# _is_key_func
-fail "Is key function - Not implemented yet"
+_is_key=$( _is_keyword 'before_api' )
+assertEquals "'before_api' is not key" 1 "$_is_key"
+
+_is_key=$( _is_keyword 'after_api' )
+assertEquals "'after_api' is not key" 1 "$_is_key"
+
+_is_key=$( _is_keyword 'whatever' )
+assertEquals "'whatever' is key" 0 "$_is_key"
 
 
-#  -test Clean trace
-# _clean_trace
-fail "Clean trace - Not implemented yet"
+#  -test Before request execution
+_before_api_var="Not executed yet"
+
+before_api() {
+    _before_api_var="Executed"
+}
+
+_before_request
+
+assertEquals "'before_api' was not executed" "Executed" "$_before_api_var"
+
+_before_request_var="Not executed yet"
+
+BEFORE_REQUEST=(
+    '_before_request_var="Executed"'
+)
+
+_before_request
+
+assertEquals "'BEFORE_REQUEST' chain was not executed" "Executed" "$_before_request_var"
+
+#  shellcheck disable=SC2034
+BEFORE_REQUEST=()
+
+
+#  -test After request execution
+_after_request_var="Not executed yet"
+
+AFTER_REQUEST=(
+    '_after_request_var="Executed"'
+)
+
+_after_request
+
+assertEquals "'AFTER_REQUEST' chain was not executed" "Executed" "$_after_request_var"
+
+#  shellcheck disable=SC2034
+AFTER_REQUEST=()
+
+_after_api_var="Not executed yet"
+
+after_api() {
+    _after_api_var="Executed"
+}
+
+_after_request
+
+assertEquals "'after_api' was not executed" "Executed" "$_after_api_var"
 
 
 #  -test Request execution
-# _request
-fail "Request execution - Not implemented yet"
+
+#  shellcheck disable=SC2034
+URL='api.github.com/search/repositories'
+#  shellcheck disable=SC2034
+METHOD="GET"
+
+_request
+
+assertTrue "Trace file does not exists" "-f \"$OUTPUT.trace\""
+assertTrue "JSON file does not exists" "-f \"$OUTPUT.output\""
+
+_documentation=$( < "$OUTPUT.output" jq ".documentation_url" )
+
+assertTrue "Request was not executed" "-n $_documentation"
+
+
+#  -test Set request method
+METHOD=""
+get_api() { : ; }
+_set_method "get_api"
+assertEquals "'get_api' has no method" "GET" "$METHOD"
+
+METHOD=""
+post_api() { : ; }
+_set_method "post_api"
+assertEquals "'post_api' has no method" "POST" "$METHOD"
+
+METHOD=""
+put_api() { : ; }
+_set_method "put_api"
+assertEquals "'put_api' has no method" "PUT" "$METHOD"
+
+METHOD=""
+patch_api() { : ; }
+_set_method "patch_api"
+assertEquals "'patch_api' has no method" "PATCH" "$METHOD"
+
+METHOD=""
+delete_api() { : ; }
+_set_method "delete_api"
+assertEquals "'delete_api' has no method" "DELETE" "$METHOD"
+
+METHOD=""
+head_api() { : ; }
+_set_method "head_api"
+assertEquals "'head_api' has no method" "HEAD" "$METHOD"
+
+METHOD=""
+options_api() { : ; }
+_set_method "options_api"
+assertEquals "'options_api' has no method" "OPTIONS" "$METHOD"
+
+METHOD=""
+unknown_api() { : ; }
+_set_method "unknown_api"
+assertTrue "'unknown_api' has method" "-z \"$METHOD\""
+
+
+#  -test Append if missing header
+# _append_if_missing_header
+fail "Append if missing header - Not implemented yet"
 
 
 #  -test Append Content-Type
@@ -37,29 +148,14 @@ fail "Append body to file - Not implemented yet"
 fail "Build cURL - Not implemented yet"
 
 
-#  -test Before request execution
-# _before_request
-fail "Before request execution - Not implemented yet"
-
-
-#  -test After request execution
-# _after_request
-fail "After request execution - Not implemented yet"
+#  -test Clean trace
+# _clean_trace
+fail "Clean trace - Not implemented yet"
 
 
 #  -test Open editor command
 # _editor_command
 fail "Open editor command - Not implemented yet"
-
-
-#  -test Set request method
-# _set_method
-fail "Set request method - Not implemented yet"
-
-
-#  -test Append if missing header
-# _append_if_missing_header
-fail "Append if missing header - Not implemented yet"
 
 
 #  -test Script finallly

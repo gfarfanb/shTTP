@@ -249,6 +249,27 @@ EDITOR_COMMAND=""
 
 # ---------- Internal functions
 
+#  Function names called internally.
+#  That functions could be defined
+#+ in the main API script.
+readonly _key_func=(
+    'before_api'
+    'after_api'
+)
+
+#  Not documented yet!!
+_is_key_func() {
+    local _name=${1:-''}
+    local _found=0
+    for _key in "${_key_func[@]}"; do
+        if [ "$_key" = "$_name" ]; then
+            _found=1
+            break
+        fi
+    done
+    echo "$_found"
+}
+
 #  Not documented yet!!
 _clean_trace() {
     local _curl=${1:-''}
@@ -500,12 +521,18 @@ _list_commands() {
     declare -a _functions=(
         $( declare -F )
     )
-     local _length=${#_functions[@]}
+    local _length=${#_functions[@]}
     if (( _length > 0 )); then
         for _function in "${_functions[@]}"; do
             local _name=""
+            local _belong=""
+            local _is_key=0
             _name=$( echo "$_function" | cut -d ' ' -f 3 )
-            if ! [[ "$_name" == "_"* ]]; then
+            _belong=$( grep "${_name}\s*()" "$0" )
+            _is_key=$( _is_key_func "$_name" )
+            if [ -n "$_belong" ] \
+                   && [[ "$_name" != "_"* ]] \
+                   && (( _is_key == 0 )); then
                 echo "$_name"
             fi
         done

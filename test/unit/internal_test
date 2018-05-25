@@ -2,6 +2,11 @@
 #  Tests for 'http_api' internal functions.
 
 
+#  -test Is key function
+# _is_key_func
+fail "Is key function - Not implemented yet"
+
+
 #  -test Clean trace
 # _clean_trace
 fail "Clean trace - Not implemented yet"

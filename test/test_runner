@@ -49,6 +49,9 @@ _assertions=0
 #  Failed assertions count.
 _failures=0
 
+#  All tests executed flag.
+_completed=0
+
 #  Increase by 1 the '_assertions' count.
 _inc_asserts() {
     _assertions=$(( _assertions+1 ))
@@ -75,7 +78,7 @@ _finally_test_runner() {
 
     . ./test_after_tests
 
-    if [ $_failures = 0 ]; then
+    if [ $_failures = 0 ] && [ $_completed = 1 ]; then
         exit 0
     else
         exit 1
@@ -89,7 +92,8 @@ _finally_test_runner() {
 #    3. Verify the kind of execution:
 #+      single test or all tests.
 #    4. Execute test(s).
-#    5. Finally function is executed.
+#    5. Check '_completed' flag.
+#    6. Finally function is executed.
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     trap _finally_test_runner EXIT
 
@@ -101,10 +105,18 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     if [ -n "$_single" ]; then
         eval ". ./${_single}_test"
     else
-        declare -a _tests=""
-        _tests=$( ls ./*_test )
-        for _test in "${_tests[@]}"; do
-            eval ". ./$_test"
-        done
+        declare -a _tests=(
+            $( find "." -name "*_test" -type f )
+        )
+        _length=${#_tests[@]}
+        if (( _length > 0 )); then
+            for _test in "${_tests[@]}"; do
+                eval ". $_test"
+            done
+        else
+            echo "Not tests found"
+        fi
     fi
+
+    _completed=1
 fi

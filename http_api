@@ -290,7 +290,8 @@ _request() {
 
 #  Not documented yet!!
 _append_content_type() {
-    if [[ ${FORM[@]} ]]; then
+    local _length=${#FORM[@]}
+    if (( _length > 0 )); then
         local _value="multipart/form-data"
     else
         local _value="application/json"
@@ -329,7 +330,8 @@ _append_body_to_file() {
     local _def=""
     _def=$( _get_body_def )
     if [[ "$_def" =~ "declare -a"* ]]; then
-        if [[ ${BODY[@]} ]]; then
+        local _length=${#BODY[@]}
+        if (( _length > 0 )); then
             for _line in "${BODY[@]}"; do
                 if [ "$_line" = "\n" ]; then
                     echo | tee -a "$_body_file" > /dev/null
@@ -610,8 +612,9 @@ expr "$*" : ".*--open" > /dev/null \
 #  More details required!!
 _clean_output_files() {
     if [ -d output ]; then
-        local _selected=""
-        _selected=$( find "output" -name "*" -type f )
+        declare -a _selected=(
+            $( find "output" -name "*" -type f )
+        )
         for _file in "${_selected[@]}"; do
             info "Removed [$_file] output"
         done

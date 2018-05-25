@@ -32,14 +32,14 @@ expr "$*" : ".*--help" > /dev/null \
 #+ directory where 'test_runner' is.
 _list_tests() {
     declare -a _tests=(
-        $( find "." -name "*_test" -type f )
+        $( find . -name "*_test" -type f )
     )
     local _length=${#_tests[@]}
     if (( _length > 0 )); then
         for _test in "${_tests[@]}"; do
             local _name=""
             _name=$( echo "$_test" | cut -d '_' -f 1 )
-            _name=${_name//[\.\/]/}
+            _name=${_name//\.\//}
             echo "$_name"
         done
     else
@@ -113,10 +113,10 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     readonly _single=${1:-''}
 
     if [ -n "$_single" ]; then
-        eval ". ./${_single}_test"
+        eval ". ${_single}_test"
     else
         declare -a _tests=(
-            $( find "." -name "*_test" -type f )
+            $( find . -name "*_test" -type f )
         )
         _length=${#_tests[@]}
         if (( _length > 0 )); then

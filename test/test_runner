@@ -31,13 +31,20 @@ expr "$*" : ".*--help" > /dev/null \
 #  The test files must be in the same
 #+ directory where 'test_runner' is.
 _list_tests() {
-    declare -a _tests=""
-    _tests=$( ls ./*_test )
-    for _test in "${_tests[@]}"; do
-        local _name=""
-        _name=$( echo "$_test" | cut -d '_' -f 1 )
-        echo "$_name"
-    done
+    declare -a _tests=(
+        $( find "." -name "*_test" -type f )
+    )
+    local _length=${#_tests[@]}
+    if (( _length > 0 )); then
+        for _test in "${_tests[@]}"; do
+            local _name=""
+            _name=$( echo "$_test" | cut -d '_' -f 1 )
+            _name=${_name//[\.\/]/}
+            echo "$_name"
+        done
+    else
+        echo "Not tests found"
+    fi
 }
 expr "$*" : ".*--list" > /dev/null \
     && _list_tests \
@@ -76,6 +83,7 @@ _finally_test_runner() {
         echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
     fi
 
+    #  shellcheck disable=SC1091
     . ./test_after_tests
 
     if [ $_failures = 0 ] && [ $_completed = 1 ]; then
@@ -97,7 +105,9 @@ _finally_test_runner() {
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     trap _finally_test_runner EXIT
 
+    #  shellcheck disable=SC1091
     . ./test_before_tests
+    #  shellcheck disable=SC1091
     . ./test_asserts
 
     readonly _single=${1:-''}

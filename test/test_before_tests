@@ -8,4 +8,5 @@
 SKIP_HTTP_API=true
 
 #  Import 'http_api'
+#  shellcheck disable=SC1091
 . ../http_api

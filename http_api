@@ -132,16 +132,19 @@ update() {
 put() {
     local _name=${1:-''}
     local _val=${2:-''}
+    local _jq=""
     if [ -z "$_val" ]; then
-        local _jq="$_name"
+        _jq="$_name"
         _name=${_name//[0-9^\[\]]/}
         _name=$( _rev "$_name" )
         _name=$( echo "$_name" | cut -d '.' -f 1 )
         _name=$( _rev "$_name" )
-    else
-       local _jq="$_val"
+    elif [[ "$_val" = \.* ]]; then
+        _jq="$_val"
     fi
-    _val=$( < "$OUTPUT.output" jq "try $_jq catch null" )
+    if [ -n "$_jq" ]; then
+        _val=$( < "$OUTPUT.output" jq "try $_jq catch null" )
+    fi
     update "ws/config.json" ". + { \"$_name\": $_val }"
     info "Saved [$_name] with value [$_val] to workspace config"
 }
@@ -215,10 +218,19 @@ HEADERS=()
 #  Documentation review required!!
 BODY=""
 
+#  Default is empty array.
+#  Documentation review required!!
+BODY_PARTS=()
+
 #  Default is empty array. Default header
 #+ will be 'Content-Type:multipart/form-data'.
 #  Documentation review required!!
 FORM=()
+
+#  Default is empty array. For each element 'eval'
+#+ is executed (as callback) before main request.
+#  Documentation review required!!
+BEFORE_REQUEST=()
 
 #  Default is empty array. For each element 'eval'
 #+ is executed (as callback) after main request.
@@ -227,7 +239,7 @@ AFTER_REQUEST=()
 
 #  Default is 'HEADER'. Allowed values:
 #+   [HEADER, QPARAM, SKIP]
-AUTH_MODE="HEADER"
+AUTH_MODE="SKIP"
 
 #  Default is empty. If value, defined command
 #+ is executed after request.
@@ -327,38 +339,27 @@ _append_auth() {
 #  Not documented yet!!
 _append_body_to_file() {
     local _body_file="ws/body.$$.json.tmp"
-    local _def=""
-    _def=$( _get_body_def )
-    if [[ "$_def" =~ "declare -a"* ]]; then
-        local _length=${#BODY[@]}
-        if (( _length > 0 )); then
-            for _line in "${BODY[@]}"; do
-                if [ "$_line" = "\n" ]; then
-                    echo | tee -a "$_body_file" > /dev/null
-                else
-                    echo "$_line" | tee -a "$_body_file" > /dev/null
-                fi
-            done
-        else
-            _body_file=""
-        fi
-    else
-        if [ -n "$BODY" ]; then
-            echo "$BODY" | tee -a "$_body_file" > /dev/null
-        else
-            _body_file=""
-        fi
+    local _length=${#BODY_PARTS[@]}
+    local _appended=0
+    if (( _length > 0 )); then
+        for _line in "${BODY_PARTS[@]}"; do
+            if [ "$_line" = "\n" ]; then
+                echo | tee -a "$_body_file" > /dev/null
+            else
+                echo "$_line" | tee -a "$_body_file" > /dev/null
+            fi
+        done
+        _appended=$(( _appended+1 ))
+    fi
+    if [ -n "$BODY" ]; then
+        echo "$BODY" | tee -a "$_body_file" > /dev/null
+        _appended=$(( _appended+1 ))
+    fi
+    if (( _appended < 1 )); then
+        _body_file=""
     fi
     echo "$_body_file"
 }
-
-# Not documented yet!!
-_get_body_def() {
-    local _def=""
-    _def=$( declare -p BODY )
-    echo "$_def"
-}
-
 
 #  Not documented yet!!
 _build_curl() {
@@ -366,12 +367,18 @@ _build_curl() {
     local _curl=(
         "curl -X $METHOD -s -v -o \"$OUTPUT.output\" \\"
     )
-    for _header in "${HEADERS[@]}"; do
-        _curl+=( "-H \"$_header\" \\" )
-    done
-    for _form in "${FORM[@]}"; do
-        _curl+=( "-F \"$_form\" \\" )
-    done
+    local _length=${#HEADERS[@]}
+    if (( _length > 0 )); then
+        for _header in "${HEADERS[@]}"; do
+            _curl+=( "-H \"$_header\" \\" )
+        done
+    fi
+    _length=${#FORM[@]}
+    if (( _length > 0 )); then
+        for _form in "${FORM[@]}"; do
+            _curl+=( "-F \"$_form\" \\" )
+        done
+    fi
     if [ -n "$_body_file" ]; then
         _curl+=( "--data-binary '@$_body_file' \\" )
     fi
@@ -380,10 +387,35 @@ _build_curl() {
 }
 
 #  Not documented yet!!
+_before_request() {
+    local _has_before=1
+    #  shellcheck disable=SC2034
+    _has_before=$( declare -f 'before_api' > /dev/null ; echo $? )
+    if (( _has_before == 0 )); then
+        before_api
+    fi
+    local _length=${#BEFORE_REQUEST[@]}
+    if (( _length > 0 )); then
+        for _callback in "${BEFORE_REQUEST[@]}"; do
+            eval "$_callback"
+        done
+    fi
+}
+
+#  Not documented yet!!
 _after_request() {
-    for _callback in "${AFTER_REQUEST[@]}"; do
-        eval "$_callback"
-    done
+    local _length=${#AFTER_REQUEST[@]}
+    if (( _length > 0 )); then
+        for _callback in "${AFTER_REQUEST[@]}"; do
+            eval "$_callback"
+        done
+    fi
+    local _has_after=1
+    #  shellcheck disable=SC2034
+    _hash_after=$( declare -f 'after_api' > /dev/null ; echo $? )
+    if (( _has_after == 0 )); then
+        after_api
+    fi
 }
 
 #  Not documented yet!!
@@ -410,6 +442,9 @@ _set_method() {
             put*)
                 METHOD="PUT"
             ;;
+            patch*)
+                METHOD="PATCH"
+            ;;
             delete*)
                 METHOD="DELETE"
             ;;
@@ -430,15 +465,18 @@ _append_if_missing_header() {
     local _value=${2:-''}
     shopt -s nocasematch
     local _found=0
-    for _header in "${HEADERS[@]}"; do
-        if [[ "$_header" =~ "$_name:"* ]]; then
-            _found=1
-            break
-        fi
-    done
+    local _length=${#HEADERS[@]}
+    if (( _length > 0 )); then
+        for _header in "${HEADERS[@]}"; do
+            if [[ "$_header" =~ "$_name:"* ]]; then
+                _found=1
+                break
+            fi
+        done
+    fi
     shopt -u nocasematch
     if [ $_found = 0 ]; then
-        HEADERS+=( "$_name:$_value" )
+        HEADERS+=( "$_name: $_value" )
     fi
 }
 
@@ -462,13 +500,16 @@ _list_commands() {
     declare -a _functions=(
         $( declare -F )
     )
-    for _function in "${_functions[@]}"; do
-        local _name=""
-        _name=$( echo "$_function" | cut -d ' ' -f 3 )
-        if ! [[ "$_name" == "_"* ]]; then
-            echo "$_name"
-        fi
-    done
+     local _length=${#_functions[@]}
+    if (( _length > 0 )); then
+        for _function in "${_functions[@]}"; do
+            local _name=""
+            _name=$( echo "$_function" | cut -d ' ' -f 3 )
+            if ! [[ "$_name" == "_"* ]]; then
+                echo "$_name"
+            fi
+        done
+    fi
 }
 expr "$*" : ".*--list" > /dev/null \
     && _list_commands \
@@ -615,10 +656,13 @@ _clean_output_files() {
         declare -a _selected=(
             $( find "output" -name "*" -type f )
         )
-        for _file in "${_selected[@]}"; do
-            info "Removed [$_file] output"
-        done
-        rm -rf output/*
+         local _length=${#_selected[@]}
+        if (( _length > 0 )); then
+            for _file in "${_selected[@]}"; do
+                info "Removed [$_file] output"
+            done
+            rm -rf output/*
+        fi
     fi
 }
 expr "$*" : ".*--clean" > /dev/null \
@@ -649,6 +693,7 @@ if [ "$_skip_http_api" != "true" ]; then
         info "Executing [$_command] command"
         eval "$_command"
         _set_method "$_command"
+        _before_request
         _request
         _after_request
         _editor_command
@@ -656,6 +701,7 @@ if [ "$_skip_http_api" != "true" ]; then
         info "Executing [main] command"
         main
         _set_method "$_command"
+        _before_request
         _request
         _after_request
         _editor_command

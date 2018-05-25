@@ -32,6 +32,11 @@ fail "Append body to file - Not implemented yet"
 fail "Build cURL - Not implemented yet"
 
 
+#  -test Before request execution
+# _before_request
+fail "Before request execution - Not implemented yet"
+
+
 #  -test After request execution
 # _after_request
 fail "After request execution - Not implemented yet"

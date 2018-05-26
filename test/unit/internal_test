@@ -326,6 +326,7 @@ _curl='curl https://any.host/any/endpoint'
 
 _clean_trace "$_curl" "$_body_file"
 
+#  shellcheck disable=SC2178
 _expected='GET /endpoint HTTP/1.1
 
 {{body}}
@@ -337,8 +338,10 @@ HTTP/1.1 200 Ok
 
 >>>>> curl
 curl https://any.host/any/endpoint' 
+#  shellcheck disable=SC2178
 _trace=$( cat "$OUTPUT.trace" )
 
+#  shellcheck disable=SC2128
 assertEquals "Clean trace file does not work" "$_expected" "$_trace"
 
 OUTPUT=""

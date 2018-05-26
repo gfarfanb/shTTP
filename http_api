@@ -594,6 +594,7 @@ _build_curl() {
 #  -param $1 cURL command
 #  -param $2 Body temporal file
 _clean_trace() {
+    #  shellcheck disable=SC2178
     local _curl=${1:-''}
     local _body_file=${2:-''}
 
@@ -610,6 +611,7 @@ _clean_trace() {
 
     echo "" | tee -a "$OUTPUT.trace" > /dev/null
     echo ">>>>> curl" | tee -a "$OUTPUT.trace" > /dev/null
+    #  shellcheck disable=SC2128
     echo "$_curl" | tee -a "$OUTPUT.trace" > /dev/null # Append CURL command
 }
 

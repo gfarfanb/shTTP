@@ -4,7 +4,7 @@
 
 
 #  -beforeTest
-OUTPUT="output/public-output.$$"
+OUTPUT="output/public-output.$( date '+%s.%N' )"
 echo '{"id":"5s43u-323we"}' > "$OUTPUT.output"
 
 

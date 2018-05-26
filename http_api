@@ -115,9 +115,10 @@ _rev() {
 update() {
     local _json=${1:-''}
     local _jq=${2:-''}
-    jq "$_jq" "$_json" \
-        > "ws/config.$$.json.tmp" \
-        && mv "ws/config.$$.json.tmp" "$_json"
+    local _temp=""
+    _temp="ws/config.$( date '+%s.%N' ).json.tmp"
+    jq "$_jq" "$_json" > "$_temp"
+    mv "$_temp" "$_json"
 }
 
 #  Save key-value config to 'ws/config.json'.
@@ -157,12 +158,11 @@ get() {
     if [[ "$_name" =~ ^[a-zA-Z]*$ ]]; then
         _val=$( eval "echo \${$_name:-''}" )
     fi
-    if [ -n "$_val" ]; then
-        echo "$_val"
-    else
+    if [ -z "$_val" ]; then
         _val=$( jq ".$_name | tostring" "ws/config.json" )
-        echo "$_val" | sed -e 's/^"//' -e 's/"$//'
+        _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
     fi
+    echo "$_val"
 }
 
 #  Remove key-value from 'ws/config.json'.
@@ -366,7 +366,20 @@ _request() {
     info "Created $OUTPUT.output"
 }
 
-#  Not documented yet!!
+#  This lifecycle function is called
+#+ for request execution:
+#    1. Look for request method at
+#+      beginning of the command name.
+#+      The search is case insensitive.
+#+      A valid command must have the
+#+      form '<verb><complement-name>',
+#+      with one of these verbs: 'get',
+#+      'post', 'put', 'patch', 'delete',
+#+      'head' or 'options'.
+#    2. If command is valid, 'METHOD'
+#+      will have the respective verb.
+#
+#  -param $1 Command name
 _set_method() {
     if [ -z "$METHOD" ]; then
         local _command=${1:-''}
@@ -398,7 +411,13 @@ _set_method() {
     fi
 }
 
-#  Not documented yet!!
+#  Look for existing header by name,
+#+ if header does not exist a new
+#+ entry is added to 'HEADERS'
+#+ otherwise skip assignment.
+#
+#  -param $1 Header name
+#  -param $2 Header value
 _append_if_missing_header() {
     local _name=${1:-''}
     local _value=${2:-''}
@@ -407,7 +426,7 @@ _append_if_missing_header() {
     local _length=${#HEADERS[@]}
     if (( _length > 0 )); then
         for _header in "${HEADERS[@]}"; do
-            if [[ "$_header" =~ "$_name:"* ]]; then
+            if [[ "$_header" == "$_name:"* ]]; then
                 _found=1
                 break
             fi
@@ -419,7 +438,11 @@ _append_if_missing_header() {
     fi
 }
 
-#  Not documented yet!!
+#  Set value to 'Content-Type' header.
+#  If 'FORM' has at least one value
+#+ 'Content-Type' will be
+#+ 'multipart/form' otherwise will be
+#+ 'application/json'.
 _append_content_type() {
     local _length=${#FORM[@]}
     if (( _length > 0 )); then
@@ -430,7 +453,27 @@ _append_content_type() {
     _append_if_missing_header "Content-Type" "$_value"
 }
 
-#  Not documented yet!!
+#  Setup the authorization mode based
+#+ on 'AUTH_MODE':
+#    1. HEADER: Set 'Authorization'
+#+      header to bearer token type,
+#+      token is obtained from
+#+      'ws/config.json' using
+#+      'apiToken' field.
+#+      Set 'Host' header, value is
+#+      obtained from 'ws/config.json'
+#+      using 'host' field.
+#    2. QPARAM: Set to 'URL' a
+#+      token as query parameter
+#+      with name 'token'. The value
+#+      is obtained from 'ws/config.json'
+#+      using 'apiToken' field.
+#+      Set 'Host' header, value is
+#+      obtained from 'ws/config.json'
+#+      using 'host' field.
+#    3. SKIP: Skip authorization setup.
+#    4. Another value: Exit script using
+#+      'fatal' logging function.
 _append_auth() {
     case "$AUTH_MODE" in
         "HEADER")
@@ -455,11 +498,24 @@ _append_auth() {
     info "Set AUTH_MODE with [$AUTH_MODE]"
 }
 
-#  Not documented yet!!
+#  First, append every 'BODY_PARTS'
+#+ into body content. Using 'BODY_PARTS'
+#+ a new line can be done using '\n'
+#+ as unique characters in the line.
+#  Second, append 'BODY' into body
+#+ content.
+#  At least one variable must be
+#+ appended for generate the body
+#+ file.
+#
+#  -return Body temporal file if
+#+         it was generated otherwise
+#+         return empty
 _append_body_to_file() {
-    local _body_file="ws/body.$$.json.tmp"
+    local _body_file=""
     local _length=${#BODY_PARTS[@]}
     local _appended=0
+    _body_file="ws/body.$( date '+%s.%N' ).json.tmp"
     if (( _length > 0 )); then
         for _line in "${BODY_PARTS[@]}"; do
             if [ "$_line" = "\n" ]; then
@@ -480,7 +536,19 @@ _append_body_to_file() {
     echo "$_body_file"
 }
 
-#  Not documented yet!!
+#  Build 'cURL' command. Use
+#+ the following variables
+#+ during build:
+#    1. METHOD: '-X <request-method>'
+#    2. OUTPUT: '-o "$OUTPUT.output"',
+#+      '> "$OUTPUT.trace" 2>&1'
+#    3. HEADERS: '-H "<header>"'
+#    4. FORM: '-F "<key>=<value>"'
+#    5. Body file: '--data-binary "@<body-file>"'
+#    6. PROTOCOL and URL: '<protocol>://<url>' 
+#
+#  -param $1 Body temporal file
+#  -return cURL command as string
 _build_curl() {
     local _body_file=${1:-''}
     local _curl=(
@@ -499,13 +567,22 @@ _build_curl() {
         done
     fi
     if [ -n "$_body_file" ]; then
-        _curl+=( "--data-binary '@$_body_file' \\" )
+        _curl+=( "--data-binary \"@$_body_file\" \\" )
     fi
     _curl+=( "$PROTOCOL://$URL > \"$OUTPUT.trace\" 2>&1" )
     echo "${_curl[*]}"
 }
 
-#  Not documented yet!!
+#  Get a request detail file
+#+ based on verbose 'cURL' file.
+#  The trace file contains:
+#+ request headers, response
+#+ headers, request body content,
+#+ response body content,
+#+ 'cURL' command used.
+#
+#  -param $1 cURL command
+#  -param $2 Body temporal file
 _clean_trace() {
     local _curl=${1:-''}
     local _body_file=${2:-''}
@@ -526,7 +603,18 @@ _clean_trace() {
     echo "$_curl" | tee -a "$OUTPUT.trace" > /dev/null # Append CURL command
 }
 
-#  Not documented yet!!
+#  Editor command is used
+#+ after request processing.
+#  The design was thinking
+#+ about to open request
+#+ results into file
+#+ editor and then process
+#+ it manually.
+#  Execution takes two steps:
+#    1. Variables resolution
+#+      if any exist in the
+#+      original definition.
+#    2. Command execution.
 _editor_command() {
     if [ -n "$EDITOR_COMMAND" ]; then
         eval "EDITOR_COMMAND=\"$EDITOR_COMMAND\""
@@ -741,26 +829,22 @@ readonly _skip_http_api=${SKIP_HTTP_API:-''}
 #+      format.
 #    4. If 'command' is present, execute
 #+      the following request lifecycle:
-#       a. Execute the command.
-#       b. Set request method based on
+#       a. Execute before-request tasks.
+#       b. Execute the command.
+#       c. Set request method based on
 #+         command name if it was not
 #+         assigned during the command
 #+         execution.
-#       d. Execute before-request tasks.
-#       e. Execute the request.
-#       f. Execute after-request tasks.
-#       g. Execute open editor task.
+#       d. Execute the request.
+#       e. Execute after-request tasks.
+#       f. Execute open editor task.
 #    5. If 'main' is present, execute
 #+      the following request lifecycle:
-#       a. Execute 'main' function.
-#       b. Set request method based on
-#+         command name if it was not
-#+         assigned during the command
-#+         execution.
-#       d. Execute before-request tasks.
-#       e. Execute the request.
-#       f. Execute after-request tasks.
-#       g. Execute open editor task.
+#       a. Execute before-request tasks.
+#       b. Execute 'main' function.
+#       c. Execute the request.
+#       d. Execute after-request tasks.
+#       e. Execute open editor task.
 #    6. Finally function is executed.
 if [ "$_skip_http_api" != "true" ]; then
     trap _finally_http_api EXIT
@@ -778,17 +862,16 @@ if [ "$_skip_http_api" != "true" ]; then
 
     if [ -n "$_command" ]; then
         info "Executing [$_command] command"
+        _before_request
         eval "$_command"
         _set_method "$_command"
-        _before_request
         _request
         _after_request
         _editor_command
     elif (( _has_main == 0 )); then
         info "Executing [main] command"
-        main
-        _set_method "$_command"
         _before_request
+        main
         _request
         _after_request
         _editor_command

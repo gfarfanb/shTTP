@@ -4,68 +4,76 @@
 
 
 #  -test List available commands
-declared_command() {
-    :
-}
-
 _commands=$( _list_commands )
 _found=0
-
 for _i in "${_commands[@]}"; do
-    [ "$_i" = "declared_command" ] && _found=1
+    [ "$_i" = "fail" ] && _found=1
 done
 
 assertEquals "Command not found" 1 "$_found"
 
 
 #  -test Set option
-# _set_config
-fail "Set option - Not implemented yet"
+_set_config "--set" "priorityVal" "value"
+put priorityVal "\"new.value\""
+_priority_val=$( get priorityVal )
+assertEquals "Unexpected 'setConfig' value" "value" "$_priority_val"
 
 
 #  -test Add option
-# _add_config
-fail "Add option - Not implemented yet"
+_add_config "--add" "addedVal" "\"value\""
+_added_val=$( get addedVal )
+assertEquals "'addedVal' not found" "value" "$_added_val"
 
 
 #  -test Get option
-# _get_config
-fail "Get option - Not implemented yet"
+put expectedVal "\"value\""
+_expected_val=$( _get_config "--get" "expectedVal" )
+assertEquals "'expectedVal' not found" "value" "$_expected_val"
 
 
 #  -test Remove option
-# _remove_config
-fail "Remove option - Not implemented yet"
+put removedVal "\"value\""
+_remove_config "--remove" "removedVal"
+_null_val=$( get removedVal )
+assertEquals "'removedVal' found" "null" "$_null_val"
 
 
 #  -test Get keys option
-# _get_config_keys
-fail "Get keys option - Not implemented yet"
+_get_config_keys
 
 
 #  -test Host option
-# _set_host
-fail "Host option - Not implemented yet"
+_set_host "command" "--host" "any.host"
+_current_host=$( get host )
+assertEquals "'Host' not assigned" "any.host" "$_current_host"
+
+_host_object="{ \"key\": \"namedHost\", \"value\": \"any.named.host\" }"
+update "ws/config.json" ". + { \"hosts\": [$_host_object] }"
+_set_host "command" "--host" "namedHost"
+_current_host=$( get host )
+assertEquals "Named 'Host' not assigned" "any.named.host" "$_current_host"
 
 
 #  -test Local option
-# _set_localhost
-fail "Local option - Not implemented yet"
+_set_localhost "command" "--local" "5555"
+assertEquals "Localhost not assigned" "localhost:5555" "$DOMAIN"
+
+
+#  -test Header authentication option
+_auth_header
+assertEquals "'HEADER' not assigned" "HEADER" "$AUTH_MODE"
 
 
 #  -test Authentication by Query Parameters option
-# _auth_qparam
-fail "Authentication by Query Parameters option - Not implemented yet"
-
-
-#  -test Skip authentication option
-# _auth_skip
-fail "Skip authentication option - Not implemented yet"
+_auth_qparam
+assertEquals "'QPARAM' not assigned" "QPARAM" "$AUTH_MODE"
 
 
 #  -test Open editor option
-# _open_editor
-fail "Open editor option - Not implemented yet"
+put editorCommand "\"vi results.json\""
+_open_editor
+assertEquals "'EDITOR_COMMAND' not assigned" "vi results.json" "$EDITOR_COMMAND"
 
 
 #  -test Clean option

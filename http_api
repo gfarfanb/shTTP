@@ -10,7 +10,7 @@ _help_http_api() {
         ""
         " Usage: ./<file>.sh <command> [--set <key-name> <value>] [--get <key-name>] [--add <key-name> <value>]"
         "                              [--remove <key-name>] [--get-keys] [--list] [--clean] [--host <host>]"
-        "                              [--local <port>] [--auth-qparam] [--auth-skip] [--open] [--help]"
+        "                              [--local <port>] [--auth-header] [--auth-qparam] [--open] [--help]"
         ""
         " Options:"
         "   --set <key-name> <value>:  Set a temporal key-value config. This won't saved to 'ws/config.json'"
@@ -24,8 +24,8 @@ _help_http_api() {
         "   --local <port>:            Set 'PROTOCOL' and 'DOMAIN' variables to local execution."
         "                                PROTOCOL: http"
         "                                DOMAIN:   localhost:<port> (default 8080)"
+        "   --auth-header:             Set 'HEADER' to 'AUTH_MODE' for headers authorization."
         "   --auth-qparam:             Set 'QPARAM' to 'AUTH_MODE' for query params authorization."
-        "   --auth-skip:               Set 'SKIP' to 'AUTH_MODE' for skip to add any kind of authorization."
         "   --open:                    Set 'EDITOR_COMMAND' with value defined on 'editorCommand' from 'ws/config.json'"
         "   --help:                    Display this help message"
     )
@@ -90,12 +90,15 @@ if ! [ -d ws ]; then
 fi
 #  Config JSON file
 if ! [ -f "ws/config.json" ]; then
-    echo "{}" > "ws/config.json"
+    echo '{ "host": null, "hosts": [] }' > "ws/config.json"
 fi
 
 
 # ---------- Util functions
 
+#  Reverse the string input.
+#
+#  -param $1 String input
 _rev() {
     local _input=${1:-''}
     local _rev=""
@@ -151,7 +154,13 @@ put() {
     info "Saved [$_name] with value [$_val] to workspace config"
 }
 
-#  Not documented yet!!
+#  Get key-value config in the following
+#+ order: script variables and then from
+#+ 'ws/config.json'.
+#
+#  -param $1 Name of the entry or 'jq'
+#+           query (without '.' at the
+#+           beginning of the query)
 get() {
     local _name=${1:-''}
     local _val=""
@@ -170,7 +179,7 @@ get() {
 #    1. 'jq' query: remove '.jq'
 #    2. Field name: remove 'name'
 #
-#  -param $1 Name of the entry or 'jq' for entry
+#  -param $1 Name of the entry
 remove() {
     local _name=${1:-''}
     if [[ "$_name" = \.* ]]; then
@@ -193,58 +202,59 @@ remove() {
 
 # ---------- Variables initialization
 
-#  Default is 'https'".
-#  Documentation review required!!
+#  Request protocol:
+#+ '<protocol>://any.host/any/endpoint'
 PROTOCOL="https"
 
-#  Default is 'host' value from 'ws/config.json'.
-#  Documentation review required!!
+#  Request protocol:
+#+ 'https://<domain>/any/endpoint'
 DOMAIN=$( get host )
 
-#  Default is empty.
-#  Documentation review required!!
+#  Request method. Allowed values:
+#+ [GET, POST, PUT, PATCH, DELETE,
+#+ HEAD, OPTIONS]
 METHOD=""
 
-#  Default is empty.
-#  Documentation review required!!
+#  Request endpoint:
+#+ 'https://any.host/<endpoint>'
 ENDPOINT=""
 
-#  Default is empty array. But values
-#+ are set during request execution:
-#+   ['Content-Type', 'Authorization', 'Host']
-#  Documentation review required!!
+#  Request headers. Default values
+#+ for [Content-Type, Authorization, Host]
+#+ could be assigned during request
+#+ execution.
 HEADERS=()
 
-#  Default is empty.
-#  Documentation review required!!
+#  Request body.
 BODY=""
 
-#  Default is empty array.
-#  Documentation review required!!
+#  Request body in parts. During
+#+ request execution these parts
+#+ will be concatenated.
 BODY_PARTS=()
 
-#  Default is empty array. Default header
-#+ will be 'Content-Type:multipart/form-data'.
-#  Documentation review required!!
+#  Requst key-value entries for
+#+ data form. If it is specified
+#+ default 'Content-Type' header
+#+ will be 'multipart/form-data'
+#+ otherwise will be 'application/json'.
 FORM=()
 
-#  Default is empty array. For each element 'eval'
-#+ is executed (as callback) before main request.
-#  Documentation review required!!
+#  Before request tasks. For each element 'eval'
+#+ will be executed (as callback).
 BEFORE_REQUEST=()
 
-#  Default is empty array. For each element 'eval'
-#+ is executed (as callback) after main request.
-#  Documentation review required!!
+#  After request tasks. For each element 'eval'
+#+ will be executed (as callback).
 AFTER_REQUEST=()
 
-#  Default is 'HEADER'. Allowed values:
-#+   [HEADER, QPARAM, SKIP]
+#  Authentication mode. Allowed values:
+#+ [HEADER, QPARAM, SKIP]
 AUTH_MODE="SKIP"
 
-#  Default is empty. If value, defined command
-#+ is executed after request.
-#  Documentation review required!!
+#  If value is defined, that command
+#+ will be executed as last tasks
+#+ of the request.
 EDITOR_COMMAND=""
 
 
@@ -637,8 +647,9 @@ _finally_http_api() {
 
 # ---------- Option functions
 
-#  List the names of available functions.
-#  More details required!!
+#  List the names of main script
+#+ functions. Names contained
+#+ in the 'keywords' are discarded.
 _list_commands() {
     declare -a _functions=(
         $( declare -F )
@@ -664,7 +675,12 @@ expr "$*" : ".*--list" > /dev/null \
     && _list_commands \
     && exit 0
 
-#  Not documented yet!!
+#  Add a new variable, into script,
+#+ which will be taken as priority
+#+ config for 'get' function.
+#
+#  -param $1 Name of the entry
+#  -param $2 Value of the entry
 _set_config() {
     local _name=""
     local _value=""
@@ -689,7 +705,11 @@ _set_config() {
 expr "$*" : ".*--set" > /dev/null \
     && _set_config "$@"
 
-#  Not document yet!!
+#  Save key-value to 'ws/config.json'
+#+ using 'put' function.
+#
+#  -param $1 Name of the entry
+#  -param $2 Value of the entry
 _add_config() {
     shift
     local _name=${1:-''}
@@ -700,7 +720,10 @@ expr "$*" : ".*--add" > /dev/null \
     && _add_config "$@" \
     && exit 0
 
-#  Not documented yet!!
+#  Get key-value from 'ws/config.json'
+#+ using 'get' function.
+#
+#  -param $1 Name of the entry
 _get_config() {
     shift
     local _name=${1:-''}
@@ -714,7 +737,10 @@ expr "$*" : ".*--get" > /dev/null \
     && _get_config "$@" \
     && exit 0
 
-#  Not documented yet!!
+#  Remove key-value to 'ws/config.json'
+#+ using 'remove' function.
+#
+#  -param $1 Name of the entry
 _remove_config() {
     shift
     local _name=${1:-''}
@@ -724,7 +750,8 @@ expr "$*" : ".*--remove" > /dev/null \
     && _remove_config "$@" \
     && exit 0
 
-#  Not documented yet!!
+#  Print all key names from
+#+ 'ws/config.json'.
 _get_config_keys() {
     jq "keys" "ws/config.json"
 }
@@ -732,7 +759,23 @@ expr "$*" : ".*--get-keys" > /dev/null \
     && _get_config_keys \
     && exit 0
 
-#  Not documented yet!!
+#  Set host value to 'ws/config.json'.
+#  Execution takes the following steps:
+#    1. Get current host.
+#    2. Get host from the parameter,
+#+      if present this will be
+#+      current host.
+#    3. Look for a host from listed
+#+      array 'hosts' defined in
+#+      'ws/config.json'. Array
+#+      must have the form:
+#+      '[{key:"" , value:""}]''
+#    4. If exist host in listed
+#+      hosts, that will be the
+#+      current host.
+#
+#  -param $1 Name of the host or
+#+           host value
 _set_host() {
     local _host=""
     local _found=0
@@ -742,11 +785,11 @@ _set_host() {
             _host="$_i"
             break
         fi
-        [ "$_i" == "--host" ] && _found=1
+        [ "$_i" = "--host" ] && _found=1
     done
     local _value=""
     _value=$( get "hosts | .[] | select(.key==\"$_host\") | .value" )
-    if [ "$_value" != "null" ]; then
+    if [ -n "$_value" ] && [ "$_value" != "null" ]; then
         _host="$_value"
     fi
     DOMAIN="$_host"
@@ -756,7 +799,14 @@ _set_host() {
 expr "$*" : ".*--host" > /dev/null \
     && _set_host "$@"
 
-#  Not documented yet!!
+#  Set domain to 'localhost'. Default
+#+ port is 8080 but it can be specified
+#+ as first parameter and will override
+#+ default port.
+#  Protocol is changed as well and takes
+#+ 'http' as value.
+#
+#  -param $1 Port value
 _set_localhost() {
     local _port="8080"
     local _found=0
@@ -777,29 +827,31 @@ _set_localhost() {
 expr "$*" : ".*--local" > /dev/null \
     && _set_localhost "$@"
 
-#  Not documented yet!!
+#  Set 'AUTH_MODE' to 'HEADER'.
+_auth_header() {
+    AUTH_MODE="HEADER"
+}
+expr "$*" : ".*--auth-header" > /dev/null \
+    && _auth_header "$@"
+
+#  Set 'AUTH_MODE' to 'QPARAM'.
 _auth_qparam() {
     AUTH_MODE="QPARAM"
 }
 expr "$*" : ".*--auth-qparam" > /dev/null \
     && _auth_qparam "$@"
 
-#  Not documented yet!!
-_auth_skip() {
-    AUTH_MODE="SKIP"
-}
-expr "$*" : ".*--auth-skip" > /dev/null \
-    && _auth_skip "$@"
-
-#  Not documented yet!!
+#  Get saved editor command from
+#+ 'ws/config.json and the value
+#+ is assigned to 'EDITOR_COMMAND'.
 _open_editor() {
     EDITOR_COMMAND="$( get editorCommand )"
 }
 expr "$*" : ".*--open" > /dev/null \
     && _open_editor "$@"
 
-#  Clean output files.
-#  More details required!!
+#  Clean all files from 'output'
+#+ directory.
 _clean_output_files() {
     if [ -d output ]; then
         declare -a _selected=(

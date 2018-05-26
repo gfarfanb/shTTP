@@ -1,7 +1,0 @@
-#! /usr/bin/env bash
-#  Tests for 'http_api' main code.
-#  -author Giovanni Farfán B.
-
-
-#  -test Main
-fail "Main - Not tests defined yet"

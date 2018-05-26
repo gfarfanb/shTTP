@@ -15,7 +15,7 @@ assertEquals "'update' not found" "\"updated\"" "$_update"
 
 update "ws/config.json" "del(.update)"
 _update=$( < "ws/config.json" jq ".update" )
-assertEquals "'update' was found" "null" "$_update"
+assertEquals "'update' found" "null" "$_update"
 
 
 #  -test Put key-value config
@@ -71,40 +71,43 @@ _object=$( get object )
 assertEquals "'object' not found" "{}" "$_object"
 
 _unknown=$( get unknown )
-assertEquals "'unknown' was found" "null" "$_unknown"
+assertEquals "'unknown' found" "null" "$_unknown"
 
-fail "Get temporal - Not implemented yet"
+#  shellcheck disable=SC2034
+tempConfig="7wjedw9djwejd"
+_temp_config=$( get tempConfig )
+assertEquals "'tempConfig' not found" "7wjedw9djwejd" "$_temp_config"
 
 
 #  -test Remove key-value config
 remove '.id'
 _id=$( get id )
-assertEquals "'id' was found" "null" "$_id"
+assertEquals "'id' found" "null" "$_id"
 
 remove jqId
 _jqId=$( get jqId )
-assertEquals "'jqId' was found" "null" "$_jqId"
+assertEquals "'jqId' found" "null" "$_jqId"
 
 remove rawId
 _rawId=$( get rawId )
-assertEquals "'rawId' was found" "null" "$_rawId"
+assertEquals "'rawId' found" "null" "$_rawId"
 
 remove idx
 _idx=$( get idx )
-assertEquals "'idx' was found" "null" "$_idx"
+assertEquals "'idx' found" "null" "$_idx"
 
 remove flag
 _flag=$( get flag )
-assertEquals "'flag' was found" "null" "$_flag"
+assertEquals "'flag' found" "null" "$_flag"
 
 remove null
 _null=$( get null )
-assertEquals "'null' was found" "null" "$_null"
+assertEquals "'null' found" "null" "$_null"
 
 remove object
 _object=$( get object )
-assertEquals "'object' was found" "null" "$_object"
+assertEquals "'object' found" "null" "$_object"
 
 remove unknown
 _unknown=$( get unknown )
-assertEquals "'unknown' was found" "null" "$_unknown"
+assertEquals "'unknown' found" "null" "$_unknown"

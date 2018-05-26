@@ -23,7 +23,7 @@ before_api() {
 
 _before_request
 
-assertEquals "'before_api' was not executed" "Executed" "$_before_api_var"
+assertEquals "'before_api' not executed" "Executed" "$_before_api_var"
 
 _before_request_var="Not executed yet"
 
@@ -33,7 +33,7 @@ BEFORE_REQUEST=(
 
 _before_request
 
-assertEquals "'BEFORE_REQUEST' chain was not executed" "Executed" "$_before_request_var"
+assertEquals "'BEFORE_REQUEST' chain not executed" "Executed" "$_before_request_var"
 
 #  shellcheck disable=SC2034
 BEFORE_REQUEST=()
@@ -48,7 +48,7 @@ AFTER_REQUEST=(
 
 _after_request
 
-assertEquals "'AFTER_REQUEST' chain was not executed" "Executed" "$_after_request_var"
+assertEquals "'AFTER_REQUEST' chain not executed" "Executed" "$_after_request_var"
 
 #  shellcheck disable=SC2034
 AFTER_REQUEST=()
@@ -61,7 +61,7 @@ after_api() {
 
 _after_request
 
-assertEquals "'after_api' was not executed" "Executed" "$_after_api_var"
+assertEquals "'after_api' not executed" "Executed" "$_after_api_var"
 
 
 #  -test Request execution
@@ -78,7 +78,7 @@ assertTrue "JSON file does not exists" "-f \"$OUTPUT.output\""
 
 _documentation=$( < "$OUTPUT.output" jq ".documentation_url" )
 
-assertTrue "Request was not executed" "-n $_documentation"
+assertTrue "Request not executed" "-n $_documentation"
 
 OUTPUT=""
 
@@ -218,7 +218,7 @@ for _header in "${HEADERS[@]}"; do
     esac
 done
 
-assertEquals "'HEADER' mode was not set" 2 "$_found"
+assertEquals "'HEADER' mode not set" 2 "$_found"
 
 HEADERS=()
 AUTH_MODE="QPARAM"
@@ -236,7 +236,7 @@ for _header in "${HEADERS[@]}"; do
     fi
 done
 
-assertEquals "'QPARAM' mode was not set" 2 "$_found"
+assertEquals "'QPARAM' mode not set" 2 "$_found"
 
 HEADERS=()
 #  shellcheck disable=SC2034
@@ -246,7 +246,7 @@ _append_auth
 
 _length=${#HEADERS[@]}
 
-assertEquals "'SKIP' mode was not set" 0 "$_length"
+assertEquals "'SKIP' mode not set" 0 "$_length"
 
 remove apiToken
 remove host

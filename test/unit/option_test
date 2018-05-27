@@ -13,28 +13,43 @@ done
 assertEquals "Command not found" 1 "$_found"
 
 
+#  -test Look for parameters
+_previous_value="last"
+_previous_length=0
+_callback_function() {
+    local _new=${1:-''}
+    local _length=$#
+    _previous_value="$_new"
+    _previous_length=$_length
+}
+_look_for_params "_callback_function" "--new" "command" "--new" "new" "--save" "key" "\"value\""
+
+assertEquals "Invalid parameter value" "new" "$_previous_value"
+assertEquals "Invalid parameters length" 1 "$_previous_length"
+
+
 #  -test Set option
-_set_config "--set" "priorityVal" "value"
+_set_config "priorityVal" "value"
 put priorityVal "\"new.value\""
 _priority_val=$( get priorityVal )
 assertEquals "Unexpected 'setConfig' value" "value" "$_priority_val"
 
 
 #  -test Add option
-_add_config "--add" "addedVal" "\"value\""
+_add_config "addedVal" "\"value\""
 _added_val=$( get addedVal )
 assertEquals "'addedVal' not found" "value" "$_added_val"
 
 
 #  -test Get option
 put expectedVal "\"value\""
-_expected_val=$( _get_config "--get" "expectedVal" )
+_expected_val=$( _get_config "expectedVal" )
 assertEquals "'expectedVal' not found" "value" "$_expected_val"
 
 
 #  -test Remove option
 put removedVal "\"value\""
-_remove_config "--remove" "removedVal"
+_remove_config "removedVal"
 _null_val=$( get removedVal )
 assertEquals "'removedVal' found" "null" "$_null_val"
 
@@ -44,19 +59,19 @@ _get_config_keys
 
 
 #  -test Host option
-_set_host "command" "--host" "any.host"
+_set_host "any.host"
 _current_host=$( get host )
 assertEquals "'Host' not assigned" "any.host" "$_current_host"
 
 _host_object="{ \"key\": \"namedHost\", \"value\": \"any.named.host\" }"
 update "ws/config.json" ". + { \"hosts\": [$_host_object] }"
-_set_host "command" "--host" "namedHost"
+_set_host "namedHost"
 _current_host=$( get host )
 assertEquals "Named 'Host' not assigned" "any.named.host" "$_current_host"
 
 
 #  -test Local option
-_set_localhost "command" "--local" "5555"
+_set_localhost "5555"
 assertEquals "Localhost not assigned" "localhost:5555" "$DOMAIN"
 
 

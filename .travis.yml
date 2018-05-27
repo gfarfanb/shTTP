@@ -4,8 +4,12 @@ language: bash
 branches:
   only:
     - master
-  
-script:
+
+install:
+  - curl --version
+  - jq --version
   - shellcheck --version
+
+script:
   - ./lint
   - ./runtests

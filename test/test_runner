@@ -78,10 +78,15 @@ _fail() {
 #+ execute the main code or after
 #+ get an error.
 _finally_test_runner() {
-    if [ $_failures = 0 ]; then
-        echo "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
+    local _code=$?
+    if [ $_code != 0 ]; then
+        echo "$( basename "$0" ): [INTERRUPTED] - [$_failures] of [$_assertions] assertions failed"
     else
-        echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
+        if [ $_failures = 0 ]; then
+            echo "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
+        else
+            echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
+        fi
     fi
 
     #  shellcheck disable=SC1091
@@ -90,7 +95,7 @@ _finally_test_runner() {
     if [ $_failures = 0 ] && [ $_completed = 1 ]; then
         exit 0
     else
-        exit 1
+        exit $_code
     fi
 }
 

@@ -430,7 +430,7 @@ _set_method() {
 #  -param $2 Header value
 _append_if_missing_header() {
     local _name=${1:-''}
-    local _value=${2:-''}
+    local _val=${2:-''}
     shopt -s nocasematch
     local _found=0
     local _length=${#HEADERS[@]}
@@ -444,7 +444,7 @@ _append_if_missing_header() {
     fi
     shopt -u nocasematch
     if [ $_found = 0 ]; then
-        HEADERS+=( "$_name: $_value" )
+        HEADERS+=( "$_name: $_val" )
     fi
 }
 
@@ -456,11 +456,11 @@ _append_if_missing_header() {
 _append_content_type() {
     local _length=${#FORM[@]}
     if (( _length > 0 )); then
-        local _value="multipart/form-data"
+        local _val="multipart/form-data"
     else
-        local _value="application/json"
+        local _val="application/json"
     fi
-    _append_if_missing_header "Content-Type" "$_value"
+    _append_if_missing_header "Content-Type" "$_val"
 }
 
 #  Setup the authorization mode based
@@ -649,6 +649,42 @@ _finally_http_api() {
 
 # ---------- Option functions
 
+#  Look for parameters belong
+#+ to option. Parameters are
+#+ collected and they are sent
+#+ to 'callback' function.
+#  Search is interrupted
+#+ if another option is found
+#+ in the parameters.
+#  Valid options have the form:
+#+ '--<option>'.
+#
+#  -param $1 Callback function
+#  -param $2 Looked option
+#  -param $* Input parameters
+_look_for_params() {
+    local _callback=${1:-''}
+    local _option=${2:-''}
+    local _params=()
+    local _found=0
+    shift 2
+    for _param in "$@"; do
+        if [ $_found = 1 ]; then
+            if [[ "$_param" == "--"* ]]; then
+                break
+            else
+                _params+=( "$_param" )
+            fi
+        fi
+        if [ "$_param" = "$_option" ]; then
+            _found=1
+        fi
+    done
+    if [ $_found = 1 ]; then
+        $_callback "${_params[@]}"
+    fi
+}
+
 #  List the names of main script
 #+ functions. Names contained
 #+ in the 'keywords' are discarded.
@@ -684,28 +720,13 @@ expr "$*" : ".*--list" > /dev/null \
 #  -param $1 Name of the entry
 #  -param $2 Value of the entry
 _set_config() {
-    local _name=""
-    local _value=""
-    local _found=0
-    for _i in "$@"; do
-        if [ $_found = 2 ]; then
-            _value="$_i"
-            _found=3
-            break
-        fi
-        if [ $_found = 1 ]; then
-            _name="$_i"
-            _found=2
-        fi
-        [ "$_i" == "--set" ] && _found=1
-    done
-    if [ $_found = 3 ]; then
-        eval "$_name=$_value"
-        info "Set temporal [$_name] with value [$_value]"
-    fi
+    local _name=${1:-''}
+    local _val=${2:-''}
+    eval "$_name=$_val"
+    info "Set temporal [$_name] with value [$_val]"
 }
 expr "$*" : ".*--set" > /dev/null \
-    && _set_config "$@"
+    && _look_for_params "_set_config" "--set" "$@"
 
 #  Save key-value to 'ws/config.json'
 #+ using 'put' function.
@@ -713,13 +734,12 @@ expr "$*" : ".*--set" > /dev/null \
 #  -param $1 Name of the entry
 #  -param $2 Value of the entry
 _add_config() {
-    shift
     local _name=${1:-''}
     local _val=${2:-''}
     put "$_name" "$_val"
 }
 expr "$*" : ".*--add" > /dev/null \
-    && _add_config "$@" \
+    && _look_for_params "_add_config" "--add" "$@" \
     && exit 0
 
 #  Get key-value from 'ws/config.json'
@@ -727,7 +747,6 @@ expr "$*" : ".*--add" > /dev/null \
 #
 #  -param $1 Name of the entry
 _get_config() {
-    shift
     local _name=${1:-''}
     local _val=""
     if [ -n "$_name" ]; then
@@ -736,7 +755,7 @@ _get_config() {
     echo "$_val"
 }
 expr "$*" : ".*--get" > /dev/null \
-    && _get_config "$@" \
+    && _look_for_params "_get_config" "--get" "$@" \
     && exit 0
 
 #  Remove key-value to 'ws/config.json'
@@ -744,12 +763,11 @@ expr "$*" : ".*--get" > /dev/null \
 #
 #  -param $1 Name of the entry
 _remove_config() {
-    shift
     local _name=${1:-''}
     remove "$_name"
 }
 expr "$*" : ".*--remove" > /dev/null \
-    && _remove_config "$@" \
+    && _look_for_params "_remove_config" "--remove" "$@" \
     && exit 0
 
 #  Print all key names from
@@ -763,10 +781,10 @@ expr "$*" : ".*--get-keys" > /dev/null \
 
 #  Set host value to 'ws/config.json'.
 #  Execution takes the following steps:
-#    1. Get current host.
-#    2. Get host from the parameter,
-#+      if present this will be
-#+      current host.
+#    1. Get host from the parameter.
+#    2. Get current host from
+#+      'ws/config.json', if parameter
+#+      is empty.
 #    3. Look for a host from listed
 #+      array 'hosts' defined in
 #+      'ws/config.json'. Array
@@ -779,27 +797,21 @@ expr "$*" : ".*--get-keys" > /dev/null \
 #  -param $1 Name of the host or
 #+           host value
 _set_host() {
-    local _host=""
-    local _found=0
-    _host=$( get host )
-    for _i in "$@"; do
-        if [ $_found = 1 ]; then
-            _host="$_i"
-            break
-        fi
-        [ "$_i" = "--host" ] && _found=1
-    done
-    local _value=""
-    _value=$( get "hosts | .[] | select(.key==\"$_host\") | .value" )
-    if [ -n "$_value" ] && [ "$_value" != "null" ]; then
-        _host="$_value"
+    local _host=${1:-''}
+    if [ -z "$_host" ]; then
+        _host=$( get host )
+    fi
+    local _val=""
+    _val=$( get "hosts | .[] | select(.key==\"$_host\") | .value" )
+    if [ -n "$_val" ] && [ "$_val" != "null" ]; then
+        _host="$_val"
     fi
     DOMAIN="$_host"
     put host "\"$_host\""
     info "Set DOMAIN with [$_host]"
 }
 expr "$*" : ".*--host" > /dev/null \
-    && _set_host "$@"
+    && _look_for_params "_set_host" "--host" "$@"
 
 #  Set domain to 'localhost'. Default
 #+ port is 8080 but it can be specified
@@ -810,24 +822,17 @@ expr "$*" : ".*--host" > /dev/null \
 #
 #  -param $1 Port value
 _set_localhost() {
-    local _port="8080"
-    local _found=0
-    for _i in "$@"; do
-        if [ $_found = 1 ]; then
-            if [[ "$_i" =~ ^[0-9]+$ ]]; then
-                _port="$_i"
-            fi
-            break
-        fi
-        [ "$_i" == "--local" ] && _found=1
-    done
+    local _port=${1:-''}
+    if [ -z "$_port" ]; then
+        _port="8080"
+    fi
     PROTOCOL="http"
     DOMAIN="localhost:$_port"
     info "Set PROTOCOL with [$PROTOCOL]"
     info "Set DOMAIN with [$DOMAIN]"
 }
 expr "$*" : ".*--local" > /dev/null \
-    && _set_localhost "$@"
+    && _look_for_params "_set_localhost" "--local" "$@"
 
 #  Set 'AUTH_MODE' to 'HEADER'.
 _auth_header() {

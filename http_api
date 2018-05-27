@@ -40,7 +40,7 @@ expr "$*" : ".*--help" > /dev/null \
 readonly _basename=$( basename "$0" )
 
 
-# ---------- Logging functions ----------
+# ---------- Logging functions
 
 #  Log filename.
 readonly _log_file="/tmp/shTTP_${_basename%.*}.$( date '+%Y-%m-%d' ).log"
@@ -67,7 +67,7 @@ error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_log_file" 
 fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_log_file" >&2 ; exit 1 ; }
 
 
-# ---------- Initialization ----------
+# ---------- Initialization
 
 # 'cURL' is required
 readonly _curl_version=$( curl --version )
@@ -877,6 +877,33 @@ expr "$*" : ".*--clean" > /dev/null \
     && _clean_output_files \
     && info "Cleaning completed" \
     && exit 0
+
+
+# ---------- Option extensions
+
+#  Option add-on files.
+#  Filename must have
+#+ the form: '<name>_option'
+declare -a _options_add_ons=(
+    $( find . -name "*_option" -type f )
+)
+
+#  Option add-on files length.
+readonly _options_length=${#_options_add_ons[@]}
+
+#  If exists add-on files
+#+ they will be sourced.
+if (( _options_length > 0 )); then
+    for _add_on in "${_options_add_ons[@]}"; do
+        eval ". $_add_on"
+        info "Add-on [$_add_on] sourced"
+    done
+else
+    info "No add-ons sourced"
+fi
+
+
+# ---------- Main
 
 #  Skip main code flag
 readonly _skip_http_api=${SKIP_HTTP_API:-''}

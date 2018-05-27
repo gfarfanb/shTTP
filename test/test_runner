@@ -26,6 +26,40 @@ expr "$*" : ".*--help" > /dev/null \
     && _help_test_runner \
     && exit 0
 
+
+#  Script filename.
+readonly _test_basename=$( basename "$0" )
+
+
+# ---------- Logging functions
+
+#  Log filename.
+readonly _test_log_file="/tmp/shTTP_${_test_basename%.*}.$( date '+%Y-%m-%d' ).log"
+
+#  Log a message object with the INFO level.
+#
+#  -param $* Log message
+info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_test_log_file" >&2 ; }
+
+#  Log a message object with the WARNING level.
+#
+#  -param $* Log message
+warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_test_log_file" >&2 ; }
+
+#  Log a message object with the ERROR level.
+#
+#  -param $* Log message
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_test_log_file" >&2 ; }
+
+#  Log a message object with the FATAL level, 
+#+ exit execution with 1.
+#
+#  -param $* Log message
+fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_test_log_file" >&2 ; exit 1 ; }
+
+
+# ---------- Option functions
+
 #  List the names of the executable
 #+ tests. A valid test filename must
 #+ follow the pattern '<name>_test'.
@@ -44,12 +78,15 @@ _list_tests() {
             echo "$_name"
         done
     else
-        echo "Not tests found"
+        info "Not tests found"
     fi
 }
 expr "$*" : ".*--list" > /dev/null \
     && _list_tests \
     && exit 0
+
+
+# ---------- Variables initialization
 
 #  Assertions count.
 _assertions=0
@@ -60,6 +97,9 @@ _failures=0
 #  All tests executed flag.
 _completed=0
 
+
+# ---------- Internal functions
+
 #  Increase by 1 the '_assertions' count.
 _inc_asserts() {
     _assertions=$(( _assertions+1 ))
@@ -68,7 +108,7 @@ _inc_asserts() {
 #  Print the failed test message and
 #+ increase the '_failures' count.
 _fail() {
-    echo ">>>   [FAILED]   $*"
+    info ">>>   [FAILED]   $*"
     _failures=$(( _failures+1 ))
 }
 
@@ -80,12 +120,12 @@ _fail() {
 _finally_test_runner() {
     local _code=$?
     if [ $_code != 0 ]; then
-        echo "$( basename "$0" ): [INTERRUPTED] - [$_failures] of [$_assertions] assertions failed"
+        error "$( basename "$0" ): [INTERRUPTED] - [$_failures] of [$_assertions] assertions failed"
     else
         if [ $_failures = 0 ]; then
-            echo "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
+            info "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
         else
-            echo "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
+            info "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
         fi
     fi
 
@@ -98,6 +138,9 @@ _finally_test_runner() {
         exit $_code
     fi
 }
+
+
+# ---------- Main
 
 #  Main code:
 #    1. Execute the global before-tests
@@ -119,7 +162,8 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     readonly _single=${1:-''}
 
     if [ -n "$_single" ]; then
-        eval ". ${_single}_test"
+        eval ". ./${_single}_test"
+        info "Test [./${_single}_test] sourced"
     else
         declare -a _tests=(
             $( find . -name "*_test" -type f )
@@ -128,9 +172,10 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
         if (( _length > 0 )); then
             for _test in "${_tests[@]}"; do
                 eval ". $_test"
+                info "Test [$_test] sourced"
             done
         else
-            echo "Not tests found"
+            info "Not tests found"
         fi
     fi
 

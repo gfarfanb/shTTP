@@ -4,13 +4,17 @@
 
 
 #  -test List available commands
-_commands=$( _list_commands )
+_commands=( $( _list_commands ) )
 _found=0
-for _i in "${_commands[@]}"; do
-    [ "$_i" = "fail" ] && _found=1
+for _command in "${_commands[@]}"; do
+    case "$_command" in
+        info | warning | error | fatal)
+            _found=$(( _found+1 ))
+        ;;
+    esac
 done
 
-assertEquals "Command not found" 1 "$_found"
+assertEquals "Command not found" 4 "$_found"
 
 
 #  -test Look for parameters

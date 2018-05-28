@@ -244,6 +244,9 @@ FORM=()
 #+ Query Parameters.
 QPARAMS=()
 
+#  Additional 'cURL' options.
+CURL_OPTS=()
+
 #  Before request tasks. For each element 'eval'
 #+ will be executed (as callback).
 BEFORE_REQUEST=()
@@ -561,7 +564,8 @@ _append_body_to_file() {
 #    5. FORM (for-each): '-F "<key>=<value>"'
 #    6. QPARAMS (for-each): '-d "<key>=<value>"'
 #    7. Body file: '--data-binary "@<body-file>"'
-#    8. PROTOCOL and URL: '<protocol>://<url>' 
+#    8. CURL_OPTS (for-each) : '<curl-option>'
+#    9. PROTOCOL and URL: '<protocol>://<url>' 
 #
 #  -param $1 Body temporal file
 #  -return cURL command as string
@@ -590,6 +594,12 @@ _build_curl() {
     fi
     if [ -n "$_body_file" ]; then
         _curl+=( "--data-binary \"@$_body_file\" \\" )
+    fi
+    _length=${#CURL_OPTS[@]}
+    if (( _length > 0 )); then
+        for _opt in "${CURL_OPTS[@]}"; do
+            _curl+=( "$_opt \\" )
+        done
     fi
     _curl+=( "$PROTOCOL://$URL > \"$OUTPUT.trace\" 2>&1" )
     echo "${_curl[*]}"

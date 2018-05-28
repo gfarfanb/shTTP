@@ -289,12 +289,18 @@ QPARAMS=(
 FORM=(
     "key=value"
 )
+CURL_OPTS=(
+    "--basic"
+    "-u user:password"
+)
 _expected=(
     "curl -X POST -s -v -o \"result.output\" \\"
     "-H \"Defined-Header: test/value\" \\"
     "-d \"param=value\" \\"
     "-F \"key=value\" \\"
     "--data-binary \"@ws/body_file.json.temp\" \\"
+    "--basic \\"
+    "-u user:password \\"
     "https://any.host/any/endpoint > \"result.trace\" 2>&1"
 )
 _curl=$( _build_curl "ws/body_file.json.temp" )
@@ -309,6 +315,8 @@ HEADERS=()
 QPARAMS=()
 #  shellcheck disable=SC2034
 FORM=()
+#  shellcheck disable=SC2034
+CURL_OPTS=()
 
 
 #  -test Clean trace

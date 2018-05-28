@@ -14,67 +14,82 @@ _is_key=$( _is_keyword 'whatever' )
 assertEquals "'whatever' is key" 0 "$_is_key"
 
 
-#  -test Before request execution
+#  -test Has function
+_has_info=$( _has_func info )
+assertEquals "'info' function not found" 1 "$_has_info"
+
+_has_warning=$( _has_func warning )
+assertEquals "'warning' function not found" 1 "$_has_warning"
+
+_has_error=$( _has_func error )
+assertEquals "'error' function not found" 1 "$_has_error"
+
+_has_fatal=$( _has_func fatal )
+assertEquals "'fatal' function not found" 1 "$_has_fatal"
+
+
+#  -test Execute if exist
+_check_exist=0
+
+complete_check() {
+    _check_exist=1
+}
+
+_execute_if_exist complete_check
+
+assertEquals "'complete_check' function not found" 1 "$_check_exist"
+
+
+#  -test Request lifecycle
 _before_api_var="Not executed yet"
+_after_api_var="Not executed yet"
 
 before_api() {
     _before_api_var="Executed"
 }
 
-_before_request
-
-assertEquals "'before_api' not executed" "Executed" "$_before_api_var"
-
-_before_request_var="Not executed yet"
-
-BEFORE_REQUEST=(
-    '_before_request_var="Executed"'
-)
-
-_before_request
-
-assertEquals "'BEFORE_REQUEST' chain not executed" "Executed" "$_before_request_var"
-
-#  shellcheck disable=SC2034
-BEFORE_REQUEST=()
-
-
-#  -test After request execution
-_after_request_var="Not executed yet"
-
-AFTER_REQUEST=(
-    '_after_request_var="Executed"'
-)
-
-_after_request
-
-assertEquals "'AFTER_REQUEST' chain not executed" "Executed" "$_after_request_var"
-
-#  shellcheck disable=SC2034
-AFTER_REQUEST=()
-
-_after_api_var="Not executed yet"
+get_repo() {
+    #  shellcheck disable=SC2034
+    URL='api.github.com/repos/gfarfanb/shTTP'
+}
 
 after_api() {
     _after_api_var="Executed"
 }
 
-_after_request
+_execute get_repo
+put '.full_name'
 
+_repo_name=$( get full_name )
+
+assertEquals "'before_api' not executed" "Executed" "$_before_api_var"
+assertEquals "Repository does not exist" "gfarfanb/shTTP" "$_repo_name"
 assertEquals "'after_api' not executed" "Executed" "$_after_api_var"
 
 
 #  -test Request execution
+_before_request_var="Not executed yet"
+_after_request_var="Not executed yet"
 
 #  shellcheck disable=SC2034
 URL='api.github.com/search/repositories'
 #  shellcheck disable=SC2034
 METHOD="GET"
 
-_request
+before_command() {
+    _before_request_var="Executed"
+}
 
-assertTrue "Trace file does not exists" "-f \"$OUTPUT.trace\""
-assertTrue "JSON file does not exists" "-f \"$OUTPUT.output\""
+after_command() {
+    _after_request_var="Executed"
+}
+
+_request command
+
+assertEquals "'before_<command>' chain not executed" "Executed" "$_before_request_var"
+assertTrue "Trace file does not exist" "-f \"$OUTPUT.trace\""
+assertTrue "JSON file does not exist" "-f \"$OUTPUT.output\""
+assertEquals "'after_<command>' not executed" "Executed" "$_after_request_var"
 
 _documentation=$( < "$OUTPUT.output" jq ".documentation_url" )
 

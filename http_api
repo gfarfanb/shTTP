@@ -247,14 +247,6 @@ QPARAMS=()
 #  Additional 'cURL' options.
 CURL_OPTS=()
 
-#  Before request tasks. For each element 'eval'
-#+ will be executed (as callback).
-BEFORE_REQUEST=()
-
-#  After request tasks. For each element 'eval'
-#+ will be executed (as callback).
-AFTER_REQUEST=()
-
 #  Authentication mode. Allowed values:
 #+ [HEADER, QPARAM, SKIP]
 AUTH_MODE="SKIP"
@@ -270,7 +262,7 @@ EDITOR_COMMAND=""
 #  Key-words used internally like
 #+ function names or field names.
 #  The functions could be defined
-#+ in the main API script if
+#+ into the main API script if
 #+ they are required during request
 #+ lifecycle.
 readonly _keywords=(
@@ -293,51 +285,67 @@ _is_keyword() {
             break
         fi
     done
+    case "$_name" in
+        before_* | after_*)
+            _found=1
+        ;;
+    esac
     echo "$_found"
 }
 
-#  This lifecycle function is called
-#+ before request execution:
-#    1. Check if 'before_api' function
-#+      exists in the main script and
-#+      execute it.
-#    2. Execute each task defined in
-#+      'BEFORE_REQUEST' variable.
-_before_request() {
-    local _has_before=1
+#  Check if function is already
+#+ declared.
+#
+#  -param $1 Function name
+_has_func() {
+    local _func=${1:-''}
+    local _exists=1
     #  shellcheck disable=SC2034
-    _has_before=$( declare -f 'before_api' > /dev/null ; echo $? )
-    if (( _has_before == 0 )); then
-        before_api
-    fi
-    local _length=${#BEFORE_REQUEST[@]}
-    if (( _length > 0 )); then
-        for _callback in "${BEFORE_REQUEST[@]}"; do
-            eval "$_callback"
-        done
+    _exists=$( declare -f $_func > /dev/null ; echo $? )
+    if (( _exists == 0 )); then
+        echo 1
+    else
+        echo 0
     fi
 }
 
-#  This lifecycle function is called
-#+ after request execution:
-#    1. Execute each task defined in
-#+      'AFTER_REQUEST' variable.
-#    2. Check if 'after_api' function
-#+      exists in the main script and
-#+      execute it.
-_after_request() {
-    local _length=${#AFTER_REQUEST[@]}
-    if (( _length > 0 )); then
-        for _callback in "${AFTER_REQUEST[@]}"; do
-            eval "$_callback"
-        done
+#  Execute function if it is
+#+ already decared.
+#
+#  -param $1 Function name
+_execute_if_exist() {
+    local _func=${1:-''}
+    local _has_func=0
+    _has_func=$( _has_func "$_func" )
+    if (( _has_func == 1 )); then
+        $_func
     fi
-    local _has_after=1
-    #  shellcheck disable=SC2034
-    _has_after=$( declare -f 'after_api' > /dev/null ; echo $? )
-    if (( _has_after == 0 )); then
-        after_api
-    fi
+}
+
+#  Execute request lifecycle:
+#    1. Execute 'before_api' function
+#+      if it is declared.
+#    2. Execute the command.
+#    3. Set request method based on
+#+      command name if it was not
+#+      assigned during the command
+#+      execution.
+#    4. Execute the request.
+#    5. Execute 'after_api' function
+#+      if it is declared.
+#    6. Execute open editor task.
+#
+#  -param $1 Request command
+_execute() {
+    local _command=${1:-''}
+    info "Init request [$_command]"
+    _execute_if_exist before_api
+    $_command
+    _set_method "$_command"
+    _request "$_command"
+    _execute_if_exist after_api
+    _editor_command
+    info "Request [$_command] completed"
 }
 
 #  This lifecycle function is called
@@ -351,10 +359,17 @@ _after_request() {
 #    4. Append authentication to request.
 #    5. Set body to a body file.
 #    6. Build 'cURL' command.
-#    7. Execute 'cURL' command.
-#    8. Clean and append details into
-#+      'OUTPUT.trace' file.
+#    7. Execute 'before_<command>' function
+#+      if it is declared.
+#    8. Execute 'cURL' command.
+#    9. Execute 'after_<command>' function
+#+      if it is declared.
+#    10. Clean and append details into
+#+       'OUTPUT.trace' file.
+#
+#  -param $1 Request command
 _request() {
+    local _command=${1:-''}
     eval "URL=\"$URL\""
 
     OUTPUT="output/$( basename "$0" ).$( date '+%Y-%m-%d.%H_%M_%S' )"
@@ -371,7 +386,10 @@ _request() {
     local _curl=""
     _body_file=$( _append_body_to_file )
     _curl=$( _build_curl "$_body_file" )
+
+    _execute_if_exist "before_${_command}"
     eval "$_curl"
+    _execute_if_exist "after_${_command}"
 
     _clean_trace "$_curl" "$_body_file"
 
@@ -946,57 +964,24 @@ readonly _skip_http_api=${SKIP_HTTP_API:-''}
 #    2. Set the exist 'main' function flag.
 #    3. Discard 'command' if has 'option'
 #+      format.
-#    4. If 'command' is present, execute
-#+      the following request lifecycle:
-#       a. Execute before-request tasks.
-#       b. Execute the command.
-#       c. Set request method based on
-#+         command name if it was not
-#+         assigned during the command
-#+         execution.
-#       d. Execute the request.
-#       e. Execute after-request tasks.
-#       f. Execute open editor task.
-#    5. If 'main' is present, execute
-#+      the following request lifecycle:
-#       a. Execute before-request tasks.
-#       b. Execute 'main' function.
-#       c. Execute the request.
-#       d. Execute after-request tasks.
-#       e. Execute open editor task.
-#    6. Finally function is executed.
+#    4. If 'command' or 'main' is present,
+#+      execute request lifecycle: '_execute'.
+#    5. Finally function is executed.
 if [ "$_skip_http_api" != "true" ]; then
     trap _finally_http_api EXIT
 
     _command=${1:-''}
-
-    #  shellcheck disable=SC2034
-    _has_main=$( declare -f 'main' > /dev/null ; echo $? )
+    _has_main=$( _has_func main )
 
     if [[ "$_command" == "--"* ]]; then
         _command=""
     fi
 
-    info "Init request"
-
     if [ -n "$_command" ]; then
-        info "Executing [$_command] command"
-        _before_request
-        eval "$_command"
-        _set_method "$_command"
-        _request
-        _after_request
-        _editor_command
-    elif (( _has_main == 0 )); then
-        info "Executing [main] command"
-        _before_request
-        main
-        _request
-        _after_request
-        _editor_command
+        _execute "$_command"
+    elif (( _has_main == 1 )); then
+        _execute main
     else
         info "No command to execute"
     fi
-
-    info "Request completed"
 fi

@@ -24,9 +24,10 @@ post_comment() {
     )
     ENDPOINT="$( get gistId )/comments"
     BODY='{ "body": "shTTP comment" }'
-    AFTER_REQUEST=(
-        "put commentId '.id'"
-    )
+}
+
+after_post_comment() {
+    put commentId '.id'
 }
 
 patch_comment() {

@@ -298,13 +298,13 @@ OUTPUT="result"
 HEADERS=(
     "Defined-Header: test/value"
 )
-QPARAMS=(
+QUERY_PARAM=(
     "param=value"
 )
 FORM=(
     "key=value"
 )
-CURL_OPTS=(
+CURL_OPT=(
     "--basic"
     "-u user:password"
 )
@@ -327,11 +327,11 @@ METHOD=""
 OUTPUT=""
 HEADERS=()
 #  shellcheck disable=SC2034
-QPARAMS=()
+QUERY_PARAM=()
 #  shellcheck disable=SC2034
 FORM=()
 #  shellcheck disable=SC2034
-CURL_OPTS=()
+CURL_OPT=()
 
 
 #  -test Clean trace

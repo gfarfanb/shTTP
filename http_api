@@ -242,10 +242,10 @@ FORM=()
 
 #  Request key-value entries for
 #+ Query Parameters.
-QPARAMS=()
+QUERY_PARAM=()
 
 #  Additional 'cURL' options.
-CURL_OPTS=()
+CURL_OPT=()
 
 #  Authentication mode. Allowed values:
 #+ [HEADER, QPARAM, SKIP]
@@ -580,9 +580,9 @@ _append_body_to_file() {
 #+      '> "$OUTPUT.trace" 2>&1'
 #    4. HEADERS (for-each): '-H "<header>"'
 #    5. FORM (for-each): '-F "<key>=<value>"'
-#    6. QPARAMS (for-each): '-d "<key>=<value>"'
+#    6. QUERY_PARAM (for-each): '-d "<key>=<value>"'
 #    7. Body file: '--data-binary "@<body-file>"'
-#    8. CURL_OPTS (for-each) : '<curl-option>'
+#    8. CURL_OPT (for-each) : '<curl-option>'
 #    9. PROTOCOL and URL: '<protocol>://<url>' 
 #
 #  -param $1 Body temporal file
@@ -598,9 +598,9 @@ _build_curl() {
             _curl+=( "-H \"$_header\" \\" )
         done
     fi
-    _length=${#QPARAMS[@]}
+    _length=${#QUERY_PARAM[@]}
     if (( _length > 0 )); then
-        for _param in "${QPARAMS[@]}"; do
+        for _param in "${QUERY_PARAM[@]}"; do
             _curl+=( "-d \"$_param\" \\" )
         done
     fi
@@ -613,9 +613,9 @@ _build_curl() {
     if [ -n "$_body_file" ]; then
         _curl+=( "--data-binary \"@$_body_file\" \\" )
     fi
-    _length=${#CURL_OPTS[@]}
+    _length=${#CURL_OPT[@]}
     if (( _length > 0 )); then
-        for _opt in "${CURL_OPTS[@]}"; do
+        for _opt in "${CURL_OPT[@]}"; do
             _curl+=( "$_opt \\" )
         done
     fi

@@ -233,12 +233,16 @@ BODY=""
 #+ will be concatenated.
 BODY_PARTS=()
 
-#  Requst key-value entries for
+#  Request key-value entries for
 #+ data form. If it is specified
 #+ default 'Content-Type' header
 #+ will be 'multipart/form-data'
 #+ otherwise will be 'application/json'.
 FORM=()
+
+#  Request key-value entries for
+#+ Query Parameters.
+QPARAMS=()
 
 #  Before request tasks. For each element 'eval'
 #+ will be executed (as callback).
@@ -550,12 +554,14 @@ _append_body_to_file() {
 #+ the following variables
 #+ during build:
 #    1. METHOD: '-X <request-method>'
-#    2. OUTPUT: '-o "$OUTPUT.output"',
+#    2. Options: '-s -v'
+#    3. OUTPUT: '-o "$OUTPUT.output"',
 #+      '> "$OUTPUT.trace" 2>&1'
-#    3. HEADERS: '-H "<header>"'
-#    4. FORM: '-F "<key>=<value>"'
-#    5. Body file: '--data-binary "@<body-file>"'
-#    6. PROTOCOL and URL: '<protocol>://<url>' 
+#    4. HEADERS (for-each): '-H "<header>"'
+#    5. FORM (for-each): '-F "<key>=<value>"'
+#    6. QPARAMS (for-each): '-d "<key>=<value>"'
+#    7. Body file: '--data-binary "@<body-file>"'
+#    8. PROTOCOL and URL: '<protocol>://<url>' 
 #
 #  -param $1 Body temporal file
 #  -return cURL command as string
@@ -568,6 +574,12 @@ _build_curl() {
     if (( _length > 0 )); then
         for _header in "${HEADERS[@]}"; do
             _curl+=( "-H \"$_header\" \\" )
+        done
+    fi
+    _length=${#QPARAMS[@]}
+    if (( _length > 0 )); then
+        for _param in "${QPARAMS[@]}"; do
+            _curl+=( "-d \"$_param\" \\" )
         done
     fi
     _length=${#FORM[@]}

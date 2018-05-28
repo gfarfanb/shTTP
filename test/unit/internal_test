@@ -283,12 +283,16 @@ OUTPUT="result"
 HEADERS=(
     "Defined-Header: test/value"
 )
+QPARAMS=(
+    "param=value"
+)
 FORM=(
     "key=value"
 )
 _expected=(
     "curl -X POST -s -v -o \"result.output\" \\"
     "-H \"Defined-Header: test/value\" \\"
+    "-d \"param=value\" \\"
     "-F \"key=value\" \\"
     "--data-binary \"@ws/body_file.json.temp\" \\"
     "https://any.host/any/endpoint > \"result.trace\" 2>&1"
@@ -301,6 +305,8 @@ URL=""
 METHOD=""
 OUTPUT=""
 HEADERS=()
+#  shellcheck disable=SC2034
+QPARAMS=()
 #  shellcheck disable=SC2034
 FORM=()
 

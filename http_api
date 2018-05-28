@@ -682,6 +682,9 @@ _look_for_params() {
     done
     if [ $_found = 1 ]; then
         $_callback "${_params[@]}"
+        return 0
+    else
+        return 1
     fi
 }
 
@@ -770,10 +773,18 @@ expr "$*" : ".*--remove" > /dev/null \
     && _look_for_params "_remove_config" "--remove" "$@" \
     && exit 0
 
-#  Print all key names from
-#+ 'ws/config.json'.
+#  List the keys of 'ws/config.json'.
 _get_config_keys() {
-    jq "keys" "ws/config.json"
+    local _keys=(
+        $( jq "keys | .[]" "ws/config.json" )
+    )
+    local _length=${#_keys[@]}
+
+    if (( _length > 0 )); then
+        for _key in "${_keys[@]}"; do
+            echo "$_key" | sed -e 's/^"//' -e 's/"$//'
+        done
+    fi
 }
 expr "$*" : ".*--get-keys" > /dev/null \
     && _get_config_keys \
@@ -879,22 +890,22 @@ expr "$*" : ".*--clean" > /dev/null \
     && exit 0
 
 
-# ---------- Option extensions
+# ---------- Add-ons
 
-#  Option add-on files.
+#  Add-on files.
 #  Filename must have
-#+ the form: '<name>_option'
-declare -a _options_add_ons=(
-    $( find . -name "*_option" -type f )
+#+ the form: '<name>_ext'
+declare -a _add_ons_ext=(
+    $( find . -name "*_ext" -type f )
 )
 
-#  Option add-on files length.
-readonly _options_length=${#_options_add_ons[@]}
+#  Add-on files length.
+readonly _add_ons_ext_length=${#_add_ons_ext[@]}
 
 #  If exists add-on files
 #+ they will be sourced.
-if (( _options_length > 0 )); then
-    for _add_on in "${_options_add_ons[@]}"; do
+if (( _add_ons_ext_length > 0 )); then
+    for _add_on in "${_add_ons_ext[@]}"; do
         eval ". $_add_on"
         info "Add-on [$_add_on] sourced"
     done

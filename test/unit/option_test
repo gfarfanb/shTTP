@@ -59,7 +59,17 @@ assertEquals "'removedVal' found" "null" "$_null_val"
 
 
 #  -test Get keys option
-_get_config_keys
+put namedKey -1
+_keys=( $( _get_config_keys ) )
+_found=0
+for _key in "${_keys[@]}"; do
+    if [ "$_key" = "namedKey" ]; then
+        _found=1
+        break;
+    fi
+done
+
+assertEquals "'namedKey' key not found" 1 "$_found"
 
 
 #  -test Host option

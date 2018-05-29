@@ -230,7 +230,7 @@ _shttp_endpoint=""
 #+ for [Content-Type, Authorization, Host]
 #+ could be assigned during request
 #+ execution.
-HEADERS=()
+_shttp_headers=()
 
 #  Request body.
 BODY=""
@@ -313,6 +313,19 @@ endpoint() {
     local _endpoint=${1:-''}
     _shttp_endpoint="$_endpoint"
     info "Set [Endpoint] with [$_shttp_endpoint]"
+}
+
+#  Setter for '_shttp_headers'.
+#
+#  -param $@ Request headers
+headers() {
+    local _length=$#
+    if (( _length > 0 )); then
+        for _header in "$@"; do
+            _shttp_headers+=( "$_header" ) 
+            info "Set [Header] with [$_header]"
+        done
+    fi
 }
 
 
@@ -415,7 +428,7 @@ _init_vars() {
     _shttp_domain=$( get host "" )
     _shttp_method=""
     _shttp_endpoint=""
-    HEADERS=()
+    _shttp_headers=()
     BODY=""
     BODY_PARTS=()
     FORM=()
@@ -523,7 +536,7 @@ _set_method() {
 
 #  Look for existing header by name,
 #+ if header does not exist a new
-#+ entry is added to 'HEADERS'
+#+ entry is added to '_shttp_headers'
 #+ otherwise skip assignment.
 #
 #  -param $1 Header name
@@ -533,9 +546,9 @@ _append_if_missing_header() {
     local _val=${2:-''}
     shopt -s nocasematch
     local _found=0
-    local _length=${#HEADERS[@]}
+    local _length=${#_shttp_headers[@]}
     if (( _length > 0 )); then
-        for _header in "${HEADERS[@]}"; do
+        for _header in "${_shttp_headers[@]}"; do
             if [[ "$_header" == "$_name:"* ]]; then
                 _found=1
                 break
@@ -544,7 +557,7 @@ _append_if_missing_header() {
     fi
     shopt -u nocasematch
     if [ $_found = 0 ]; then
-        HEADERS+=( "$_name: $_val" )
+        headers "$_name: $_val"
     fi
 }
 
@@ -649,7 +662,7 @@ _append_body_to_file() {
 #  Build 'cURL' command. This
 #+ uses the following template:
 #    'curl -X <_shttp_method> -s -v -o "<_shttp_output>.output" \
-#+       -H "<_shttp_header[1..n]>" \
+#+       -H "<_shttp_headers[1..n]>" \
 #+       -d "<_shttp_query_param[1..n]>" \
 #+       -F "<_shttp_form[1..n]>" \
 #+       --data-binary "@<:body_file>" \
@@ -663,9 +676,9 @@ _build_curl() {
     local _curl=(
         "curl -X $_shttp_method -s -v -o \"$OUTPUT.output\" \\"
     )
-    local _length=${#HEADERS[@]}
+    local _length=${#_shttp_headers[@]}
     if (( _length > 0 )); then
-        for _header in "${HEADERS[@]}"; do
+        for _header in "${_shttp_headers[@]}"; do
             _curl+=( "-H \"$_header\" \\" )
         done
     fi

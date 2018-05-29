@@ -94,7 +94,7 @@ assertEquals "'after_<command>' not executed" "Executed" "$_after_request_var"
 
 _info_pronounced=$( < "$OUTPUT.output" jq ".pronounced" )
 
-assertEquals "Request not executed" "shell-ttp" "$_info_pronounced"
+assertEquals "Request not executed" "\"shell-ttp\"" "$_info_pronounced"
 
 _init_vars
 
@@ -151,12 +151,13 @@ _init_vars
 
 
 #  -test Append if missing header
-HEADERS=()
+_init_vars
 
 _append_if_missing_header "Missing-Header" "test/value"
 
 _found=0
-for _header in "${HEADERS[@]}"; do
+#  shellcheck disable=SC2154
+for _header in "${_shttp_headers[@]}"; do
     if [[ "$_header" == "Missing-Header:"* ]]; then
         _found=1
         break
@@ -165,14 +166,12 @@ done
 
 assertEquals "'Missing-Header' does not exist" 1 "$_found"
 
-HEADERS=(
-    "Present-Header: test/value"
-)
+headers "Present-Header: test/value"
 
 _append_if_missing_header "Present-Header" "test/value.new"
 
 _found=0
-for _header in "${HEADERS[@]}"; do
+for _header in "${_shttp_headers[@]}"; do
     if [[ "$_header" == *"test/value.new" ]]; then
         _found=1
         break
@@ -185,13 +184,12 @@ _init_vars
 
 
 #  -test Append Content-Type
-FORM=()
-HEADERS=()
+_init_vars
 
 _append_content_type
 
 _found=0
-for _header in "${HEADERS[@]}"; do
+for _header in "${_shttp_headers[@]}"; do
     if [ "$_header" = "Content-Type: application/json" ]; then
         _found=1
         break
@@ -200,15 +198,15 @@ done
 
 assertEquals "'application/json' is not present" 1 "$_found"
 
+_init_vars
 FORM=(
     "key=value"
 )
-HEADERS=()
 
 _append_content_type
 
 _found=0
-for _header in "${HEADERS[@]}"; do
+for _header in "${_shttp_headers[@]}"; do
     if [ "$_header" = "Content-Type: multipart/form-data" ]; then
         _found=1
         break
@@ -224,13 +222,13 @@ _init_vars
 put apiToken "\"uqweq8u23j23e\""
 put host "\"any.host\""
 
-HEADERS=()
+_init_vars
 AUTH_MODE="HEADER"
 
 _append_auth
 
 _found=0
-for _header in "${HEADERS[@]}"; do
+for _header in "${_shttp_headers[@]}"; do
     case "$_header" in
         "Authorization: Bearer uqweq8u23j23e")
             _found=$(( _found+1 ))
@@ -243,7 +241,7 @@ done
 
 assertEquals "'HEADER' mode not set" 2 "$_found"
 
-HEADERS=()
+_init_vars
 AUTH_MODE="QPARAM"
 
 _append_auth
@@ -252,7 +250,7 @@ _found=0
 if [[ "$URL" == *"?token=uqweq8u23j23e" ]]; then
     _found=$(( _found+1 ))
 fi
-for _header in "${HEADERS[@]}"; do
+for _header in "${_shttp_headers[@]}"; do
     if [ "$_header" = "Host: any.host" ]; then
         _found=$(( _found+1 ))
         break
@@ -261,13 +259,13 @@ done
 
 assertEquals "'QPARAM' mode not set" 2 "$_found"
 
-HEADERS=()
+_init_vars
 #  shellcheck disable=SC2034
 AUTH_MODE="SKIP"
 
 _append_auth
 
-_length=${#HEADERS[@]}
+_length=${#_shttp_headers[@]}
 
 assertEquals "'SKIP' mode not set" 0 "$_length"
 
@@ -303,9 +301,7 @@ assertFalse "Body (parts) temporal file exists" "-f \"$_body_file\""
 URL="any.host/any/endpoint"
 method "POST"
 OUTPUT="result"
-HEADERS=(
-    "Defined-Header: test/value"
-)
+headers "Defined-Header: test/value"
 QUERY_PARAM=(
     "param=value"
 )

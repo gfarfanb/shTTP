@@ -54,3 +54,11 @@ endpoint "id/test"
 #  shellcheck disable=SC2154
 assertEquals "Set endpoint does not work" "id/test" "$_shttp_endpoint"
 _init_vars
+
+
+#  -test Set headers
+headers "Header-1: test/1" "Header-2: test/2" "Header-3: test/3"
+#  shellcheck disable=SC2154
+_length=${#_shttp_headers[@]}
+assertEquals "Set headers does not work" 3 "$_length"
+_init_vars

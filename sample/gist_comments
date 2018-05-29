@@ -18,10 +18,9 @@ get_comment() {
 }
 
 post_comment() {
-    HEADERS=(
-        "Content-Type: application/vnd.github.$( get githubApiVersion ).full+json"
+    headers \
+        "Content-Type: application/vnd.github.$( get githubApiVersion ).full+json" \
         "Accept: application/vnd.github.$( get githubApiVersion ).full+json"
-    )
     endpoint "$( get gistId )/comments"
     BODY='{ "body": "shTTP comment" }'
 }

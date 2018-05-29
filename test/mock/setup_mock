@@ -1,0 +1,36 @@
+#! /usr/bin/env bash
+#  Mock service configurator.
+#  -author Giovanni Farfán B.
+set -euo pipefail
+IFS=$'\n\t'
+
+#  Check installation and
+#+ stop service.
+nginx -v
+service nginx stop
+
+
+#  Copy services files
+if ! [ -d /var/www/shttp_mock ]; then 
+    mkdir /var/www/shttp_mock
+fi
+
+rm -rf /var/www/shttp_mock/*
+cp srv/* /var/www/shttp_mock
+
+
+#  Set-up Nginx server
+_mock_conf="shttp_mock.conf"
+
+rm -rf /etc/nginx/sites-available/shttp*
+
+#  Copy server configuration
+cp $_mock_conf /etc/nginx/sites-available/
+
+rm -rf /etc/nginx/sites-enabled/shttp*
+
+#  Enable site by creating a symbolic link
+ln -s /etc/nginx/sites-available/$_mock_conf /etc/nginx/sites-enabled/ 
+
+nginx -t
+service nginx start

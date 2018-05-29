@@ -8,3 +8,9 @@
 #+ because 'http_api'
 rm -rf output
 rm -rf ws
+
+
+#  Clean-up mock services.
+cd mock
+./clean_mock
+cd ..

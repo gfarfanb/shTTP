@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 #  Run all tests of the project.
 #  -author Giovanni Farfán B.
+set -euo pipefail
+IFS=$'\n\t'
 
 cd test && ./test_runner

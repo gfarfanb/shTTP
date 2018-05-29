@@ -64,6 +64,11 @@ Usage:
 shellcheck http_api
 ```
 
+* Service mock nginx:
+```
+sudo apt-get install nginx
+```
+
 
 ## Script plugin
 

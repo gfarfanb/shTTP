@@ -2,6 +2,8 @@
 #  Run 'shellcheck' for project.
 #  https://github.com/koalaman/shellcheck
 #  -author Giovanni Farfán B.
+set -euo pipefail
+IFS=$'\n\t'
 
 shellcheck http_api
 shellcheck lint

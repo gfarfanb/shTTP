@@ -50,7 +50,9 @@ before_api() {
 
 get_repo() {
     #  shellcheck disable=SC2034
-    URL='api.github.com/repos/gfarfanb/shTTP'
+    PROTOCOL="http"
+    #  shellcheck disable=SC2034
+    URL="127.0.0.1:5555/info"
 }
 
 after_api() {
@@ -58,12 +60,12 @@ after_api() {
 }
 
 _execute get_repo
-put '.full_name'
+put '.name'
 
-_repo_name=$( get full_name )
+_info_name=$( get name )
 
 assertEquals "'before_api' not executed" "Executed" "$_before_api_var"
-assertEquals "Repository does not exist" "gfarfanb/shTTP" "$_repo_name"
+assertEquals "Lifecycle not executed" "shTTP" "$_info_name"
 assertEquals "'after_api' not executed" "Executed" "$_after_api_var"
 
 
@@ -72,7 +74,9 @@ _before_request_var="Not executed yet"
 _after_request_var="Not executed yet"
 
 #  shellcheck disable=SC2034
-URL='api.github.com/search/repositories'
+PROTOCOL="http"
+#  shellcheck disable=SC2034
+URL="127.0.0.1:5555/info"
 #  shellcheck disable=SC2034
 METHOD="GET"
 
@@ -91,10 +95,11 @@ assertTrue "Trace file does not exist" "-f \"$OUTPUT.trace\""
 assertTrue "JSON file does not exist" "-f \"$OUTPUT.output\""
 assertEquals "'after_<command>' not executed" "Executed" "$_after_request_var"
 
-_documentation=$( < "$OUTPUT.output" jq ".documentation_url" )
+_name=$( < "$OUTPUT.output" jq ".name" )
 
-assertTrue "Request not executed" "-n $_documentation"
+assertEquals "Request not executed" "shTTP" "$_info_name"
 
+PROTOCOL="https"
 OUTPUT=""
 
 

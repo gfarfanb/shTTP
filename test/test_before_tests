@@ -4,6 +4,12 @@
 #  -author Giovanni Farfán B.
 
 
+#  Set-up mock services.
+cd mock
+./setup_mock
+cd ..
+
+
 #  Mark as skip 'http_api' main code.
 #  shellcheck disable=SC2034
 SKIP_HTTP_API=true

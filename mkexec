@@ -3,6 +3,8 @@
 #  If '-x' appears in the parameters
 #+ the execution permission is removed.
 #  -author Giovanni Farfán B.
+set -euo pipefail
+IFS=$'\n\t'
 
 readonly _script=${1:-''}
 

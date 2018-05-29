@@ -220,7 +220,7 @@ _shttp_domain=""
 #  Allowed values:
 #+   [GET, POST, PUT, PATCH,
 #+   DELETE, HEAD, OPTIONS]
-METHOD=""
+_shttp_method=""
 
 #  Request endpoint:
 #+ 'https://any.host/<endpoint>'
@@ -268,7 +268,7 @@ EDITOR_COMMAND=""
 
 #  Setter for '_shttp_protocol'.
 #
-#  -param $1 Protocol
+#  -param $1 Request Protocol
 protocol() {
     local _protocol=${1:-''}
     _shttp_protocol="$_protocol"
@@ -277,11 +277,33 @@ protocol() {
 
 #  Setter for '_shttp_domain'.
 #
-#  -param $1 Domain
+#  -param $1 Request domain
 domain() {
     local _domain=${1:-''}
     _shttp_domain="$_domain"
     info "Set [Domain] with [$_shttp_domain]"
+}
+
+#  Setter for '_shttp_method'.
+#
+#  -param $1 Request method
+method() {
+    local _method=${1:-''}
+    case "$_method" in
+        GET \
+        | POST \
+        | PUT \
+        | PATCH \
+        | DELETE \
+        | HEAD \
+        | OPTIONS)
+            _shttp_method="$_method"
+            info "Set [Method] with [$_shttp_method]"
+        ;;
+        *)
+            fatal "Invalid [$_method] request method"
+        ;;
+    esac
 }
 
 
@@ -382,7 +404,7 @@ _execute() {
 _init_vars() {
     _shttp_protocol="https"
     _shttp_domain=$( get host "" )
-    METHOD=""
+    _shttp_method=""
     ENDPOINT=""
     HEADERS=()
     BODY=""
@@ -420,7 +442,7 @@ _request() {
 
     OUTPUT="output/$( basename "$0" ).$( date '+%Y-%m-%d.%H_%M_%S' )"
 
-    info "Set METHOD with [$METHOD]"
+    
     info "Set ENDPOINT [$ENDPOINT] to URL"
     info "Set URL with [$URL]"
     info "Set OUTPUT with [$OUTPUT]"
@@ -457,35 +479,35 @@ _request() {
 #+      with one of these verbs: 'get',
 #+      'post', 'put', 'patch', 'delete',
 #+      'head' or 'options'.
-#    2. If command is valid, 'METHOD'
+#    2. If command is valid, '_shttp_method'
 #+      will have the respective verb.
 #
 #  -param $1 Command name
 _set_method() {
-    if [ -z "$METHOD" ]; then
+    if [ -z "$_shttp_method" ]; then
         local _command=${1:-''}
         shopt -s nocasematch
         case "$_command" in
             get*)
-                METHOD="GET"
+                method "GET"
             ;;
             post*)
-                METHOD="POST"
+                method "POST"
             ;;
             put*)
-                METHOD="PUT"
+                method "PUT"
             ;;
             patch*)
-                METHOD="PATCH"
+                method "PATCH"
             ;;
             delete*)
-                METHOD="DELETE"
+                method "DELETE"
             ;;
             head*)
-                METHOD="HEAD"
+                method "HEAD"
             ;;
             options*)
-                METHOD="OPTIONS"
+                method "OPTIONS"
             ;;
         esac
         shopt -u nocasematch
@@ -632,7 +654,7 @@ _append_body_to_file() {
 _build_curl() {
     local _body_file=${1:-''}
     local _curl=(
-        "curl -X $METHOD -s -v -o \"$OUTPUT.output\" \\"
+        "curl -X $_shttp_method -s -v -o \"$OUTPUT.output\" \\"
     )
     local _length=${#HEADERS[@]}
     if (( _length > 0 )); then

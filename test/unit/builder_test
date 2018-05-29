@@ -13,3 +13,28 @@ _init_vars
 domain "0.0.0.0:0000"
 assertEquals "Set domain does not work" "0.0.0.0:0000" "$_shttp_domain"
 _init_vars
+
+
+#  -test Set method
+method "GET"
+assertEquals "Method 'GET' not found" "GET" "$_shttp_method"
+
+method "POST"
+assertEquals "Method 'POST' not found" "POST" "$_shttp_method"
+
+method "PUT"
+assertEquals "Method 'PUT' not found" "PUT" "$_shttp_method"
+
+method "PATCH"
+assertEquals "Method 'PATCH' not found" "PATCH" "$_shttp_method"
+
+method "DELETE"
+assertEquals "Method 'DELETE' not found" "DELETE" "$_shttp_method"
+
+method "HEAD"
+assertEquals "Method 'HEAD' not found" "HEAD" "$_shttp_method"
+
+method "OPTIONS"
+assertEquals "Method 'OPTIONS' not found" "OPTIONS" "$_shttp_method"
+
+_init_vars

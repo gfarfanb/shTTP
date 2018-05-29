@@ -75,8 +75,7 @@ _after_request_var="Not executed yet"
 protocol http
 #  shellcheck disable=SC2034
 URL="127.0.0.1:5555/info"
-#  shellcheck disable=SC2034
-METHOD="GET"
+method "GET"
 
 before_command() {
     _before_request_var="Executed"
@@ -101,45 +100,47 @@ _init_vars
 
 
 #  -test Set request method
-METHOD=""
+_init_vars
 get_api() { : ; }
 _set_method "get_api"
-assertEquals "'get_api' has no method" "GET" "$METHOD"
+assertEquals "'get_api' has no method" "GET" "$_shttp_method"
 
-METHOD=""
+_init_vars
 post_api() { : ; }
 _set_method "post_api"
-assertEquals "'post_api' has no method" "POST" "$METHOD"
+assertEquals "'post_api' has no method" "POST" "$_shttp_method"
 
-METHOD=""
+_init_vars
 put_api() { : ; }
 _set_method "put_api"
-assertEquals "'put_api' has no method" "PUT" "$METHOD"
+assertEquals "'put_api' has no method" "PUT" "$_shttp_method"
 
-METHOD=""
+_init_vars
 patch_api() { : ; }
 _set_method "patch_api"
-assertEquals "'patch_api' has no method" "PATCH" "$METHOD"
+assertEquals "'patch_api' has no method" "PATCH" "$_shttp_method"
 
-METHOD=""
+_init_vars
 delete_api() { : ; }
 _set_method "delete_api"
-assertEquals "'delete_api' has no method" "DELETE" "$METHOD"
+assertEquals "'delete_api' has no method" "DELETE" "$_shttp_method"
 
-METHOD=""
+_init_vars
 head_api() { : ; }
 _set_method "head_api"
-assertEquals "'head_api' has no method" "HEAD" "$METHOD"
+assertEquals "'head_api' has no method" "HEAD" "$_shttp_method"
 
-METHOD=""
+_init_vars
 options_api() { : ; }
 _set_method "options_api"
-assertEquals "'options_api' has no method" "OPTIONS" "$METHOD"
+assertEquals "'options_api' has no method" "OPTIONS" "$_shttp_method"
 
-METHOD=""
+_init_vars
 unknown_api() { : ; }
 _set_method "unknown_api"
-assertTrue "'unknown_api' has method" "-z \"$METHOD\""
+assertTrue "'unknown_api' has method" "-z \"$_shttp_method\""
+
+_init_vars
 
 
 #  -test Append if missing header
@@ -293,7 +294,7 @@ assertFalse "Body (parts) temporal file exists" "-f \"$_body_file\""
 
 #  -test Build cURL
 URL="any.host/any/endpoint"
-METHOD="POST"
+method "POST"
 OUTPUT="result"
 HEADERS=(
     "Defined-Header: test/value"

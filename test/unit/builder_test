@@ -70,3 +70,11 @@ body '{' '"key": "value"' ',' '"name": "test"' '}'
 _length=${#_shttp_body[@]}
 assertEquals "Set body does not work" 5 "$_length"
 _init_vars
+
+
+#  -test Set form
+form "key=value" "name=test"
+#  shellcheck disable=SC2154
+_length=${#_shttp_form[@]}
+assertEquals "Set form does not work" 2 "$_length"
+_init_vars

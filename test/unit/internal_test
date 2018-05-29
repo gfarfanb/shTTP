@@ -199,9 +199,7 @@ done
 assertEquals "'application/json' is not present" 1 "$_found"
 
 _init_vars
-FORM=(
-    "key=value"
-)
+form "key=value"
 
 _append_content_type
 
@@ -303,9 +301,7 @@ headers "Defined-Header: test/value"
 QUERY_PARAM=(
     "param=value"
 )
-FORM=(
-    "key=value"
-)
+form "key=value"
 CURL_OPT=(
     "--basic"
     "-u user:password"

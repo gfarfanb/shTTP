@@ -242,7 +242,7 @@ _shttp_body=()
 #+ default 'Content-Type' header
 #+ will be 'multipart/form-data'
 #+ otherwise will be 'application/json'.
-FORM=()
+_shttp_form=()
 
 #  Request key-value entries for
 #+ Query Parameters.
@@ -328,7 +328,6 @@ headers() {
 #  Setter for '_shttp_body'.
 #
 #  -param $@ Request body
-#+           (in parts)
 body() {
     local _length=$#
     local _size=0
@@ -339,6 +338,19 @@ body() {
         done
     fi
     info "Set [Body] with [$_size] bytes"
+}
+
+#  Setter for '_shttp_form'.
+#
+#  -param $@ Request form
+form() {
+    local _length=$#
+    if (( _length > 0 )); then
+        for _form in "$@"; do
+            _shttp_form+=( "$_form" )
+            info "Set [Form] with [$_form]"
+        done
+    fi
 }
 
 
@@ -443,7 +455,7 @@ _init_vars() {
     _shttp_endpoint=""
     _shttp_headers=()
     _shttp_body=()
-    FORM=()
+    _shttp_form=()
     QUERY_PARAM=()
     CURL_OPT=()
     AUTH_MODE="SKIP"
@@ -574,12 +586,12 @@ _append_if_missing_header() {
 }
 
 #  Set value to 'Content-Type' header.
-#  If 'FORM' has at least one value
+#  If '_shttp_form' has at least one value
 #+ 'Content-Type' will be
 #+ 'multipart/form' otherwise will be
 #+ 'application/json'.
 _append_content_type() {
-    local _length=${#FORM[@]}
+    local _length=${#_shttp_form[@]}
     if (( _length > 0 )); then
         local _val="multipart/form-data"
     else
@@ -694,9 +706,9 @@ _build_curl() {
             _curl+=( "-d \"$_param\" \\" )
         done
     fi
-    _length=${#FORM[@]}
+    _length=${#_shttp_form[@]}
     if (( _length > 0 )); then
-        for _form in "${FORM[@]}"; do
+        for _form in "${_shttp_form[@]}"; do
             _curl+=( "-F \"$_form\" \\" )
         done
     fi

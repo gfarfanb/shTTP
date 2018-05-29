@@ -88,6 +88,14 @@ assertEquals "Set query parameters does not work" 2 "$_length"
 _init_vars
 
 
+#  -test Set cURL options
+curlOpts "--basic" "-u user:password"
+#  shellcheck disable=SC2154
+_length=${#_shttp_curl_opts[@]}
+assertEquals "Set cURL options does not work" 2 "$_length"
+_init_vars
+
+
 #  -test Set output
 output 'output/response'
 #  shellcheck disable=SC2154

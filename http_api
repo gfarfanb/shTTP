@@ -249,7 +249,7 @@ _shttp_form=()
 _shttp_query_params=()
 
 #  Additional 'cURL' options.
-CURL_OPT=()
+_shttp_curl_opts=()
 
 #  Authentication mode. Allowed values:
 #+ [HEADER, QPARAM, SKIP]
@@ -373,6 +373,19 @@ queryParams() {
     fi
 }
 
+#  Setter for '_shttp_curl_opts'.
+#
+#  -param $@ Additional cURL options
+curlOpts() {
+    local _length=$#
+    if (( _length > 0 )); then
+        for _opt in "$@"; do
+            _shttp_curl_opts+=( "$_opt" )
+            info "Set [cURL-opt] with [$_opt]"
+        done
+    fi
+}
+
 #  Setter for '_shttp_output'.
 #
 #  -param $1 Response output
@@ -486,7 +499,7 @@ _init_vars() {
     _shttp_body=()
     _shttp_form=()
     _shttp_query_params=()
-    CURL_OPT=()
+    _shttp_curl_opts=()
     AUTH_MODE="SKIP"
     EDITOR_COMMAND=""
     _shttp_output=""
@@ -715,7 +728,7 @@ _append_body_to_file() {
 #+       -d "<_shttp_query_params[1..n]>" \
 #+       -F "<_shttp_form[1..n]>" \
 #+       --data-binary "@<:body_file>" \
-#+       <_shttp_curl_opt[1..n]> \
+#+       <_shttp_curl_opts[1..n]> \
 #+       <_shttp_protocol>://<:url> > "<_shttp_output>.trace" 2>&1'
 #
 #  -param $1 Body temporal file
@@ -746,9 +759,9 @@ _build_curl() {
     if [ -n "$_body_file" ]; then
         _curl+=( "--data-binary \"@$_body_file\" \\" )
     fi
-    _length=${#CURL_OPT[@]}
+    _length=${#_shttp_curl_opts[@]}
     if (( _length > 0 )); then
-        for _opt in "${CURL_OPT[@]}"; do
+        for _opt in "${_shttp_curl_opts[@]}"; do
             _curl+=( "$_opt \\" )
         done
     fi

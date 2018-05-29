@@ -302,10 +302,8 @@ output "result"
 headers "Defined-Header: test/value"
 queryParams "param=value"
 form "key=value"
-CURL_OPT=(
-    "--basic"
-    "-u user:password"
-)
+curlOpts "--basic" "-u user:password"
+
 _expected=(
     "curl -X POST -s -v -o \"result.output\" \\"
     "-H \"Defined-Header: test/value\" \\"

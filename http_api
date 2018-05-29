@@ -24,8 +24,8 @@ _shttp_help_content() {
         "   --local <port>:            Set variables to local execution:"
         "                                _shttp_protocol: http"
         "                                _shttp_domain: localhost:<port> (default 8080)"
-        "   --auth-header:             Set 'HEADER' to 'AUTH_MODE' for headers authorization."
-        "   --auth-qparam:             Set 'QPARAM' to 'AUTH_MODE' for query params authorization."
+        "   --auth-header:             Set 'HEADER' to '_shttp_auth_mode' for headers authorization."
+        "   --auth-qparam:             Set 'QPARAM' to '_shttp_auth_mode' for query params authorization."
         "   --open:                    Set '_shttp_editor_command' with value defined on 'editorCommand' from 'ws/config.json'"
         "   --help:                    Display this help message"
     )
@@ -253,7 +253,7 @@ _shttp_curl_opts=()
 
 #  Authentication mode. Allowed values:
 #+ [HEADER, QPARAM, SKIP]
-AUTH_MODE=""
+_shttp_auth_mode=""
 
 #  If value is defined, that command
 #+ will be executed as last tasks
@@ -386,6 +386,24 @@ curlOpts() {
     fi
 }
 
+#  Setter for '_shttp_auth_mode'.
+#
+#  -param $1 Request authentication mode
+authMode() {
+    local _mode=${1:-''}
+    case "$_mode" in
+        HEADER \
+        | QPARAM \
+        | SKIP)
+            _shttp_auth_mode="$_mode"
+            info "Set [Authentication-mode] with [$_shttp_auth_mode]"
+        ;;
+        *)
+            fatal "Invalid [$_mode] authentication mode"
+        ;;
+    esac
+}
+
 #  Setter for '_shttp_editor_command'.
 #
 #  -param $1 Editor command
@@ -509,7 +527,7 @@ _init_vars() {
     _shttp_form=()
     _shttp_query_params=()
     _shttp_curl_opts=()
-    AUTH_MODE="SKIP"
+    _shttp_auth_mode="SKIP"
     _shttp_editor_command=""
     _shttp_output=""
 }
@@ -654,7 +672,7 @@ _append_content_type() {
 }
 
 #  Setup the authorization mode based
-#+ on 'AUTH_MODE':
+#+ on '_shttp_auth_mode':
 #    1. HEADER: Set 'Authorization'
 #+      header to bearer token type,
 #+      token is obtained from
@@ -675,7 +693,7 @@ _append_content_type() {
 #    4. Another value: Exit script using
 #+      'fatal' logging function.
 _append_auth() {
-    case "$AUTH_MODE" in
+    case "$_shttp_auth_mode" in
         "HEADER")
             _append_if_missing_header "Authorization" "Bearer $( get apiToken )"
             _append_if_missing_header "Host" "$( get host )"
@@ -692,10 +710,9 @@ _append_auth() {
             :
         ;;
         *)
-        fatal "Invalid authorization mode [$AUTH_MODE]"
+        fatal "Invalid authorization mode [$_shttp_auth_mode]"
         ;;
     esac
-    info "Set AUTH_MODE with [$AUTH_MODE]"
 }
 
 #  Append every '_shttp_body' element
@@ -1037,16 +1054,16 @@ _set_localhost() {
 expr "$*" : ".*--local" > /dev/null \
     && _look_for_params "_set_localhost" "--local" "$@"
 
-#  Set 'AUTH_MODE' to 'HEADER'.
+#  Set '_shttp_auth_mode' to 'HEADER'.
 _auth_header() {
-    AUTH_MODE="HEADER"
+    authMode "HEADER"
 }
 expr "$*" : ".*--auth-header" > /dev/null \
     && _auth_header "$@"
 
-#  Set 'AUTH_MODE' to 'QPARAM'.
+#  Set '_shttp_auth_mode' to 'QPARAM'.
 _auth_qparam() {
-    AUTH_MODE="QPARAM"
+    authMode "QPARAM"
 }
 expr "$*" : ".*--auth-qparam" > /dev/null \
     && _auth_qparam "$@"

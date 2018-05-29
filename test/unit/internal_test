@@ -102,7 +102,6 @@ _init_vars
 
 
 #  -test Set request method
-_init_vars
 get_api() { : ; }
 _set_method "get_api"
 #  shellcheck disable=SC2154
@@ -153,8 +152,6 @@ _init_vars
 
 
 #  -test Append if missing header
-_init_vars
-
 _append_if_missing_header "Missing-Header" "test/value"
 
 _found=0
@@ -186,8 +183,6 @@ _init_vars
 
 
 #  -test Append Content-Type
-_init_vars
-
 _append_content_type
 
 _found=0
@@ -222,8 +217,7 @@ _init_vars
 put apiToken "\"uqweq8u23j23e\""
 put host "\"any.host\""
 
-_init_vars
-AUTH_MODE="HEADER"
+authMode "HEADER"
 
 _append_auth
 
@@ -242,7 +236,7 @@ done
 assertEquals "'HEADER' mode not set" 2 "$_found"
 
 _init_vars
-AUTH_MODE="QPARAM"
+authMode "QPARAM"
 
 _append_auth
 
@@ -260,8 +254,7 @@ done
 assertEquals "'QPARAM' mode not set" 2 "$_found"
 
 _init_vars
-#  shellcheck disable=SC2034
-AUTH_MODE="SKIP"
+authMode "SKIP"
 
 _append_auth
 

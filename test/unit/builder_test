@@ -96,10 +96,26 @@ assertEquals "Set cURL options does not work" 2 "$_length"
 _init_vars
 
 
+#  -test Set authorization mode
+authMode "HEADER"
+#  shellcheck disable=SC2154
+assertEquals "'HEADER' mode not found" "HEADER" "$_shttp_auth_mode"
+
+authMode "QPARAM"
+#  shellcheck disable=SC2154
+assertEquals "'QPARAM' mode not found" "QPARAM" "$_shttp_auth_mode"
+
+authMode "SKIP"
+#  shellcheck disable=SC2154
+assertEquals "'SKIP' mode not found" "SKIP" "$_shttp_auth_mode"
+
+_init_vars
+
+
 #  -test Set editor command
 editor 'vim script'
 #  shellcheck disable=SC2154
-assertEquals "Set output does not work" "vim script" "$_shttp_editor_command"
+assertEquals "Set editor command does not work" "vim script" "$_shttp_editor_command"
 _init_vars
 
 

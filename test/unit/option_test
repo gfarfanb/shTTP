@@ -92,12 +92,14 @@ assertEquals "Localhost not assigned" "localhost:5555" "$_shttp_domain"
 
 #  -test Header authentication option
 _auth_header
-assertEquals "'HEADER' not assigned" "HEADER" "$AUTH_MODE"
+#  shellcheck disable=SC2154
+assertEquals "'HEADER' not assigned" "HEADER" "$_shttp_auth_mode"
 
 
 #  -test Authentication by query parameters option
 _auth_qparam
-assertEquals "'QPARAM' not assigned" "QPARAM" "$AUTH_MODE"
+#  shellcheck disable=SC2154
+assertEquals "'QPARAM' not assigned" "QPARAM" "$_shttp_auth_mode"
 
 
 #  -test Open editor option

@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 #  -author Giovanni Farfán B.
 
-URL='$_shttp_domain/gists/$ENDPOINT'
+URL='$_shttp_domain/gists/$_shttp_endpoint'
 
 before_api() {
     put host "\"api.github.com\""
@@ -10,11 +10,11 @@ before_api() {
 }
 
 get_all() {
-    ENDPOINT="$( get gistId )/comments"
+    endpoint "$( get gistId )/comments"
 }
 
 get_comment() {
-    ENDPOINT="/gists/$( get gistId )/comments/$( get commentId )"
+    endpoint "/gists/$( get gistId )/comments/$( get commentId )"
 }
 
 post_comment() {
@@ -22,7 +22,7 @@ post_comment() {
         "Content-Type: application/vnd.github.$( get githubApiVersion ).full+json"
         "Accept: application/vnd.github.$( get githubApiVersion ).full+json"
     )
-    ENDPOINT="$( get gistId )/comments"
+    endpoint "$( get gistId )/comments"
     BODY='{ "body": "shTTP comment" }'
 }
 
@@ -31,12 +31,12 @@ after_post_comment() {
 }
 
 patch_comment() {
-    ENDPOINT="/gists/$( get gistId )/comments/$( get commentId )"
+    endpoint "/gists/$( get gistId )/comments/$( get commentId )"
     BODY='{ "body": "shTTP comment update" }'
 }
 
 delete_comment() {
-    ENDPOINT="/gists/$( get gistId )/comments/$( get commentId )"
+    endpoint "/gists/$( get gistId )/comments/$( get commentId )"
 }
 
 after_api() {

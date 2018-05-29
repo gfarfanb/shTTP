@@ -224,7 +224,7 @@ _shttp_method=""
 
 #  Request endpoint:
 #+ 'https://any.host/<endpoint>'
-ENDPOINT=""
+_shttp_endpoint=""
 
 #  Request headers. Default values
 #+ for [Content-Type, Authorization, Host]
@@ -304,6 +304,15 @@ method() {
             fatal "Invalid [$_method] request method"
         ;;
     esac
+}
+
+#  Setter for '_shttp_endpoint'.
+#
+#  -param $1 Request endpoint
+endpoint() {
+    local _endpoint=${1:-''}
+    _shttp_endpoint="$_endpoint"
+    info "Set [Endpoint] with [$_shttp_endpoint]"
 }
 
 
@@ -405,7 +414,7 @@ _init_vars() {
     _shttp_protocol="https"
     _shttp_domain=$( get host "" )
     _shttp_method=""
-    ENDPOINT=""
+    _shttp_endpoint=""
     HEADERS=()
     BODY=""
     BODY_PARTS=()
@@ -442,8 +451,6 @@ _request() {
 
     OUTPUT="output/$( basename "$0" ).$( date '+%Y-%m-%d.%H_%M_%S' )"
 
-    
-    info "Set ENDPOINT [$ENDPOINT] to URL"
     info "Set URL with [$URL]"
     info "Set OUTPUT with [$OUTPUT]"
 

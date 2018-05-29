@@ -38,3 +38,9 @@ method "OPTIONS"
 assertEquals "Method 'OPTIONS' not found" "OPTIONS" "$_shttp_method"
 
 _init_vars
+
+
+#  -test Set endpoint
+endpoint "id/test"
+assertEquals "Set endpoint does not work" "id/test" "$_shttp_endpoint"
+_init_vars

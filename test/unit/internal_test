@@ -88,11 +88,13 @@ after_command() {
 _request command
 
 assertEquals "'before_<command>' chain not executed" "Executed" "$_before_request_var"
-assertTrue "Trace file does not exist" "-f \"$OUTPUT.trace\""
-assertTrue "JSON file does not exist" "-f \"$OUTPUT.output\""
+#  shellcheck disable=SC2154
+assertTrue "Trace file does not exist" "-f \"$_shttp_output.trace\""
+#  shellcheck disable=SC2154
+assertTrue "JSON file does not exist" "-f \"$_shttp_output.output\""
 assertEquals "'after_<command>' not executed" "Executed" "$_after_request_var"
 
-_info_pronounced=$( < "$OUTPUT.output" jq ".pronounced" )
+_info_pronounced=$( < "$_shttp_output.output" jq ".pronounced" )
 
 assertEquals "Request not executed" "\"shell-ttp\"" "$_info_pronounced"
 
@@ -296,7 +298,7 @@ _init_vars
 #  -test Build cURL
 URL="any.host/any/endpoint"
 method "POST"
-OUTPUT="result"
+output "result"
 headers "Defined-Header: test/value"
 queryParams "param=value"
 form "key=value"
@@ -330,9 +332,9 @@ _trace=(
     "* Unused line"
     "{ [5 bytes data]"
 )
-OUTPUT="output/trace.$( date '+%s.%N' ).json.tmp"
+output "output/trace.$( date '+%s.%N' ).json.tmp"
 for _line in "${_trace[@]}"; do
-    echo "$_line" | tee -a "$OUTPUT.trace" > /dev/null
+    echo "$_line" | tee -a "$_shttp_output.trace" > /dev/null
 done
 
 _body_file="ws/body.$( date '+%s.%N' ).json.tmp"
@@ -355,7 +357,7 @@ HTTP/1.1 200 Ok
 >>>>> curl
 curl https://any.host/any/endpoint' 
 #  shellcheck disable=SC2178
-_trace=$( cat "$OUTPUT.trace" )
+_trace=$( cat "$_shttp_output.trace" )
 
 #  shellcheck disable=SC2128
 assertEquals "Clean trace file does not work" "$_expected" "$_trace"

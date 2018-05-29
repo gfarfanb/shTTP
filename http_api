@@ -148,7 +148,7 @@ put() {
         _jq="$_val"
     fi
     if [ -n "$_jq" ]; then
-        _val=$( < "$OUTPUT.output" jq "try $_jq catch null" )
+        _val=$( < "$_shttp_output.output" jq "try $_jq catch null" )
     fi
     update "ws/config.json" ". + { \"$_name\": $_val }"
     info "Saved [$_name] with value [$_val] to workspace config"
@@ -260,6 +260,13 @@ AUTH_MODE=""
 #+ of the request.
 EDITOR_COMMAND=""
 
+#  Response output base filename.
+#  During request this filename
+#+ will be used for make files:
+#+ '<output>.output' and
+#+ '<output>.trace'.
+_shttp_output=""
+
 
 # ---------- Builder functions
 
@@ -364,6 +371,15 @@ queryParams() {
             info "Set [Query-Param] with [$_param]"
         done
     fi
+}
+
+#  Setter for '_shttp_output'.
+#
+#  -param $1 Response output
+output() {
+    local _output=${1:-''}
+    _shttp_output="$_output"
+    info "Set [Output] with [$_shttp_output]"
 }
 
 
@@ -473,12 +489,13 @@ _init_vars() {
     CURL_OPT=()
     AUTH_MODE="SKIP"
     EDITOR_COMMAND=""
+    _shttp_output=""
 }
 
 #  This lifecycle function is called
 #+ for request execution:
 #    1. Set the 'URL' value (no protocol).
-#    2. Set the 'OUTPUT' basename with
+#    2. Set the '_shttp_output' basename with
 #+      format: 'output/<main-script>.
 #+      yyyy-mm-dd.hh_mm_ss'.
 #    3. Append default 'Content-Type' to
@@ -492,17 +509,18 @@ _init_vars() {
 #    9. Execute 'after_<command>' function
 #+      if it is declared.
 #    10. Clean and append details into
-#+       'OUTPUT.trace' file.
+#+       '_shttp_output.trace' file.
 #
 #  -param $1 Request command
 _request() {
     local _command=${1:-''}
     eval "URL=\"$URL\""
 
-    OUTPUT="output/$( basename "$0" ).$( date '+%Y-%m-%d.%H_%M_%S' )"
+    if [ -z "$_shttp_output" ]; then
+        output "output/$( basename "$0" ).$( date '+%Y-%m-%d.%H_%M_%S' )"
+    fi
 
     info "Set URL with [$URL]"
-    info "Set OUTPUT with [$OUTPUT]"
 
     _append_content_type
     _append_auth
@@ -518,12 +536,12 @@ _request() {
 
     _clean_trace "$_curl" "$_body_file"
 
-    printf '\n' ; cat "$OUTPUT.trace"
-    printf '\n>>>>> response\n' ; cat "$OUTPUT.output"
+    printf '\n' ; cat "$_shttp_output.trace"
+    printf '\n>>>>> response\n' ; cat "$_shttp_output.output"
     printf '\n\n'
 
-    info "Created $OUTPUT.trace"
-    info "Created $OUTPUT.output"
+    info "Created $_shttp_output.trace"
+    info "Created $_shttp_output.output"
 }
 
 #  This lifecycle function is called
@@ -705,7 +723,7 @@ _append_body_to_file() {
 _build_curl() {
     local _body_file=${1:-''}
     local _curl=(
-        "curl -X $_shttp_method -s -v -o \"$OUTPUT.output\" \\"
+        "curl -X $_shttp_method -s -v -o \"$_shttp_output.output\" \\"
     )
     local _length=${#_shttp_headers[@]}
     if (( _length > 0 )); then
@@ -734,7 +752,7 @@ _build_curl() {
             _curl+=( "$_opt \\" )
         done
     fi
-    _curl+=( "$_shttp_protocol://$URL > \"$OUTPUT.trace\" 2>&1" )
+    _curl+=( "$_shttp_protocol://$URL > \"$_shttp_output.trace\" 2>&1" )
     echo "${_curl[*]}"
 }
 
@@ -753,21 +771,21 @@ _clean_trace() {
     local _curl=${1:-''}
     local _body_file=${2:-''}
 
-    sed -i -e '/^[*{} ]/d' "$OUTPUT.trace" # Remove unnecessary log lines
-    sed -i -e "/^> $/a> {{body}}\n" "$OUTPUT.trace" # Append body tag 
-    sed -i -e 's/^..//' "$OUTPUT.trace" # Remove first two characters in each line
+    sed -i -e '/^[*{} ]/d' "$_shttp_output.trace" # Remove unnecessary log lines
+    sed -i -e "/^> $/a> {{body}}\n" "$_shttp_output.trace" # Append body tag 
+    sed -i -e 's/^..//' "$_shttp_output.trace" # Remove first two characters in each line
 
     if [ -n "$_body_file" ]; then
-        echo "" | tee -a "$OUTPUT.trace" > /dev/null
-        echo ">>>>> body" | tee -a "$OUTPUT.trace" > /dev/null
-        < "$_body_file" tee -a "$OUTPUT.trace" > /dev/null # Append body content
+        echo "" | tee -a "$_shttp_output.trace" > /dev/null
+        echo ">>>>> body" | tee -a "$_shttp_output.trace" > /dev/null
+        < "$_body_file" tee -a "$_shttp_output.trace" > /dev/null # Append body content
         rm -rf "$_body_file"
     fi
 
-    echo "" | tee -a "$OUTPUT.trace" > /dev/null
-    echo ">>>>> curl" | tee -a "$OUTPUT.trace" > /dev/null
+    echo "" | tee -a "$_shttp_output.trace" > /dev/null
+    echo ">>>>> curl" | tee -a "$_shttp_output.trace" > /dev/null
     #  shellcheck disable=SC2128
-    echo "$_curl" | tee -a "$OUTPUT.trace" > /dev/null # Append CURL command
+    echo "$_curl" | tee -a "$_shttp_output.trace" > /dev/null # Append CURL command
 }
 
 #  Editor command is used

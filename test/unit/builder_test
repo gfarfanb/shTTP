@@ -86,3 +86,10 @@ queryParams "key=value" "name=test"
 _length=${#_shttp_query_params[@]}
 assertEquals "Set query parameters does not work" 2 "$_length"
 _init_vars
+
+
+#  -test Set output
+output 'output/response'
+#  shellcheck disable=SC2154
+assertEquals "Set output does not work" "output/response" "$_shttp_output"
+_init_vars

@@ -11,6 +11,7 @@ rm -rf ws
 
 
 #  Clean-up mock services.
-cd mock
+(
+cd mock || exit
 ./clean_mock
-cd ..
+)

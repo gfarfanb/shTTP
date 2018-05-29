@@ -5,10 +5,10 @@
 
 
 #  Set-up mock services.
-cd mock
+(
+cd mock || exit
 ./setup_mock
-cd ..
-
+)
 
 #  Mark as skip 'http_api' main code.
 #  shellcheck disable=SC2034

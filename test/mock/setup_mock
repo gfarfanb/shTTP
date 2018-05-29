@@ -10,23 +10,20 @@ nginx -v
 service nginx stop
 
 
-#  Copy services files
-if ! [ -d /var/www/shttp_mock ]; then 
-    mkdir /var/www/shttp_mock
-fi
-
-rm -rf /var/www/shttp_mock/*
-cp srv/* /var/www/shttp_mock
-
-
 #  Set-up Nginx server
-_mock_conf="shttp_mock.conf"
+readonly _srv_location="$( pwd )/srv"
+readonly _mock_conf="shttp_mock.conf"
 
+# Clean-up last files in available sites
 rm -rf /etc/nginx/sites-available/shttp*
 
 #  Copy server configuration
 cp $_mock_conf /etc/nginx/sites-available/
 
+#  Put correct service location
+sed -i -e "s|{{_shttp_srv_location}}|$_srv_location|g" "/etc/nginx/sites-available/$_mock_conf"
+
+# Clean-up last files in enabled sites
 rm -rf /etc/nginx/sites-enabled/shttp*
 
 #  Enable site by creating a symbolic link

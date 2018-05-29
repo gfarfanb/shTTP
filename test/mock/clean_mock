@@ -10,12 +10,6 @@ nginx -v
 service nginx stop
 
 
-#  Remove services files
-if [ -d /var/www/shttp_mock ]; then 
-    rm -rf /var/www/shttp_mock
-fi
-
-
 #  Clean-up Nginx server
 rm -rf /etc/nginx/sites-available/shttp*
 rm -rf /etc/nginx/sites-enabled/shttp*

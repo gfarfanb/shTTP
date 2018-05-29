@@ -5,7 +5,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 #  Show the help content.
-_help_http_api() {
+_shttp_help_content() {
     local _content=(
         ""
         " Usage: ./<file>.sh <command> [--set <key-name> <value>] [--get <key-name>] [--add <key-name> <value>]"
@@ -21,8 +21,8 @@ _help_http_api() {
         "   --list:                    Display the <command> list (all functions defined into main script)"
         "   --clean:                   Clean up all output files 'output/*'"
         "   --host <host>:             Set host value to 'host' in 'ws/config.json'"
-        "   --local <port>:            Set 'PROTOCOL' and 'DOMAIN' variables to local execution."
-        "                                PROTOCOL: http"
+        "   --local <port>:            Set variables to local execution:"
+        "                                _shttp_protocol: http"
         "                                DOMAIN:   localhost:<port> (default 8080)"
         "   --auth-header:             Set 'HEADER' to 'AUTH_MODE' for headers authorization."
         "   --auth-qparam:             Set 'QPARAM' to 'AUTH_MODE' for query params authorization."
@@ -32,39 +32,39 @@ _help_http_api() {
     echo "${_content[*]}"
 }
 expr "$*" : ".*--help" > /dev/null \
-    && _help_http_api \
+    && _shttp_help_content \
     && exit 0
 
 
 #  Script filename.
-readonly _basename=$( basename "$0" )
+readonly _shttp_basename=$( basename "$0" )
 
 
 # ---------- Logging functions
 
 #  Log filename.
-readonly _log_file="/tmp/shTTP_${_basename%.*}.$( date '+%Y-%m-%d' ).log"
+readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' ).log"
 
 #  Log a message object with the INFO level.
 #
 #  -param $* Log message
-info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_log_file" >&2 ; }
+info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message object with the WARNING level.
 #
 #  -param $* Log message
-warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_log_file" >&2 ; }
+warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message object with the ERROR level.
 #
 #  -param $* Log message
-error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_log_file" >&2 ; }
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message object with the FATAL level, 
 #+ exit execution with 1.
 #
 #  -param $* Log message
-fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_log_file" >&2 ; exit 1 ; }
+fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
 
 
 # ---------- Initialization
@@ -161,8 +161,11 @@ put() {
 #  -param $1 Name of the entry or 'jq'
 #+           query (without '.' at the
 #+           beginning of the query)
+#  -param $1 Default value if required
+#+           is not found
 get() {
     local _name=${1:-''}
+    local _default=${2:-'null'}
     local _val=""
     if [[ "$_name" =~ ^[a-zA-Z]*$ ]]; then
         _val=$( eval "echo \${$_name:-''}" )
@@ -170,6 +173,9 @@ get() {
     if [ -z "$_val" ]; then
         _val=$( jq ".$_name | tostring" "ws/config.json" )
         _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
+        if [ "$_val" = "null" ]; then
+            _val="$_default"
+        fi
     fi
     echo "$_val"
 }
@@ -204,15 +210,16 @@ remove() {
 
 #  Request protocol:
 #+ '<protocol>://any.host/any/endpoint'
-PROTOCOL="https"
+_shttp_protocol=""
 
-#  Request protocol:
+#  Request domain:
 #+ 'https://<domain>/any/endpoint'
-DOMAIN=$( get host )
+DOMAIN=""
 
-#  Request method. Allowed values:
-#+ [GET, POST, PUT, PATCH, DELETE,
-#+ HEAD, OPTIONS]
+#  Request method.
+#  Allowed values:
+#+   [GET, POST, PUT, PATCH,
+#+   DELETE, HEAD, OPTIONS]
 METHOD=""
 
 #  Request endpoint:
@@ -249,12 +256,24 @@ CURL_OPT=()
 
 #  Authentication mode. Allowed values:
 #+ [HEADER, QPARAM, SKIP]
-AUTH_MODE="SKIP"
+AUTH_MODE=""
 
 #  If value is defined, that command
 #+ will be executed as last tasks
 #+ of the request.
 EDITOR_COMMAND=""
+
+
+# ---------- Builder functions
+
+#  Setter for '_shttp_protocol'.
+#
+#  -param $1 Protocol
+protocol() {
+    local _protocol=${1:-''}
+    _shttp_protocol="$_protocol"
+    info "Set [Protocol] with [$_shttp_protocol]"
+}
 
 
 # ---------- Internal functions
@@ -265,7 +284,7 @@ EDITOR_COMMAND=""
 #+ into the main API script if
 #+ they are required during request
 #+ lifecycle.
-readonly _keywords=(
+readonly _shttp_keywords=(
     'before_api' # Lifecycle function
     'after_api'  # Lifecycle function
 )
@@ -279,7 +298,7 @@ readonly _keywords=(
 _is_keyword() {
     local _name=${1:-''}
     local _found=0
-    for _key in "${_keywords[@]}"; do
+    for _key in "${_shttp_keywords[@]}"; do
         if [ "$_key" = "$_name" ]; then
             _found=1
             break
@@ -301,7 +320,7 @@ _has_func() {
     local _func=${1:-''}
     local _exists=1
     #  shellcheck disable=SC2034
-    _exists=$( declare -f $_func > /dev/null ; echo $? )
+    _exists=$( declare -f "$_func" > /dev/null ; echo $? )
     if (( _exists == 0 )); then
         echo 1
     else
@@ -323,22 +342,24 @@ _execute_if_exist() {
 }
 
 #  Execute request lifecycle:
-#    1. Execute 'before_api' function
+#    1. Initialize request variables.
+#    2. Execute 'before_api' function
 #+      if it is declared.
-#    2. Execute the command.
-#    3. Set request method based on
+#    3. Execute the command.
+#    4. Set request method based on
 #+      command name if it was not
 #+      assigned during the command
 #+      execution.
-#    4. Execute the request.
-#    5. Execute 'after_api' function
+#    5. Execute the request.
+#    6. Execute 'after_api' function
 #+      if it is declared.
-#    6. Execute open editor task.
+#    7. Execute open editor task.
 #
 #  -param $1 Request command
 _execute() {
     local _command=${1:-''}
     info "Init request [$_command]"
+    _init_vars
     _execute_if_exist before_api
     $_command
     _set_method "$_command"
@@ -346,6 +367,22 @@ _execute() {
     _execute_if_exist after_api
     _editor_command
     info "Request [$_command] completed"
+}
+
+#  Initilize request variables.
+_init_vars() {
+    _shttp_protocol="https"
+    DOMAIN=$( get host "" )
+    METHOD=""
+    ENDPOINT=""
+    HEADERS=()
+    BODY=""
+    BODY_PARTS=()
+    FORM=()
+    QUERY_PARAM=()
+    CURL_OPT=()
+    AUTH_MODE="SKIP"
+    EDITOR_COMMAND=""
 }
 
 #  This lifecycle function is called
@@ -571,19 +608,15 @@ _append_body_to_file() {
     echo "$_body_file"
 }
 
-#  Build 'cURL' command. Use
-#+ the following variables
-#+ during build:
-#    1. METHOD: '-X <request-method>'
-#    2. Options: '-s -v'
-#    3. OUTPUT: '-o "$OUTPUT.output"',
-#+      '> "$OUTPUT.trace" 2>&1'
-#    4. HEADERS (for-each): '-H "<header>"'
-#    5. FORM (for-each): '-F "<key>=<value>"'
-#    6. QUERY_PARAM (for-each): '-d "<key>=<value>"'
-#    7. Body file: '--data-binary "@<body-file>"'
-#    8. CURL_OPT (for-each) : '<curl-option>'
-#    9. PROTOCOL and URL: '<protocol>://<url>' 
+#  Build 'cURL' command. This
+#+ uses the following template:
+#    'curl -X <_shttp_method> -s -v -o "<_shttp_output>.output" \
+#+       -H "<_shttp_header[1..n]>" \
+#+       -d "<_shttp_query_param[1..n]>" \
+#+       -F "<_shttp_form[1..n]>" \
+#+       --data-binary "@<:body_file>" \
+#+       <_shttp_curl_opt[1..n]> \
+#+       <_shttp_protocol>://<:url> > "<_shttp_output>.trace" 2>&1'
 #
 #  -param $1 Body temporal file
 #  -return cURL command as string
@@ -619,7 +652,7 @@ _build_curl() {
             _curl+=( "$_opt \\" )
         done
     fi
-    _curl+=( "$PROTOCOL://$URL > \"$OUTPUT.trace\" 2>&1" )
+    _curl+=( "$_shttp_protocol://$URL > \"$OUTPUT.trace\" 2>&1" )
     echo "${_curl[*]}"
 }
 
@@ -877,9 +910,8 @@ _set_localhost() {
     if [ -z "$_port" ]; then
         _port="8080"
     fi
-    PROTOCOL="http"
+    protocol "http"
     DOMAIN="localhost:$_port"
-    info "Set PROTOCOL with [$PROTOCOL]"
     info "Set DOMAIN with [$DOMAIN]"
 }
 expr "$*" : ".*--local" > /dev/null \
@@ -935,17 +967,17 @@ expr "$*" : ".*--clean" > /dev/null \
 #  Add-on files.
 #  Filename must have
 #+ the form: '<name>_ext'
-declare -a _add_ons_ext=(
+declare -a _shttp_add_ons=(
     $( find . -name "*_ext" -type f )
 )
 
 #  Add-on files length.
-readonly _add_ons_ext_length=${#_add_ons_ext[@]}
+readonly _shttp_add_ons_length=${#_shttp_add_ons[@]}
 
 #  If exists add-on files
 #+ they will be sourced.
-if (( _add_ons_ext_length > 0 )); then
-    for _add_on in "${_add_ons_ext[@]}"; do
+if (( _shttp_add_ons_length > 0 )); then
+    for _add_on in "${_shttp_add_ons[@]}"; do
         eval ". $_add_on"
         info "Add-on [$_add_on] sourced"
     done
@@ -957,7 +989,7 @@ fi
 # ---------- Main
 
 #  Skip main code flag
-readonly _skip_http_api=${SKIP_HTTP_API:-''}
+readonly _shttp_skip=${SKIP_HTTP_API:-''}
 
 #  Main code:
 #    1. Get the 'command' input.
@@ -967,19 +999,19 @@ readonly _skip_http_api=${SKIP_HTTP_API:-''}
 #    4. If 'command' or 'main' is present,
 #+      execute request lifecycle: '_execute'.
 #    5. Finally function is executed.
-if [ "$_skip_http_api" != "true" ]; then
+if [ "$_shttp_skip" != "true" ]; then
     trap _finally_http_api EXIT
 
-    _command=${1:-''}
-    _has_main=$( _has_func main )
+    readonly _shttp_command=${1:-''}
+    readonly _has_shttp_main=$( _has_func main )
 
-    if [[ "$_command" == "--"* ]]; then
-        _command=""
+    if [[ "$_shttp_command" == "--"* ]]; then
+        _shttp_command=""
     fi
 
-    if [ -n "$_command" ]; then
-        _execute "$_command"
-    elif (( _has_main == 1 )); then
+    if [ -n "$_shttp_command" ]; then
+        _execute "$_shttp_command"
+    elif (( _has_shttp_main == 1 )); then
         _execute main
     else
         info "No command to execute"

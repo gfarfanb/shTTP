@@ -49,8 +49,7 @@ before_api() {
 }
 
 get_repo() {
-    #  shellcheck disable=SC2034
-    PROTOCOL="http"
+    protocol http
     #  shellcheck disable=SC2034
     URL="127.0.0.1:5555/info"
 }
@@ -73,8 +72,7 @@ assertEquals "'after_api' not executed" "Executed" "$_after_api_var"
 _before_request_var="Not executed yet"
 _after_request_var="Not executed yet"
 
-#  shellcheck disable=SC2034
-PROTOCOL="http"
+protocol http
 #  shellcheck disable=SC2034
 URL="127.0.0.1:5555/info"
 #  shellcheck disable=SC2034
@@ -99,8 +97,7 @@ _name=$( < "$OUTPUT.output" jq ".name" )
 
 assertEquals "Request not executed" "shTTP" "$_info_name"
 
-PROTOCOL="https"
-OUTPUT=""
+_init_vars
 
 
 #  -test Set request method
@@ -176,7 +173,7 @@ done
 
 assertEquals "'Present-Header' change its value" 0 "$_found"
 
-HEADERS=()
+_init_vars
 
 
 #  -test Append Content-Type
@@ -212,9 +209,7 @@ done
 
 assertEquals "'multipart/form-data' is not present" 1 "$_found"
 
-#  shellcheck disable=SC2034
-FORM=()
-HEADERS=()
+_init_vars
 
 
 #  -test Append Authentication
@@ -327,16 +322,7 @@ _curl=$( _build_curl "ws/body_file.json.temp" )
 
 assertEquals "'cURL' command bad" "${_expected[*]}" "$_curl"
 
-URL=""
-METHOD=""
-OUTPUT=""
-HEADERS=()
-#  shellcheck disable=SC2034
-QUERY_PARAM=()
-#  shellcheck disable=SC2034
-FORM=()
-#  shellcheck disable=SC2034
-CURL_OPT=()
+_init_vars
 
 
 #  -test Clean trace
@@ -378,7 +364,7 @@ _trace=$( cat "$OUTPUT.trace" )
 #  shellcheck disable=SC2128
 assertEquals "Clean trace file does not work" "$_expected" "$_trace"
 
-OUTPUT=""
+_init_vars
 
 
 #  -test Open editor command
@@ -392,8 +378,7 @@ _editor_command
 #  shellcheck disable=SC2154
 assertTrue "Open editor command does not work" "-n \"$_command_version\""
 
-#  shellcheck disable=SC2034
-EDITOR_COMMAND=""
+_init_vars
 
 
 #  -test Script finallly

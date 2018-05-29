@@ -70,6 +70,9 @@ assertEquals "'null' not found" "null" "$_null"
 _object=$( get object )
 assertEquals "'object' not found" "{}" "$_object"
 
+_default_value=$( get unknown "default" )
+assertEquals "'default' found" "default" "$_default_value"
+
 _unknown=$( get unknown )
 assertEquals "'unknown' found" "null" "$_unknown"
 

@@ -246,7 +246,7 @@ _shttp_form=()
 
 #  Request key-value entries for
 #+ Query Parameters.
-QUERY_PARAM=()
+_shttp_query_params=()
 
 #  Additional 'cURL' options.
 CURL_OPT=()
@@ -349,6 +349,19 @@ form() {
         for _form in "$@"; do
             _shttp_form+=( "$_form" )
             info "Set [Form] with [$_form]"
+        done
+    fi
+}
+
+#  Setter for '_shttp_query_params'.
+#
+#  -param $@ Request query parameters
+queryParams() {
+    local _length=$#
+    if (( _length > 0 )); then
+        for _param in "$@"; do
+            _shttp_query_params+=( "$_param" )
+            info "Set [Query-Param] with [$_param]"
         done
     fi
 }
@@ -456,7 +469,7 @@ _init_vars() {
     _shttp_headers=()
     _shttp_body=()
     _shttp_form=()
-    QUERY_PARAM=()
+    _shttp_query_params=()
     CURL_OPT=()
     AUTH_MODE="SKIP"
     EDITOR_COMMAND=""
@@ -681,7 +694,7 @@ _append_body_to_file() {
 #+ uses the following template:
 #    'curl -X <_shttp_method> -s -v -o "<_shttp_output>.output" \
 #+       -H "<_shttp_headers[1..n]>" \
-#+       -d "<_shttp_query_param[1..n]>" \
+#+       -d "<_shttp_query_params[1..n]>" \
 #+       -F "<_shttp_form[1..n]>" \
 #+       --data-binary "@<:body_file>" \
 #+       <_shttp_curl_opt[1..n]> \
@@ -700,9 +713,9 @@ _build_curl() {
             _curl+=( "-H \"$_header\" \\" )
         done
     fi
-    _length=${#QUERY_PARAM[@]}
+    _length=${#_shttp_query_params[@]}
     if (( _length > 0 )); then
-        for _param in "${QUERY_PARAM[@]}"; do
+        for _param in "${_shttp_query_params[@]}"; do
             _curl+=( "-d \"$_param\" \\" )
         done
     fi

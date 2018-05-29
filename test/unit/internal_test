@@ -298,9 +298,7 @@ URL="any.host/any/endpoint"
 method "POST"
 OUTPUT="result"
 headers "Defined-Header: test/value"
-QUERY_PARAM=(
-    "param=value"
-)
+queryParams "param=value"
 form "key=value"
 CURL_OPT=(
     "--basic"

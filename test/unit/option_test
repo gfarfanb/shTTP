@@ -95,7 +95,7 @@ _auth_header
 assertEquals "'HEADER' not assigned" "HEADER" "$AUTH_MODE"
 
 
-#  -test Authentication by Query Parameters option
+#  -test Authentication by query parameters option
 _auth_qparam
 assertEquals "'QPARAM' not assigned" "QPARAM" "$AUTH_MODE"
 

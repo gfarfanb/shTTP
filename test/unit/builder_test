@@ -78,3 +78,11 @@ form "key=value" "name=test"
 _length=${#_shttp_form[@]}
 assertEquals "Set form does not work" 2 "$_length"
 _init_vars
+
+
+#  -test Set query parameters
+queryParams "key=value" "name=test"
+#  shellcheck disable=SC2154
+_length=${#_shttp_query_params[@]}
+assertEquals "Set query parameters does not work" 2 "$_length"
+_init_vars

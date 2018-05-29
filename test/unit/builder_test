@@ -3,6 +3,13 @@
 #  -author Giovanni Farfán B.
 
 
+#  -test Set URL
+url "https://any.host/any/endpoint"
+#  shellcheck disable=SC2154
+assertEquals "Set URL does not work" "https://any.host/any/endpoint" "$_shttp_url"
+_init_vars
+
+
 #  -test Set protocol
 protocol ftp
 #  shellcheck disable=SC2154
@@ -14,6 +21,20 @@ _init_vars
 domain "0.0.0.0:0000"
 #  shellcheck disable=SC2154
 assertEquals "Set domain does not work" "0.0.0.0:0000" "$_shttp_domain"
+_init_vars
+
+
+#  -test Set endpoint
+basePath "api/path"
+#  shellcheck disable=SC2154
+assertEquals "Set base path does not work" "api/path" "$_shttp_base_path"
+_init_vars
+
+
+#  -test Set endpoint
+endpoint "id/test"
+#  shellcheck disable=SC2154
+assertEquals "Set endpoint does not work" "id/test" "$_shttp_endpoint"
 _init_vars
 
 
@@ -46,13 +67,6 @@ method "OPTIONS"
 #  shellcheck disable=SC2154
 assertEquals "Method 'OPTIONS' not found" "OPTIONS" "$_shttp_method"
 
-_init_vars
-
-
-#  -test Set endpoint
-endpoint "id/test"
-#  shellcheck disable=SC2154
-assertEquals "Set endpoint does not work" "id/test" "$_shttp_endpoint"
 _init_vars
 
 

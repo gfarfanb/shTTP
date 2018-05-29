@@ -208,6 +208,12 @@ remove() {
 
 # ---------- Variables initialization
 
+#  Request URL. During request,
+#+ if value is empty, the URL
+#+ will be build by:
+#+ '<protocol>://<domain><base-path><endpoint>'
+_shttp_url=""
+
 #  Request protocol:
 #+ '<protocol>://any.host/any/endpoint'
 _shttp_protocol=""
@@ -216,15 +222,19 @@ _shttp_protocol=""
 #+ 'https://<domain>/any/endpoint'
 _shttp_domain=""
 
+#  Request base path:
+#+ 'https://any.host/<base-path>/endpoint'
+_shttp_base_path=""
+
+#  Request endpoint:
+#+ 'https://any.host/any/<endpoint>'
+_shttp_endpoint=""
+
 #  Request method.
 #  Allowed values:
 #+   [GET, POST, PUT, PATCH,
 #+   DELETE, HEAD, OPTIONS]
 _shttp_method=""
-
-#  Request endpoint:
-#+ 'https://any.host/<endpoint>'
-_shttp_endpoint=""
 
 #  Request headers. Default values
 #+ for [Content-Type, Authorization, Host]
@@ -270,6 +280,15 @@ _shttp_output=""
 
 # ---------- Builder functions
 
+#  Setter for '_shttp_url'.
+#
+#  -param $1 Request URL
+url() {
+    local _url=${1:-''}
+    _shttp_url="$_url"
+    info "Set [URL] with [$_shttp_url]"
+}
+
 #  Setter for '_shttp_protocol'.
 #
 #  -param $1 Request Protocol
@@ -286,6 +305,24 @@ domain() {
     local _domain=${1:-''}
     _shttp_domain="$_domain"
     info "Set [Domain] with [$_shttp_domain]"
+}
+
+#  Setter for '_shttp_base_path'.
+#
+#  -param $1 Request base path
+basePath() {
+    local _path=${1:-''}
+    _shttp_base_path="$_path"
+    info "Set [Base-path] with [$_shttp_base_path]"
+}
+
+#  Setter for '_shttp_endpoint'.
+#
+#  -param $1 Request endpoint
+endpoint() {
+    local _endpoint=${1:-''}
+    _shttp_endpoint="$_endpoint"
+    info "Set [Endpoint] with [$_shttp_endpoint]"
 }
 
 #  Setter for '_shttp_method'.
@@ -308,15 +345,6 @@ method() {
             fatal "Invalid [$_method] request method"
         ;;
     esac
-}
-
-#  Setter for '_shttp_endpoint'.
-#
-#  -param $1 Request endpoint
-endpoint() {
-    local _endpoint=${1:-''}
-    _shttp_endpoint="$_endpoint"
-    info "Set [Endpoint] with [$_shttp_endpoint]"
 }
 
 #  Setter for '_shttp_headers'.
@@ -518,6 +546,7 @@ _execute() {
 
 #  Initilize request variables.
 _init_vars() {
+    _shttp_url=""
     _shttp_protocol="https"
     _shttp_domain=$( get host "" )
     _shttp_method=""
@@ -554,13 +583,14 @@ _init_vars() {
 #  -param $1 Request command
 _request() {
     local _command=${1:-''}
-    eval "URL=\"$URL\""
+    
+    if [ -z "$_shttp_url" ]; then
+        url "${_shttp_protocol}://${_shttp_domain}${_shttp_base_path}${_shttp_endpoint}"
+    fi
 
     if [ -z "$_shttp_output" ]; then
         output "output/$( basename "$0" ).$( date '+%Y-%m-%d.%H_%M_%S' )"
     fi
-
-    info "Set URL with [$URL]"
 
     _append_content_type
     _append_auth
@@ -699,11 +729,7 @@ _append_auth() {
             _append_if_missing_header "Host" "$( get host )"
         ;;
         "QPARAM")
-            if [[ "$URL" = *\?* ]]; then
-                URL="$URL&token=$( get apiToken )"
-            else
-                URL="$URL?token=$( get apiToken )"
-            fi
+            queryParams "token=$( get apiToken )"
             _append_if_missing_header "Host" "$( get host )"
         ;;
         "SKIP")
@@ -755,7 +781,7 @@ _append_body_to_file() {
 #+       -F "<_shttp_form[1..n]>" \
 #+       --data-binary "@<:body_file>" \
 #+       <_shttp_curl_opts[1..n]> \
-#+       <_shttp_protocol>://<:url> > "<_shttp_output>.trace" 2>&1'
+#+       <_shttp_url> > "<_shttp_output>.trace" 2>&1'
 #
 #  -param $1 Body temporal file
 #  -return cURL command as string
@@ -791,7 +817,7 @@ _build_curl() {
             _curl+=( "$_opt \\" )
         done
     fi
-    _curl+=( "$_shttp_protocol://$URL > \"$_shttp_output.trace\" 2>&1" )
+    _curl+=( "$_shttp_url > \"$_shttp_output.trace\" 2>&1" )
     echo "${_curl[*]}"
 }
 

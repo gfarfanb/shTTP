@@ -49,9 +49,7 @@ before_api() {
 }
 
 get_repo() {
-    protocol http
-    #  shellcheck disable=SC2034
-    URL="127.0.0.1:5555/info"
+    url "http://127.0.0.1:5555/info"
 }
 
 after_api() {
@@ -72,9 +70,7 @@ assertEquals "'after_api' not executed" "Executed" "$_after_api_var"
 _before_request_var="Not executed yet"
 _after_request_var="Not executed yet"
 
-protocol http
-#  shellcheck disable=SC2034
-URL="127.0.0.1:5555/info"
+url "http://127.0.0.1:5555/info"
 method "GET"
 
 before_command() {
@@ -241,9 +237,15 @@ authMode "QPARAM"
 _append_auth
 
 _found=0
-if [[ "$URL" == *"?token=uqweq8u23j23e" ]]; then
+
+#  shellcheck disable=SC2154
+for _param in "${_shttp_query_params[@]}"; do
+    if [ "$_param" = "token=uqweq8u23j23e" ]; then
     _found=$(( _found+1 ))
 fi
+done
+
+#  shellcheck disable=SC2154
 for _header in "${_shttp_headers[@]}"; do
     if [ "$_header" = "Host: any.host" ]; then
         _found=$(( _found+1 ))
@@ -289,7 +291,7 @@ _init_vars
 
 
 #  -test Build cURL
-URL="any.host/any/endpoint"
+url "https://any.host/any/endpoint"
 method "POST"
 output "result"
 headers "Defined-Header: test/value"

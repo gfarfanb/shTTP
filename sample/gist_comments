@@ -41,4 +41,5 @@ after_api() {
     remove gistId
 }
 
+#  shellcheck disable=SC1091
 . ../http_api

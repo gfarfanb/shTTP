@@ -19,4 +19,4 @@ install:
 
 script:
   - ./lint
-  - ./runtests
+  - sudo ./runtests

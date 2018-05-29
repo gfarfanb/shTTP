@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 #  -author Giovanni Farfán B.
 
-URL='$DOMAIN/gists/$ENDPOINT'
+URL='$_shttp_domain/gists/$ENDPOINT'
 
 before_api() {
     put host "\"api.github.com\""

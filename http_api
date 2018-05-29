@@ -23,7 +23,7 @@ _shttp_help_content() {
         "   --host <host>:             Set host value to 'host' in 'ws/config.json'"
         "   --local <port>:            Set variables to local execution:"
         "                                _shttp_protocol: http"
-        "                                DOMAIN:   localhost:<port> (default 8080)"
+        "                                _shttp_domain: localhost:<port> (default 8080)"
         "   --auth-header:             Set 'HEADER' to 'AUTH_MODE' for headers authorization."
         "   --auth-qparam:             Set 'QPARAM' to 'AUTH_MODE' for query params authorization."
         "   --open:                    Set 'EDITOR_COMMAND' with value defined on 'editorCommand' from 'ws/config.json'"
@@ -214,7 +214,7 @@ _shttp_protocol=""
 
 #  Request domain:
 #+ 'https://<domain>/any/endpoint'
-DOMAIN=""
+_shttp_domain=""
 
 #  Request method.
 #  Allowed values:
@@ -273,6 +273,15 @@ protocol() {
     local _protocol=${1:-''}
     _shttp_protocol="$_protocol"
     info "Set [Protocol] with [$_shttp_protocol]"
+}
+
+#  Setter for '_shttp_domain'.
+#
+#  -param $1 Domain
+domain() {
+    local _domain=${1:-''}
+    _shttp_domain="$_domain"
+    info "Set [Domain] with [$_shttp_domain]"
 }
 
 
@@ -372,7 +381,7 @@ _execute() {
 #  Initilize request variables.
 _init_vars() {
     _shttp_protocol="https"
-    DOMAIN=$( get host "" )
+    _shttp_domain=$( get host "" )
     METHOD=""
     ENDPOINT=""
     HEADERS=()
@@ -890,14 +899,13 @@ _set_host() {
     if [ -n "$_val" ] && [ "$_val" != "null" ]; then
         _host="$_val"
     fi
-    DOMAIN="$_host"
+    domain "$_host"
     put host "\"$_host\""
-    info "Set DOMAIN with [$_host]"
 }
 expr "$*" : ".*--host" > /dev/null \
     && _look_for_params "_set_host" "--host" "$@"
 
-#  Set domain to 'localhost'. Default
+#  Set '_shttp_domain' to 'localhost'. Default
 #+ port is 8080 but it can be specified
 #+ as first parameter and will override
 #+ default port.
@@ -911,8 +919,7 @@ _set_localhost() {
         _port="8080"
     fi
     protocol "http"
-    DOMAIN="localhost:$_port"
-    info "Set DOMAIN with [$DOMAIN]"
+    domain "localhost:$_port"
 }
 expr "$*" : ".*--local" > /dev/null \
     && _look_for_params "_set_localhost" "--local" "$@"

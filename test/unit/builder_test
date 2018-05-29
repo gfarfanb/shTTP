@@ -7,3 +7,9 @@
 protocol ftp
 assertEquals "Set protocol does not work" "ftp" "$_shttp_protocol"
 _init_vars
+
+
+#  -test Set domain
+domain "0.0.0.0:0000"
+assertEquals "Set domain does not work" "0.0.0.0:0000" "$_shttp_domain"
+_init_vars

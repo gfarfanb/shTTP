@@ -86,7 +86,7 @@ assertEquals "Named 'Host' not assigned" "any.named.host" "$_current_host"
 
 #  -test Local option
 _set_localhost "5555"
-assertEquals "Localhost not assigned" "localhost:5555" "$DOMAIN"
+assertEquals "Localhost not assigned" "localhost:5555" "$_shttp_domain"
 
 
 #  -test Header authentication option

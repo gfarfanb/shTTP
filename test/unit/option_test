@@ -86,6 +86,7 @@ assertEquals "Named 'Host' not assigned" "any.named.host" "$_current_host"
 
 #  -test Local option
 _set_localhost "5555"
+#  shellcheck disable=SC2154
 assertEquals "Localhost not assigned" "localhost:5555" "$_shttp_domain"
 
 

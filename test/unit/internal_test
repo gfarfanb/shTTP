@@ -92,9 +92,9 @@ assertTrue "Trace file does not exist" "-f \"$OUTPUT.trace\""
 assertTrue "JSON file does not exist" "-f \"$OUTPUT.output\""
 assertEquals "'after_<command>' not executed" "Executed" "$_after_request_var"
 
-_name=$( < "$OUTPUT.output" jq ".name" )
+_info_pronounced=$( < "$OUTPUT.output" jq ".pronounced" )
 
-assertEquals "Request not executed" "shTTP" "$_info_name"
+assertEquals "Request not executed" "shell-ttp" "$_info_pronounced"
 
 _init_vars
 
@@ -103,6 +103,7 @@ _init_vars
 _init_vars
 get_api() { : ; }
 _set_method "get_api"
+#  shellcheck disable=SC2154
 assertEquals "'get_api' has no method" "GET" "$_shttp_method"
 
 _init_vars
@@ -113,31 +114,37 @@ assertEquals "'post_api' has no method" "POST" "$_shttp_method"
 _init_vars
 put_api() { : ; }
 _set_method "put_api"
+#  shellcheck disable=SC2154
 assertEquals "'put_api' has no method" "PUT" "$_shttp_method"
 
 _init_vars
 patch_api() { : ; }
 _set_method "patch_api"
+#  shellcheck disable=SC2154
 assertEquals "'patch_api' has no method" "PATCH" "$_shttp_method"
 
 _init_vars
 delete_api() { : ; }
 _set_method "delete_api"
+#  shellcheck disable=SC2154
 assertEquals "'delete_api' has no method" "DELETE" "$_shttp_method"
 
 _init_vars
 head_api() { : ; }
 _set_method "head_api"
+#  shellcheck disable=SC2154
 assertEquals "'head_api' has no method" "HEAD" "$_shttp_method"
 
 _init_vars
 options_api() { : ; }
 _set_method "options_api"
+#  shellcheck disable=SC2154
 assertEquals "'options_api' has no method" "OPTIONS" "$_shttp_method"
 
 _init_vars
 unknown_api() { : ; }
 _set_method "unknown_api"
+#  shellcheck disable=SC2154
 assertTrue "'unknown_api' has method" "-z \"$_shttp_method\""
 
 _init_vars

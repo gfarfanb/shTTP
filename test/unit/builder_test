@@ -5,36 +5,45 @@
 
 #  -test Set protocol
 protocol ftp
+#  shellcheck disable=SC2154
 assertEquals "Set protocol does not work" "ftp" "$_shttp_protocol"
 _init_vars
 
 
 #  -test Set domain
 domain "0.0.0.0:0000"
+#  shellcheck disable=SC2154
 assertEquals "Set domain does not work" "0.0.0.0:0000" "$_shttp_domain"
 _init_vars
 
 
 #  -test Set method
 method "GET"
+#  shellcheck disable=SC2154
 assertEquals "Method 'GET' not found" "GET" "$_shttp_method"
 
 method "POST"
+#  shellcheck disable=SC2154
 assertEquals "Method 'POST' not found" "POST" "$_shttp_method"
 
 method "PUT"
+#  shellcheck disable=SC2154
 assertEquals "Method 'PUT' not found" "PUT" "$_shttp_method"
 
 method "PATCH"
+#  shellcheck disable=SC2154
 assertEquals "Method 'PATCH' not found" "PATCH" "$_shttp_method"
 
 method "DELETE"
+#  shellcheck disable=SC2154
 assertEquals "Method 'DELETE' not found" "DELETE" "$_shttp_method"
 
 method "HEAD"
+#  shellcheck disable=SC2154
 assertEquals "Method 'HEAD' not found" "HEAD" "$_shttp_method"
 
 method "OPTIONS"
+#  shellcheck disable=SC2154
 assertEquals "Method 'OPTIONS' not found" "OPTIONS" "$_shttp_method"
 
 _init_vars
@@ -42,5 +51,6 @@ _init_vars
 
 #  -test Set endpoint
 endpoint "id/test"
+#  shellcheck disable=SC2154
 assertEquals "Set endpoint does not work" "id/test" "$_shttp_endpoint"
 _init_vars

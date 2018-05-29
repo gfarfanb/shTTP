@@ -11,3 +11,5 @@ shellcheck mkexec
 shellcheck runtests
 shellcheck test/test_*
 shellcheck test/unit/*
+shellcheck test/mock/*_mock
+shellcheck sample/gist_comments

@@ -96,6 +96,13 @@ assertEquals "Set cURL options does not work" 2 "$_length"
 _init_vars
 
 
+#  -test Set editor command
+editor 'vim script'
+#  shellcheck disable=SC2154
+assertEquals "Set output does not work" "vim script" "$_shttp_editor_command"
+_init_vars
+
+
 #  -test Set output
 output 'output/response'
 #  shellcheck disable=SC2154

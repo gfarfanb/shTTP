@@ -367,7 +367,7 @@ _init_vars
 put program "\"jq\""
 
 #  shellcheck disable=SC2016
-EDITOR_COMMAND='_command_version="$( $( get program ) --version )"'
+editor '_command_version="$( $( get program ) --version )"'
 
 _editor_command
 

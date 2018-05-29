@@ -26,7 +26,7 @@ _shttp_help_content() {
         "                                _shttp_domain: localhost:<port> (default 8080)"
         "   --auth-header:             Set 'HEADER' to 'AUTH_MODE' for headers authorization."
         "   --auth-qparam:             Set 'QPARAM' to 'AUTH_MODE' for query params authorization."
-        "   --open:                    Set 'EDITOR_COMMAND' with value defined on 'editorCommand' from 'ws/config.json'"
+        "   --open:                    Set '_shttp_editor_command' with value defined on 'editorCommand' from 'ws/config.json'"
         "   --help:                    Display this help message"
     )
     echo "${_content[*]}"
@@ -258,7 +258,7 @@ AUTH_MODE=""
 #  If value is defined, that command
 #+ will be executed as last tasks
 #+ of the request.
-EDITOR_COMMAND=""
+_shttp_editor_command=""
 
 #  Response output base filename.
 #  During request this filename
@@ -386,6 +386,15 @@ curlOpts() {
     fi
 }
 
+#  Setter for '_shttp_editor_command'.
+#
+#  -param $1 Editor command
+editor() {
+    local _editor=${1:-''}
+    _shttp_editor_command="$_editor"
+    info "Set [Editor] with [$_shttp_editor_command]"
+}
+
 #  Setter for '_shttp_output'.
 #
 #  -param $1 Response output
@@ -501,7 +510,7 @@ _init_vars() {
     _shttp_query_params=()
     _shttp_curl_opts=()
     AUTH_MODE="SKIP"
-    EDITOR_COMMAND=""
+    _shttp_editor_command=""
     _shttp_output=""
 }
 
@@ -814,10 +823,10 @@ _clean_trace() {
 #+      original definition.
 #    2. Command execution.
 _editor_command() {
-    if [ -n "$EDITOR_COMMAND" ]; then
-        eval "EDITOR_COMMAND=\"$EDITOR_COMMAND\""
-        info "Set EDITOR_COMMAND with [$EDITOR_COMMAND]"
-        eval "$EDITOR_COMMAND"
+    if [ -n "$_shttp_editor_command" ]; then
+        eval "_shttp_editor_command=\"$_shttp_editor_command\""
+        info "Start [$_shttp_editor_command]"
+        eval "$_shttp_editor_command"
     fi
 }
 
@@ -1044,9 +1053,9 @@ expr "$*" : ".*--auth-qparam" > /dev/null \
 
 #  Get saved editor command from
 #+ 'ws/config.json and the value
-#+ is assigned to 'EDITOR_COMMAND'.
+#+ is assigned to '_shttp_editor_command'.
 _open_editor() {
-    EDITOR_COMMAND="$( get editorCommand )"
+    editor "$( get editorCommand )"
 }
 expr "$*" : ".*--open" > /dev/null \
     && _open_editor "$@"

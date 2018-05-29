@@ -6,8 +6,8 @@
 
 #  Set-up mock services.
 (
-cd mock || exit
-./setup_mock
+    cd mock || exit
+    ./setup_mock
 )
 
 #  Mark as skip 'http_api' main code.

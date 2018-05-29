@@ -62,3 +62,11 @@ headers "Header-1: test/1" "Header-2: test/2" "Header-3: test/3"
 _length=${#_shttp_headers[@]}
 assertEquals "Set headers does not work" 3 "$_length"
 _init_vars
+
+
+#  -test Set body
+body '{' '"key": "value"' ',' '"name": "test"' '}'
+#  shellcheck disable=SC2154
+_length=${#_shttp_body[@]}
+assertEquals "Set body does not work" 5 "$_length"
+_init_vars

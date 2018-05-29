@@ -274,27 +274,25 @@ remove host
 
 
 #  -test Append body to file
-BODY='{ "body": "content" }'
+body '{ "body": "content" }'
 _body_file=$( _append_body_to_file )
 assertTrue "Body temporal file does not exist" "-f \"$_body_file\""
+_init_vars
 
-#  shellcheck disable=SC2034
-BODY=''
 _body_file=$( _append_body_to_file )
 assertFalse "Body temporal file exists" "-f \"$_body_file\""
+_init_vars
 
-BODY_PARTS=(
-    '{'
-    '"body": "content"'
+body '{' \
+    '"body": "content"' \
     '}'
-)
 _body_file=$( _append_body_to_file )
 assertTrue "Body (parts) temporal file does not exist" "-f \"$_body_file\""
+_init_vars
 
-#  shellcheck disable=SC2034
-BODY_PARTS=()
 _body_file=$( _append_body_to_file )
 assertFalse "Body (parts) temporal file exists" "-f \"$_body_file\""
+_init_vars
 
 
 #  -test Build cURL

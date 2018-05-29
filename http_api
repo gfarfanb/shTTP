@@ -232,13 +232,10 @@ _shttp_endpoint=""
 #+ execution.
 _shttp_headers=()
 
-#  Request body.
-BODY=""
-
 #  Request body in parts. During
 #+ request execution these parts
 #+ will be concatenated.
-BODY_PARTS=()
+_shttp_body=()
 
 #  Request key-value entries for
 #+ data form. If it is specified
@@ -322,10 +319,26 @@ headers() {
     local _length=$#
     if (( _length > 0 )); then
         for _header in "$@"; do
-            _shttp_headers+=( "$_header" ) 
+            _shttp_headers+=( "$_header" )
             info "Set [Header] with [$_header]"
         done
     fi
+}
+
+#  Setter for '_shttp_body'.
+#
+#  -param $@ Request body
+#+           (in parts)
+body() {
+    local _length=$#
+    local _size=0
+    if (( _length > 0 )); then
+        for _part in "$@"; do
+            _shttp_body+=( "$_part" )
+            _size=$(( _size+${#_part}  ))
+        done
+    fi
+    info "Set [Body] with [$_size] bytes"
 }
 
 
@@ -429,8 +442,7 @@ _init_vars() {
     _shttp_method=""
     _shttp_endpoint=""
     _shttp_headers=()
-    BODY=""
-    BODY_PARTS=()
+    _shttp_body=()
     FORM=()
     QUERY_PARAM=()
     CURL_OPT=()
@@ -621,12 +633,10 @@ _append_auth() {
     info "Set AUTH_MODE with [$AUTH_MODE]"
 }
 
-#  First, append every 'BODY_PARTS'
-#+ into body content. Using 'BODY_PARTS'
-#+ a new line can be done using '\n'
-#+ as unique characters in the line.
-#  Second, append 'BODY' into body
-#+ content.
+#  Append every '_shttp_body' element
+#+ into body content. A new line can
+#+ be done using '\n' as unique
+#+ characters in the line.
 #  At least one variable must be
 #+ appended for generate the body
 #+ file.
@@ -636,21 +646,17 @@ _append_auth() {
 #+         return empty
 _append_body_to_file() {
     local _body_file=""
-    local _length=${#BODY_PARTS[@]}
+    local _length=${#_shttp_body[@]}
     local _appended=0
     _body_file="ws/body.$( date '+%s.%N' ).json.tmp"
     if (( _length > 0 )); then
-        for _line in "${BODY_PARTS[@]}"; do
+        for _line in "${_shttp_body[@]}"; do
             if [ "$_line" = "\n" ]; then
                 echo | tee -a "$_body_file" > /dev/null
             else
                 echo "$_line" | tee -a "$_body_file" > /dev/null
             fi
         done
-        _appended=$(( _appended+1 ))
-    fi
-    if [ -n "$BODY" ]; then
-        echo "$BODY" | tee -a "$_body_file" > /dev/null
         _appended=$(( _appended+1 ))
     fi
     if (( _appended < 1 )); then

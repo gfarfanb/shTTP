@@ -22,7 +22,7 @@ post_comment() {
         "Content-Type: application/vnd.github.$( get githubApiVersion ).full+json" \
         "Accept: application/vnd.github.$( get githubApiVersion ).full+json"
     endpoint "$( get gistId )/comments"
-    BODY='{ "body": "shTTP comment" }'
+    body '{ "body": "shTTP comment" }'
 }
 
 after_post_comment() {
@@ -31,7 +31,7 @@ after_post_comment() {
 
 patch_comment() {
     endpoint "/gists/$( get gistId )/comments/$( get commentId )"
-    BODY='{ "body": "shTTP comment update" }'
+    body '{ "body": "shTTP comment update" }'
 }
 
 delete_comment() {

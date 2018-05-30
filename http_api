@@ -10,7 +10,7 @@ _shttp_help_content() {
         ""
         " Usage: ./<file>.sh <command> [--set <key-name> <value>] [--get <key-name>] [--add <key-name> <value>]"
         "                              [--remove <key-name>] [--get-keys] [--list] [--clean] [--host <host>]"
-        "                              [--local <port>] [--auth-basic] [--auth-bearer] [--auth-qparam]"
+        "                              [--local <port>] [--auth-basic] [--auth-header] [--auth-qparam]"
         "                              [--auth-skip] [--open] [--help]"
         ""
         " Options:"
@@ -26,7 +26,7 @@ _shttp_help_content() {
         "                                  _shttp_protocol: http"
         "                                  _shttp_domain: localhost:<port> (default 8080)"
         "   --auth-basic <credential>:   Set 'BASIC' mode to '_shttp_auth_mode'."
-        "   --auth-bearer <credential>:  Set 'BEARER' mode to '_shttp_auth_mode'."
+        "   --auth-header <credential>:  Set 'HEADER' mode to '_shttp_auth_mode'."
         "   --auth-qparam <credential>:  Set 'QPARAM' mode to '_shttp_auth_mode'."
         "   --auth-skip:                 Set 'SKIP' mode to '_shttp_auth_mode'."
         "   --open:                      Set '_shttp_editor_command' with value defined on 'editorCommand' from 'ws/config.json'"
@@ -285,9 +285,9 @@ _shttp_query_params=()
 _shttp_curl_opts=()
 
 #  Authorization mode. Allowed values:
-#+ [BASIC, BEARER, QPARAM, SKIP].
+#+ [BASIC, HEADER, QPARAM, SKIP].
 #    1. BASIC: HTTP Basic Authentication
-#    2. BEARER: Bearer Authorization
+#    2. HEADER: Header Authorization
 #    3. QPARAM: Authorization via Query
 #+      Parameters
 #    4. SKIP: No authorization mode
@@ -460,7 +460,7 @@ authMode() {
     local _mode=${1:-''}
     case "$_mode" in
         BASIC \
-        | BEARER \
+        | HEADER \
         | QPARAM \
         | SKIP)
             _shttp_auth_mode="$_mode"
@@ -748,8 +748,8 @@ _append_content_type() {
 #+      type by 'cURL' options.
 #+      Use from credential: 'username',
 #+      'password'.
-#    2. BEARER: Set 'Authorization'
-#+      header to bearer token type.
+#    2. HEADER: Set authentication
+#+      token by request header.
 #+      Use from credential: 'type',
 #+      'secret'. If 'type' is not
 #+      found, default value will be
@@ -776,7 +776,7 @@ _append_auth() {
             _password=$( _credential_part password )
             curlOpts "--basic" "-u $_username:$_password"
         ;;
-        "BEARER")
+        "HEADER")
             _type=$( _credential_part type "token" )
             _secret=$( _credential_part secret )
             _append_if_missing_header "Authorization" "$_type $_secret"
@@ -1175,9 +1175,9 @@ _set_credentials() {
 expr "$*" : ".*--auth-basic" > /dev/null \
     && _look_for_params "_set_credentials" "--auth-basic" "$@" \
     && authMode "BASIC"
-expr "$*" : ".*--auth-bearer" > /dev/null \
-    && _look_for_params "_set_credentials" "--auth-bearer" "$@" \
-    && authMode "BEARER"
+expr "$*" : ".*--auth-header" > /dev/null \
+    && _look_for_params "_set_credentials" "--auth-header" "$@" \
+    && authMode "HEADER"
 expr "$*" : ".*--auth-qparam" > /dev/null \
     && _look_for_params "_set_credentials" "--auth-qparam" "$@" \
     && authMode "QPARAM"

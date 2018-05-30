@@ -241,7 +241,7 @@ assertEquals "'BASIC' mode not set" 2 "$_found"
 
 _init_vars
 credential "auth"
-authMode "BEARER"
+authMode "HEADER"
 
 _append_auth
 
@@ -257,7 +257,7 @@ for _header in "${_shttp_headers[@]}"; do
     esac
 done
 
-assertEquals "'BEARER' mode not set" 2 "$_found"
+assertEquals "'HEADER' mode not set" 2 "$_found"
 
 _init_vars
 credential "auth"

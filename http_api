@@ -102,7 +102,7 @@ if ! [ -f "ws/credentials.json" ]; then
         "username": "Required for: BASIC",
         "password": "Required for: BASIC",
         "secret": "Required for: BEARER, QPARAM",
-        "qparam": "Used for: QPARAM"
+        "type": "Used for: BEARER, QPARAM"
     }]' > "ws/credentials.json"
 fi
 #  Override JSON file
@@ -300,8 +300,8 @@ _shttp_auth_mode=""
 #+ credential must have the
 #+ following fields:
 #    1. BASIC: 'username', 'password'
-#    2. BEARER: 'secret'
-#    3. QPARAM: 'qparam', 'secret'.
+#    2. BEARER: 'type', 'secret'
+#    3. QPARAM: 'type', 'secret'.
 _shttp_auth_credential=""
 
 #  If value is defined, that command
@@ -750,11 +750,14 @@ _append_content_type() {
 #+      'password'.
 #    2. BEARER: Set 'Authorization'
 #+      header to bearer token type.
-#+      Use from credential: 'secret'.
+#+      Use from credential: 'type',
+#+      'secret'. If 'type' is not
+#+      found, default value will be
+#+      'token'.
 #    3. QPARAM: Set to 'URL' a
 #+      token as query parameter.
-#+      Use from credential: 'qparam',
-#+      'secret'. If 'qparam' is not
+#+      Use from credential: 'type',
+#+      'secret'. If 'type' is not
 #+      found, default value will be
 #+      'access_token'.
 #    4. SKIP: Skip authorization setup.
@@ -766,7 +769,7 @@ _append_auth() {
     local _username=""
     local _password=""
     local _secret=""
-    local _qparam=""    
+    local _type=""    
     case "$_shttp_auth_mode" in
         "BASIC")
             _username=$( _credential_part username )
@@ -774,13 +777,14 @@ _append_auth() {
             curlOpts "--basic" "-u $_username:$_password"
         ;;
         "BEARER")
+            _type=$( _credential_part type "token" )
             _secret=$( _credential_part secret )
-            _append_if_missing_header "Authorization" "Bearer $_secret"
+            _append_if_missing_header "Authorization" "$_type $_secret"
         ;;
         "QPARAM")
-            _qparam=$( _credential_part qparam "access_token" )
+            _type=$( _credential_part type "access_token" )
             _secret=$( _credential_part secret )
-            queryParams "$_qparam=$_secret"
+            queryParams "$_type=$_secret"
         ;;
         "SKIP")
             :

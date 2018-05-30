@@ -215,7 +215,7 @@ update "ws/credentials.json" '. + [{
         "username": "auth",
         "password": "t35t",
         "secret": "uqweq8u23j23e",
-        "qparam": "api_token"
+        "type": "api_token"
     }]'
 put host "\"any.host\""
 
@@ -248,7 +248,7 @@ _append_auth
 _found=0
 for _header in "${_shttp_headers[@]}"; do
     case "$_header" in
-        "Authorization: Bearer uqweq8u23j23e")
+        "Authorization: api_token uqweq8u23j23e")
             _found=$(( _found+1 ))
         ;;
         "Host: any.host")
@@ -311,13 +311,13 @@ update "ws/credentials.json" '. + [{
         "username": "test",
         "password": "t35t",
         "secret": "1234567890",
-        "qparam": "token"
+        "type": "token"
     }]'
 
 _credential_username=""
 _credential_password=""
 _credential_secret=""
-_credential_qparam=""
+_credential_type=""
 
 _credential_username=$( _credential_part username )
 assertEquals "Username part not found" "test" "$_credential_username"
@@ -328,8 +328,8 @@ assertEquals "Password part not found" "t35t" "$_credential_password"
 _credential_secret=$( _credential_part secret )
 assertEquals "Secret part not found" "1234567890" "$_credential_secret"
 
-_credential_qparam=$( _credential_part qparam )
-assertEquals "Query param part not found" "token" "$_credential_qparam"
+_credential_type=$( _credential_part type )
+assertEquals "Type part not found" "token" "$_credential_type"
 
 _credential_unknown=$( _credential_part unknown "apiToken" )
 assertEquals "Unknown part found" "apiToken" "$_credential_unknown"

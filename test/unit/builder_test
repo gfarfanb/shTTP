@@ -111,9 +111,13 @@ _init_vars
 
 
 #  -test Set authorization mode
-authMode "HEADER"
+authMode "BASIC"
 #  shellcheck disable=SC2154
-assertEquals "'HEADER' mode not found" "HEADER" "$_shttp_auth_mode"
+assertEquals "'BASIC' mode not found" "BASIC" "$_shttp_auth_mode"
+
+authMode "BEARER"
+#  shellcheck disable=SC2154
+assertEquals "'BEARER' mode not found" "BEARER" "$_shttp_auth_mode"
 
 authMode "QPARAM"
 #  shellcheck disable=SC2154
@@ -123,6 +127,13 @@ authMode "SKIP"
 #  shellcheck disable=SC2154
 assertEquals "'SKIP' mode not found" "SKIP" "$_shttp_auth_mode"
 
+_init_vars
+
+
+#  -test Set authentication credential
+credential 'user'
+#  shellcheck disable=SC2154
+assertEquals "Set credential does not work" "user" "$_shttp_auth_credential"
 _init_vars
 
 

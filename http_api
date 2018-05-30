@@ -10,24 +10,27 @@ _shttp_help_content() {
         ""
         " Usage: ./<file>.sh <command> [--set <key-name> <value>] [--get <key-name>] [--add <key-name> <value>]"
         "                              [--remove <key-name>] [--get-keys] [--list] [--clean] [--host <host>]"
-        "                              [--local <port>] [--auth-header] [--auth-qparam] [--open] [--help]"
+        "                              [--local <port>] [--auth-basic] [--auth-bearer] [--auth-qparam]"
+        "                              [--auth-skip] [--open] [--help]"
         ""
         " Options:"
-        "   --set <key-name> <value>:  Set a temporal key-value config. This won't saved to 'ws/config.json'"
-        "   --get <key-name>:          Display the value for key from 'ws/config.json'"
-        "   --add <key-name> <value>:  Add new key-value to 'ws/config.json'"
-        "   --remove <key-name>:       Remove the key-value from 'ws/config.json'"
-        "   --get-keys:                Display all keys from 'ws/config.json' file"
-        "   --list:                    Display the <command> list (all functions defined into main script)"
-        "   --clean:                   Clean up all output files 'output/*'"
-        "   --host <host>:             Set host value to 'host' in 'ws/config.json'"
-        "   --local <port>:            Set variables to local execution:"
-        "                                _shttp_protocol: http"
-        "                                _shttp_domain: localhost:<port> (default 8080)"
-        "   --auth-header:             Set 'HEADER' to '_shttp_auth_mode' for headers authorization."
-        "   --auth-qparam:             Set 'QPARAM' to '_shttp_auth_mode' for query params authorization."
-        "   --open:                    Set '_shttp_editor_command' with value defined on 'editorCommand' from 'ws/config.json'"
-        "   --help:                    Display this help message"
+        "   --set <key-name> <value>:    Set a temporal key-value config. This won't saved to 'ws/config.json'"
+        "   --get <key-name>:            Display the value for key from 'ws/config.json'"
+        "   --add <key-name> <value>:    Add new key-value to 'ws/config.json'"
+        "   --remove <key-name>:         Remove the key-value from 'ws/config.json'"
+        "   --get-keys:                  Display all keys from 'ws/config.json' file"
+        "   --list:                      Display the <command> list (all functions defined into main script)"
+        "   --clean:                     Clean up all output files 'output/*'"
+        "   --host <host>:               Set host value to 'host' in 'ws/config.json'"
+        "   --local <port>:              Set variables to local execution:"
+        "                                  _shttp_protocol: http"
+        "                                  _shttp_domain: localhost:<port> (default 8080)"
+        "   --auth-basic <credential>:   Set 'BASIC' mode to '_shttp_auth_mode'."
+        "   --auth-bearer <credential>:  Set 'BEARER' mode to '_shttp_auth_mode'."
+        "   --auth-qparam <credential>:  Set 'QPARAM' mode to '_shttp_auth_mode'."
+        "   --auth-skip:                 Set 'SKIP' mode to '_shttp_auth_mode'."
+        "   --open:                      Set '_shttp_editor_command' with value defined on 'editorCommand' from 'ws/config.json'"
+        "   --help:                      Display this help message"
     )
     echo "${_content[*]}"
 }
@@ -91,6 +94,16 @@ fi
 #  Config JSON file
 if ! [ -f "ws/config.json" ]; then
     echo '{ "host": null, "hosts": [] }' > "ws/config.json"
+fi
+#  Credentials JSON file
+if ! [ -f "ws/credentials.json" ]; then
+    echo '[{
+        "id": "Mandatory",
+        "username": "Required for: BASIC",
+        "password": "Required for: BASIC",
+        "secret": "Required for: BEARER, QPARAM",
+        "qparam": "Used for: QPARAM"
+    }]' > "ws/credentials.json"
 fi
 #  Override JSON file
 if ! [ -f "ws/override.json.tmp" ]; then
@@ -271,9 +284,25 @@ _shttp_query_params=()
 #  Additional 'cURL' options.
 _shttp_curl_opts=()
 
-#  Authentication mode. Allowed values:
-#+ [HEADER, QPARAM, SKIP]
+#  Authorization mode. Allowed values:
+#+ [BASIC, BEARER, QPARAM, SKIP].
+#    1. BASIC: HTTP Basic Authentication
+#    2. BEARER: Bearer Authorization
+#    3. QPARAM: Authorization via Query
+#+      Parameters
+#    4. SKIP: No authorization mode
 _shttp_auth_mode=""
+
+#  Authentication credential identifier.
+#  The credential must be in 
+#+ 'ws/credentials.json'.
+#  Regarding to '_shttp_auth_mode'
+#+ credential must have the
+#+ following fields:
+#    1. BASIC: 'username', 'password'
+#    2. BEARER: 'secret'
+#    3. QPARAM: 'qparam', 'secret'.
+_shttp_auth_credential=""
 
 #  If value is defined, that command
 #+ will be executed as last tasks
@@ -426,11 +455,12 @@ curlOpts() {
 
 #  Setter for '_shttp_auth_mode'.
 #
-#  -param $1 Request authentication mode
+#  -param $1 Request authorization mode
 authMode() {
     local _mode=${1:-''}
     case "$_mode" in
-        HEADER \
+        BASIC \
+        | BEARER \
         | QPARAM \
         | SKIP)
             _shttp_auth_mode="$_mode"
@@ -440,6 +470,16 @@ authMode() {
             fatal "Invalid [$_mode] authentication mode"
         ;;
     esac
+}
+
+#  Setter for '_shttp_auth_credential'.
+#
+#  -param $1 Request authentication
+#+           credential
+credential() {
+    local _credential=${1:-''}
+    _shttp_auth_credential="$_credential"
+    info "Set [Credential] with [$_shttp_auth_credential]"
 }
 
 #  Setter for '_shttp_editor_command'.
@@ -463,19 +503,10 @@ output() {
 
 # ---------- Internal functions
 
-#  Key-words used internally like
-#+ function names or field names.
-#  The functions could be defined
-#+ into the main API script if
-#+ they are required during request
-#+ lifecycle.
-readonly _shttp_keywords=(
-    'before_api' # Lifecycle function
-    'after_api'  # Lifecycle function
-)
-
-#  Check if word passed as parameter
-#+ exists in the key-words list.
+#  Check if word exists is a
+#+ key-words:
+#    1. Start with 'before_'
+#    2. Start with 'after_'
 #
 #  -param $1 Name of key-word
 #  -return '1' if keyword exist
@@ -483,12 +514,6 @@ readonly _shttp_keywords=(
 _is_keyword() {
     local _name=${1:-''}
     local _found=0
-    for _key in "${_shttp_keywords[@]}"; do
-        if [ "$_key" = "$_name" ]; then
-            _found=1
-            break
-        fi
-    done
     case "$_name" in
         before_* | after_*)
             _found=1
@@ -569,6 +594,7 @@ _init_vars() {
     _shttp_query_params=()
     _shttp_curl_opts=()
     _shttp_auth_mode="SKIP"
+    _shttp_auth_credential=""
     _shttp_editor_command=""
     _shttp_output=""
 }
@@ -718,34 +744,43 @@ _append_content_type() {
 
 #  Setup the authorization mode based
 #+ on '_shttp_auth_mode':
-#    1. HEADER: Set 'Authorization'
-#+      header to bearer token type,
-#+      token is obtained from
-#+      'ws/config.json' using
-#+      'apiToken' field.
-#+      Set 'Host' header, value is
-#+      obtained from 'ws/config.json'
-#+      using 'host' field.
-#    2. QPARAM: Set to 'URL' a
-#+      token as query parameter
-#+      with name 'token'. The value
-#+      is obtained from 'ws/config.json'
-#+      using 'apiToken' field.
-#+      Set 'Host' header, value is
-#+      obtained from 'ws/config.json'
-#+      using 'host' field.
-#    3. SKIP: Skip authorization setup.
-#    4. Another value: Exit script using
+#    1. BASIC: Set basic authentication
+#+      type by 'cURL' options.
+#+      Use from credential: 'username',
+#+      'password'.
+#    2. BEARER: Set 'Authorization'
+#+      header to bearer token type.
+#+      Use from credential: 'secret'.
+#    3. QPARAM: Set to 'URL' a
+#+      token as query parameter.
+#+      Use from credential: 'qparam',
+#+      'secret'. If 'qparam' is not
+#+      found, default value will be
+#+      'access_token'.
+#    4. SKIP: Skip authorization setup.
+#    5. Another value: Exit script using
 #+      'fatal' logging function.
+#  Set 'host' value from 'ws/config.json'
+#+ to 'Host' header if it is found.
 _append_auth() {
+    local _username=""
+    local _password=""
+    local _secret=""
+    local _qparam=""    
     case "$_shttp_auth_mode" in
-        "HEADER")
-            _append_if_missing_header "Authorization" "Bearer $( get apiToken )"
-            _append_if_missing_header "Host" "$( get host )"
+        "BASIC")
+            _username=$( _credential_part username )
+            _password=$( _credential_part password )
+            curlOpts "--basic" "-u $_username:$_password"
+        ;;
+        "BEARER")
+            _secret=$( _credential_part secret )
+            _append_if_missing_header "Authorization" "Bearer $_secret"
         ;;
         "QPARAM")
-            queryParams "token=$( get apiToken )"
-            _append_if_missing_header "Host" "$( get host )"
+            _qparam=$( _credential_part qparam "access_token" )
+            _secret=$( _credential_part secret )
+            queryParams "$_qparam=$_secret"
         ;;
         "SKIP")
             :
@@ -754,6 +789,30 @@ _append_auth() {
         fatal "Invalid authorization mode [$_shttp_auth_mode]"
         ;;
     esac
+    local _host=""
+    _host=$( get host )
+    if [ "$_host" != "null" ]; then
+        _append_if_missing_header "Host" "$_host"
+    fi
+}
+
+#  Get the credential part for
+#+ '_shttp_auth_credentials'.
+#
+#  -param $1 Part name
+#  -param $2 Default name
+#  -return Credential part value
+_credential_part() {
+    local _name=${1:-''}
+    local _default=${2:-'null'}
+    local _part=""
+    _part=$( < "ws/credentials.json" \
+        jq ".[] | select(.id == \"$_shttp_auth_credential\") | .$_name")
+    _part=$( echo "$_part" | sed -e 's/^"//' -e 's/"$//' )
+    if [ "$_part" = "null" ]; then
+        _part="$_default"
+    fi
+    echo "$_part"
 }
 
 #  Append every '_shttp_body' element
@@ -938,7 +997,7 @@ _look_for_params() {
     if [ $_found = 1 ]; then
         $_callback "${_params[@]}"
     fi
-    if (( $_found > 1 )); then
+    if (( _found > 1 )); then
         return 0
     else
         return 1
@@ -1104,19 +1163,22 @@ _set_localhost() {
 expr "$*" : ".*--local" > /dev/null \
     && _look_for_params "_set_localhost" "--local" "$@"
 
-#  Set '_shttp_auth_mode' to 'HEADER'.
-_auth_header() {
-    authMode "HEADER"
+#  Set credential to '_shttp_auth_credential'.
+_set_credentials() {
+    local _credential=${1:-''}
+    credential "$_credential"
 }
-expr "$*" : ".*--auth-header" > /dev/null \
-    && _auth_header "$@"
-
-#  Set '_shttp_auth_mode' to 'QPARAM'.
-_auth_qparam() {
-    authMode "QPARAM"
-}
+expr "$*" : ".*--auth-basic" > /dev/null \
+    && _look_for_params "_set_credentials" "--auth-basic" "$@" \
+    && authMode "BASIC"
+expr "$*" : ".*--auth-bearer" > /dev/null \
+    && _look_for_params "_set_credentials" "--auth-bearer" "$@" \
+    && authMode "BEARER"
 expr "$*" : ".*--auth-qparam" > /dev/null \
-    && _auth_qparam "$@"
+    && _look_for_params "_set_credentials" "--auth-qparam" "$@" \
+    && authMode "QPARAM"
+expr "$*" : ".*--auth-skip" > /dev/null \
+    && authMode "SKIP"
 
 #  Get saved editor command from
 #+ 'ws/config.json and the value

@@ -101,16 +101,10 @@ _set_localhost "5555"
 assertEquals "Localhost not assigned" "localhost:5555" "$_shttp_domain"
 
 
-#  -test Header authentication option
-_auth_header
+#  -test Set authentication credential option
+_set_credentials "test.user"
 #  shellcheck disable=SC2154
-assertEquals "'HEADER' not assigned" "HEADER" "$_shttp_auth_mode"
-
-
-#  -test Authentication by query parameters option
-_auth_qparam
-#  shellcheck disable=SC2154
-assertEquals "'QPARAM' not assigned" "QPARAM" "$_shttp_auth_mode"
+assertEquals "Credential not assigned" "test.user" "$_shttp_auth_credential"
 
 
 #  -test Open editor option

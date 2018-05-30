@@ -378,3 +378,5 @@ echo '{}' > ws/cleanable_config.json.tmp
 _finally_http_api
 
 assertFalse "Workspace file is currently exists" "-f ws/cleanable_config.json.tmp"
+
+echo '{ }' > "ws/override.json.tmp"

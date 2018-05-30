@@ -13,3 +13,7 @@ assertTrue "Workspace directory is not found" "-d ws"
 
 #  -test Config file exists
 assertTrue "Config JSON is not found" "-f ws/config.json"
+
+
+#  -test Override file exists
+assertTrue "Override JSON is not found" "-f ws/override.json.tmp"

@@ -162,8 +162,8 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     readonly _single=${1:-''}
 
     if [ -n "$_single" ]; then
+        info "+++ Test [./${_single}_test] sourced"
         eval ". ./${_single}_test"
-        info "Test [./${_single}_test] sourced"
     else
         declare -a _tests=(
             $( find . -name "*_test" -type f )
@@ -171,8 +171,8 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
         _length=${#_tests[@]}
         if (( _length > 0 )); then
             for _test in "${_tests[@]}"; do
+                info "+++ Test [$_test] sourced"
                 eval ". $_test"
-                info "Test [$_test] sourced"
             done
         else
             info "Not tests found"

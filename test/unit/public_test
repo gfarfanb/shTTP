@@ -78,7 +78,7 @@ _unknown=$( get unknown )
 assertEquals "'unknown' found" "null" "$_unknown"
 
 #  shellcheck disable=SC2034
-tempConfig="7wjedw9djwejd"
+update "ws/override.json.tmp" ". + { \"tempConfig\": \"7wjedw9djwejd\" }"
 _temp_config=$( get tempConfig )
 assertEquals "'tempConfig' not found" "7wjedw9djwejd" "$_temp_config"
 

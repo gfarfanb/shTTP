@@ -92,6 +92,10 @@ fi
 if ! [ -f "ws/config.json" ]; then
     echo '{ "host": null, "hosts": [] }' > "ws/config.json"
 fi
+#  Override JSON file
+if ! [ -f "ws/override.json.tmp" ]; then
+    echo '{ }' > "ws/override.json.tmp"
+fi
 
 
 # ---------- Util functions
@@ -99,6 +103,7 @@ fi
 #  Reverse the string input.
 #
 #  -param $1 String input
+#  -return Reversed string
 _rev() {
     local _input=${1:-''}
     local _rev=""
@@ -119,8 +124,8 @@ update() {
     local _json=${1:-''}
     local _jq=${2:-''}
     local _temp=""
-    _temp="ws/config.$( date '+%s.%N' ).json.tmp"
-    jq "$_jq" "$_json" > "$_temp"
+    _temp="ws/pivot.$( date '+%s.%N' ).json.tmp"
+    < "$_json" jq "$_jq" > "$_temp"
     mv "$_temp" "$_json"
 }
 
@@ -162,13 +167,18 @@ put() {
 #+           query (without '.' at the
 #+           beginning of the query)
 #  -param $1 Default value if required
-#+           is not found
+#+           is not found. If it is not
+#+           specified 'null' will be
+#+           default value.
+#  -return Config value
 get() {
     local _name=${1:-''}
     local _default=${2:-'null'}
     local _val=""
-    if [[ "$_name" =~ ^[a-zA-Z]*$ ]]; then
-        _val=$( eval "echo \${$_name:-''}" )
+    _val=$( < "ws/override.json.tmp" jq ".$_name | tostring" )
+    _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
+    if [ "$_val" = "null" ]; then
+        _val=""
     fi
     if [ -z "$_val" ]; then
         _val=$( jq ".$_name | tostring" "ws/config.json" )
@@ -491,6 +501,8 @@ _is_keyword() {
 #+ declared.
 #
 #  -param $1 Function name
+#  -return '1' if exist function
+#+         otherwise '0'
 _has_func() {
     local _func=${1:-''}
     local _exists=1
@@ -936,6 +948,8 @@ _look_for_params() {
 #  List the names of main script
 #+ functions. Names contained
 #+ in the 'keywords' are discarded.
+#
+#  -return Command list
 _list_commands() {
     declare -a _functions=(
         $( declare -F )
@@ -970,7 +984,7 @@ expr "$*" : ".*--list" > /dev/null \
 _set_config() {
     local _name=${1:-''}
     local _val=${2:-''}
-    eval "$_name=$_val"
+    update "ws/override.json.tmp" ". + { \"$_name\": $_val }"
     info "Set temporal [$_name] with value [$_val]"
 }
 expr "$*" : ".*--set" > /dev/null \
@@ -994,6 +1008,7 @@ expr "$*" : ".*--add" > /dev/null \
 #+ using 'get' function.
 #
 #  -param $1 Name of the entry
+#  -return Value of the entry
 _get_config() {
     local _name=${1:-''}
     local _val=""
@@ -1019,6 +1034,8 @@ expr "$*" : ".*--remove" > /dev/null \
     && exit 0
 
 #  List the keys of 'ws/config.json'.
+#
+#  -return 'ws/config.json' keys
 _get_config_keys() {
     local _keys=(
         $( jq "keys | .[]" "ws/config.json" )

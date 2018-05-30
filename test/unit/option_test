@@ -44,7 +44,7 @@ assertEquals "Invalid parameters length" 4 "$_found"
 
 
 #  -test Set option
-_set_config "priorityVal" "value"
+_set_config "priorityVal" "\"value\""
 put priorityVal "\"new.value\""
 _priority_val=$( get priorityVal )
 assertEquals "Unexpected 'setConfig' value" "value" "$_priority_val"

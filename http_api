@@ -99,10 +99,10 @@ fi
 if ! [ -f "ws/credentials.json" ]; then
     echo '[{
         "id": "Mandatory",
-        "username": "Required for: BASIC",
-        "password": "Required for: BASIC",
-        "secret": "Required for: BEARER, QPARAM",
-        "type": "Used for: BEARER, QPARAM"
+        "username": "Mandatory for: BASIC",
+        "password": "Optional for: BASIC",
+        "secret": "Mandatory for: BEARER, QPARAM",
+        "type": "Optional for: BEARER, QPARAM"
     }]' > "ws/credentials.json"
 fi
 #  Override JSON file
@@ -774,7 +774,11 @@ _append_auth() {
         "BASIC")
             _username=$( _credential_part username )
             _password=$( _credential_part password )
-            curlOpts "--basic" "-u $_username:$_password"
+            if [ "$_password" = "null" ]; then
+                curlOpts "--basic" "-u $_username"
+            else
+                curlOpts "--basic" "-u $_username:$_password"
+            fi
         ;;
         "HEADER")
             _type=$( _credential_part type "token" )

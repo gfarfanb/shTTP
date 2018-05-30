@@ -66,6 +66,67 @@ assertEquals "Lifecycle not executed" "shTTP" "$_info_name"
 assertEquals "'after_api' not executed" "Executed" "$_after_api_var"
 
 
+#  -test Initialize request variables
+_shttp_url="not-empty"
+_shttp_protocol="not-empty"
+_shttp_domain="not-empty"
+_shttp_method="not-empty"
+_shttp_base_path="not-empty"
+_shttp_endpoint="not-empty"
+_shttp_headers=( "not-empty" )
+_shttp_body=( "not-empty" )
+_shttp_form=( "not-empty" )
+_shttp_query_params=( "not-empty" )
+_shttp_curl_opts=( "not-empty" )
+_shttp_auth_mode="not-empty"
+_shttp_auth_credential="not-empty"
+_shttp_editor_command="not-empty"
+_shttp_output="not-empty"
+
+_init_vars
+
+assertTrue "'_shttp_url' is not empty" "-z \"$_shttp_url\""
+assertTrue "'_shttp_protocol' is not empty" "-z \"$_shttp_protocol\""
+assertTrue "'_shttp_domain' is not empty" "-z \"$_shttp_domain\""
+assertTrue "'_shttp_method' is not empty" "-z \"$_shttp_method\""
+assertTrue "'_shttp_base_path' is not empty" "-z \"$_shttp_base_path\""
+assertTrue "'_shttp_endpoint' is not empty" "-z \"$_shttp_endpoint\""
+
+_length=${#_shttp_headers[@]}
+assertEquals "'_shttp_headers' is not empty" 0 "$_length"
+
+_length=${#_shttp_body[@]}
+assertEquals "'_shttp_body' is not empty" 0 "$_length"
+
+_length=${#_shttp_form[@]}
+assertEquals "'_shttp_form' is not empty" 0 "$_length"
+
+_length=${#_shttp_query_params[@]}
+assertEquals "'_shttp_query_params' is not empty" 0 "$_length"
+
+_length=${#_shttp_curl_opts[@]}
+assertEquals "'_shttp_curl_opts' is not empty" 0 "$_length"
+
+assertTrue "'_shttp_auth_mode' is not empty" "-z \"$_shttp_auth_mode\""
+assertTrue "'_shttp_auth_credential' is not empty" "-z \"$_shttp_auth_credential\""
+assertTrue "'_shttp_editor_command' is not empty" "-z \"$_shttp_editor_command\""
+assertTrue "'_shttp_output' is not empty" "-z \"$_shttp_output\""
+
+
+#  -test Default values to request variables
+update "ws/config.json" '. + { "host": "not-empty"}'
+
+_default_vars
+
+assertEquals "'_shttp_protocol' is not empty" "https" "$_shttp_protocol"
+assertEquals "'_shttp_domain' is not empty" "not-empty" "$_shttp_domain"
+assertEquals "'_shttp_url' is not empty" "https://not-empty" "$_shttp_url"
+assertEquals "'_shttp_auth_mode' is not empty" "SKIP" "$_shttp_auth_mode"
+assertTrue "'_shttp_output' is not empty" "-n \"$_shttp_output\""
+
+_init_vars
+
+
 #  -test Request execution
 _before_request_var="Not executed yet"
 _after_request_var="Not executed yet"

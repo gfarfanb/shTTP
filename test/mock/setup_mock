@@ -11,8 +11,16 @@ nginx -v
 service nginx stop
 
 
+#  Copy services files.
+readonly _nginx_share="/usr/share/nginx/"
+if ! [ -d "${_nginx_share}shttp_mock" ]; then
+    mkdir "${_nginx_share}shttp_mock"
+fi
+cp srv/* "${_nginx_share}shttp_mock/"
+
+
 #  Set-up Nginx server
-readonly _srv_location="$( pwd )/srv"
+readonly _srv_location="${_nginx_share}shttp_mock"
 readonly _mock_conf="shttp_mock.conf"
 readonly _nginx_available="/etc/nginx/sites-available/"
 readonly _nginx_enabled="/etc/nginx/sites-enabled/"

@@ -148,6 +148,7 @@ update() {
     _temp="ws/pivot.$( date '+%s.%N' ).json.tmp"
     < "$_json" jq "$_jq" > "$_temp"
     mv "$_temp" "$_json"
+    info "Updated [$_json] file"
 }
 
 #  Save key-value config to 'ws/config.json'.
@@ -866,7 +867,7 @@ _credential_part() {
     local _default=${2:-'null'}
     local _part=""
     _part=$( < "ws/credentials.json" \
-        jq ".[] | select(.id == \"$_shttp_auth_credential\") | .$_name")
+        jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_name")
     _part=$( echo "$_part" | sed -e 's/^"//' -e 's/"$//' )
     if [ "$_part" = "null" ]; then
         _part="$_default"
@@ -1189,13 +1190,19 @@ expr "$*" : ".*--get-keys" > /dev/null \
 #+           host value
 _set_host() {
     local _host=${1:-''}
+    local _val=""
+    local _length=0
     if [ -z "$_host" ]; then
         _host=$( get host )
     fi
-    local _val=""
-    _val=$( get "hosts | .[] | select(.key==\"$_host\") | .value" )
-    if [ -n "$_val" ] && [ "$_val" != "null" ]; then
-        _host="$_val"
+    _length=$( < "ws/config.json" jq ".hosts | length" )
+    if (( _length > 0 )); then
+        _val=$( < "ws/config.json" \
+            jq ".hosts | .[] | select(.key==\"$_host\") | .value" )
+        _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
+        if [ -n "$_val" ] && [ "$_val" != "null" ]; then
+            _host="$_val"
+        fi
     fi
     domain "$_host"
     put host "\"$_host\""

@@ -12,6 +12,11 @@ service nginx stop
 service nginx status
 
 
+#  Remove services files.
+readonly _nginx_share="/usr/share/nginx/"
+rm -rf "${_nginx_share}shttp_mock"
+
+
 #  Clean-up Nginx server
 readonly _nginx_available="/etc/nginx/sites-available/"
 readonly _nginx_enabled="/etc/nginx/sites-enabled/"

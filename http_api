@@ -325,7 +325,7 @@ _shttp_editor_command=""
 _shttp_output=""
 
 #  Script input parameters.
-_shttp_input_params="$@"
+_shttp_input_params="${*}"
 
 
 # ---------- Builder functions
@@ -612,7 +612,7 @@ _init_vars() {
         _shttp_protocol=""
     fi
     if [[ "$_shttp_input_params" != *"--local"* ]] \
-        && [[ "$*" != *"--host"* ]]; then
+        && [[ "$_shttp_input_params" != *"--host"* ]]; then
         _shttp_domain=""
     fi
     
@@ -647,7 +647,7 @@ _default_vars() {
         protocol "https"
     fi
     if [ -z "$_shttp_domain" ]; then
-        domain $( get host "" )
+        domain "$( get host '' )"
     fi
     if [ -z "$_shttp_url" ]; then
         url "${_shttp_protocol}://${_shttp_domain}${_shttp_base_path}${_shttp_endpoint}"

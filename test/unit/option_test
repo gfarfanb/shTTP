@@ -18,18 +18,29 @@ assertEquals "Command not found" 4 "$_found"
 
 
 #  -test Look for parameters
-_previous_value="last"
-_previous_length=0
+_previous_value=()
 _callback_function() {
     local _new=${1:-''}
-    local _length=$#
-    _previous_value="$_new"
-    _previous_length=$_length
+    _previous_value+=( "$_new" )
 }
-_look_for_params "_callback_function" "--new" "command" "--new" "new" "--save" "key" "\"value\""
+_look_for_params "_callback_function" "--new" "command" \
+    "--new" "A" \
+    "--save" "key" "\"value\"" \
+    "--new" "B" \
+    "--new" "C" \
+    "--remove" "key" \
+    "--new" "D" \
+    "--basic"
 
-assertEquals "Invalid parameter value" "new" "$_previous_value"
-assertEquals "Invalid parameters length" 1 "$_previous_length"
+_found=0
+for _val in "${_previous_value[@]}"; do
+    case "$_val" in
+        A | B | C | D )
+            _found=$(( _found+1 ))
+        ;;
+    esac
+done
+assertEquals "Invalid parameters length" 4 "$_found"
 
 
 #  -test Set option

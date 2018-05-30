@@ -209,7 +209,7 @@ remove() {
 # ---------- Variables initialization
 
 #  Request URL. During request,
-#+ if value is empty, the URL
+#+ if its value is empty, the URL
 #+ will be build by:
 #+ '<protocol>://<domain><base-path><endpoint>'
 _shttp_url=""
@@ -563,7 +563,10 @@ _init_vars() {
 
 #  This lifecycle function is called
 #+ for request execution:
-#    1. Set the 'URL' value (no protocol).
+#    1. Build the '_shttp_url' value by
+#+      <protocol>://<domain><base-path><endpoint>.
+#+      If previously '_shttp_url' had a
+#+      value no build is performed.
 #    2. Set the '_shttp_output' basename with
 #+      format: 'output/<main-script>.
 #+      yyyy-mm-dd.hh_mm_ss'.
@@ -909,17 +912,21 @@ _look_for_params() {
     for _param in "$@"; do
         if [ $_found = 1 ]; then
             if [[ "$_param" == "--"* ]]; then
-                break
+                $_callback "${_params[@]}"
+                _found=2 # Option executed flag
+                _params=()
             else
                 _params+=( "$_param" )
             fi
         fi
         if [ "$_param" = "$_option" ]; then
-            _found=1
+            _found=1 # Option found flag
         fi
     done
     if [ $_found = 1 ]; then
         $_callback "${_params[@]}"
+    fi
+    if (( $_found > 1 )); then
         return 0
     else
         return 1

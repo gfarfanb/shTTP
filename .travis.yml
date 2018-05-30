@@ -6,16 +6,11 @@ branches:
   only:
     - master
 
-addons:
-  apt:
-    packages:
-      - nginx
-
 install:
   - curl --version
   - jq --version
   - shellcheck --version
-  - nginx -v
+  - sudo apt-get install nginx
 
 script:
   - ./lint

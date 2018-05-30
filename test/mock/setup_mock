@@ -23,7 +23,7 @@ cp $_mock_conf /etc/nginx/sites-available/
 #  Put correct service location
 sed -i -e "s|{{_shttp_srv_location}}|$_srv_location|g" "/etc/nginx/sites-available/$_mock_conf"
 
-cat "/etc/nginx/sites-available/$_mock_conf"
+cat "/etc/nginx/sites-available/default"
 
 # Clean-up last files in enabled sites
 rm -rf /etc/nginx/sites-enabled/shttp*
@@ -32,4 +32,7 @@ rm -rf /etc/nginx/sites-enabled/shttp*
 ln -s /etc/nginx/sites-available/$_mock_conf /etc/nginx/sites-enabled/ 
 
 nginx -t
-service nginx start
+service nginx restart
+
+#  Ping Nginx
+curl http://127.0.0.1

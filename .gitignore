@@ -1,7 +1,7 @@
 
 output/
-ws/
-*.json
+/ws/
+/test/ws/
 
 tmp/
 log/

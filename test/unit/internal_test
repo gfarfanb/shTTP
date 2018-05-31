@@ -114,18 +114,14 @@ assertTrue "'_shttp_output' is not empty" "-z \"$_shttp_output\""
 
 
 #  -test Default values to request variables
-update "ws/config.json" '. + { "host": "not-empty" }'
-
 _default_vars
 
 assertEquals "'_shttp_protocol' is not empty" "https" "$_shttp_protocol"
-assertEquals "'_shttp_domain' is not empty" "not-empty" "$_shttp_domain"
-assertEquals "'_shttp_url' is not empty" "https://not-empty" "$_shttp_url"
+assertEquals "'_shttp_url' is not empty" "https://" "$_shttp_url"
 assertEquals "'_shttp_auth_mode' is not empty" "SKIP" "$_shttp_auth_mode"
 assertTrue "'_shttp_output' is not empty" "-n \"$_shttp_output\""
 
 _init_vars
-update "ws/config.json" '. + { "host": null }'
 
 
 #  -test Request execution
@@ -279,7 +275,6 @@ update "ws/credentials.json" '. + [{
         "secret": "uqweq8u23j23e",
         "type": "api_token"
     }]'
-put host "\"any.host\""
 
 credential "auth"
 authMode "BASIC"
@@ -309,17 +304,12 @@ _append_auth
 
 _found=0
 for _header in "${_shttp_headers[@]}"; do
-    case "$_header" in
-        "Authorization: api_token uqweq8u23j23e")
-            _found=$(( _found+1 ))
-        ;;
-        "Host: any.host")
-            _found=$(( _found+1 ))
-        ;;
-    esac
+    if [ "$_header" = "Authorization: api_token uqweq8u23j23e" ]; then
+        _found=1
+    fi
 done
 
-assertEquals "'HEADER' mode not set" 2 "$_found"
+assertEquals "'HEADER' mode not set" 1 "$_found"
 
 _init_vars
 credential "auth"
@@ -332,19 +322,11 @@ _found=0
 #  shellcheck disable=SC2154
 for _param in "${_shttp_query_params[@]}"; do
     if [ "$_param" = "api_token=uqweq8u23j23e" ]; then
-    _found=$(( _found+1 ))
+    _found=1
 fi
 done
 
-#  shellcheck disable=SC2154
-for _header in "${_shttp_headers[@]}"; do
-    if [ "$_header" = "Host: any.host" ]; then
-        _found=$(( _found+1 ))
-        break
-    fi
-done
-
-assertEquals "'QPARAM' mode not set" 2 "$_found"
+assertEquals "'QPARAM' mode not set" 1 "$_found"
 
 _init_vars
 credential "auth"
@@ -358,11 +340,7 @@ assertEquals "'SKIP' mode not set for cURL options" 0 "$_length"
 _length=${#_shttp_query_params[@]}
 assertEquals "'SKIP' mode not set for query params" 0 "$_length"
 
-_length=${#_shttp_headers[@]}
-assertEquals "'SKIP' mode not set for headers" 1 "$_length"
-
 remove apiToken
-remove host
 _init_vars
 
 

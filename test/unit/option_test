@@ -83,26 +83,6 @@ done
 assertEquals "'namedKey' key not found" 1 "$_found"
 
 
-#  -test Host option
-_set_host "any.host"
-_current_host=$( get host )
-
-assertEquals "'Host' not assigned" "any.host" "$_current_host"
-
-update "ws/config.json" ". + { \"host\": null }"
-
-_host_object="{ \"key\": \"namedHost\", \"value\": \"any.named.host\" }"
-update "ws/config.json" ". + { \"hosts\": [$_host_object] }"
-
-_set_host "namedHost"
-_current_host=$( get host )
-
-assertEquals "Named 'Host' not assigned" "any.named.host" "$_current_host"
-
-update "ws/config.json" ". + { \"host\": null }"
-update "ws/config.json" ". + { \"hosts\": [] }"
-
-
 #  -test Local option
 _set_localhost "5555"
 #  shellcheck disable=SC2154

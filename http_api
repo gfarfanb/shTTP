@@ -9,19 +9,18 @@ _shttp_help_content() {
     local _content=(
         ""
         " Usage: ./<file>.sh <command> [--set <key-name> <value>] [--get <key-name>] [--add <key-name> <value>]"
-        "                              [--remove <key-name>] [--get-keys] [--list] [--clean] [--host <host>]"
-        "                              [--local <port>] [--auth-basic] [--auth-header] [--auth-qparam]"
-        "                              [--auth-skip] [--open] [--help]"
+        "                              [--remove <key-name>] [--keys] [--list] [--clean] [--local <port>]"
+        "                              [--auth-basic] [--auth-header] [--auth-qparam] [--auth-skip]"
+        "                              [--open] [--help]"
         ""
         " Options:"
         "   --set <key-name> <value>:    Set a temporal key-value config. This won't saved to 'ws/config.json'"
         "   --get <key-name>:            Display the value for key from 'ws/config.json'"
         "   --add <key-name> <value>:    Add new key-value to 'ws/config.json'"
         "   --remove <key-name>:         Remove the key-value from 'ws/config.json'"
-        "   --get-keys:                  Display all keys from 'ws/config.json' file"
+        "   --keys:                      Display all keys from 'ws/config.json' file"
         "   --list:                      Display the <command> list (all functions defined into main script)"
         "   --clean:                     Clean up all output files 'output/*'"
-        "   --host <host>:               Set host value to 'host' in 'ws/config.json'"
         "   --local <port>:              Set variables to local execution:"
         "                                  _shttp_protocol: http"
         "                                  _shttp_domain: localhost:<port> (default 8080)"
@@ -98,7 +97,7 @@ fi
 
 #  Config JSON file
 if ! [ -f "ws/config.json" ]; then
-    echo '{ "host": null, "hosts": [] }' > "ws/config.json"
+    echo '{ }' > "ws/config.json"
 fi
 
 #  Credentials JSON file
@@ -611,12 +610,8 @@ _init_vars() {
     _shttp_output=""
     if [[ "$_shttp_input_params" != *"--local"* ]]; then
         _shttp_protocol=""
-    fi
-    if [[ "$_shttp_input_params" != *"--local"* ]] \
-        && [[ "$_shttp_input_params" != *"--host"* ]]; then
         _shttp_domain=""
-    fi
-    
+    fi    
     if [[ "$_shttp_input_params" != *"--auth-"* ]]; then
         _shttp_auth_mode=""
         _shttp_auth_credential=""
@@ -629,26 +624,19 @@ _init_vars() {
 #    1. Set as default 'https' for
 #+      '_shttp_protocol' if value
 #+      was not set.
-#    2. Set as default 'host' (from
-#+      'ws/config.json') or '' for
-#+      '_shttp_domain' if value
-#+      was not set.
-#    3. Build the '_shttp_url' value by
+#    2. Build the '_shttp_url' value by
 #+      <protocol>://<domain><base-path><endpoint>.
 #+      If previously '_shttp_url' had a
 #+      value no build is performed.
-#    4. Set as default 'SKIP' for
+#    3. Set as default 'SKIP' for
 #+      '_shttp_auth_mode' if value
 #+      was not set.
-#    5. Set the '_shttp_output' basename with
+#    4. Set the '_shttp_output' basename with
 #+      format: 'output/<main-script>.
 #+      yyyy-mm-dd.hh_mm_ss'.
 _default_vars() {
     if [ -z "$_shttp_protocol" ]; then
         protocol "https"
-    fi
-    if [ -z "$_shttp_domain" ]; then
-        domain "$( get host '' )"
     fi
     if [ -z "$_shttp_url" ]; then
         url "${_shttp_protocol}://${_shttp_domain}${_shttp_base_path}${_shttp_endpoint}"
@@ -812,8 +800,6 @@ _append_content_type() {
 #    4. SKIP: Skip authorization setup.
 #    5. Another value: Exit script using
 #+      'fatal' logging function.
-#  Set 'host' value from 'ws/config.json'
-#+ to 'Host' header if it is found.
 _append_auth() {
     local _username=""
     local _password=""
@@ -849,11 +835,6 @@ _append_auth() {
         fatal "Invalid authorization mode [$_shttp_auth_mode]"
         ;;
     esac
-    local _host=""
-    _host=$( get host )
-    if [ "$_host" != "null" ]; then
-        _append_if_missing_header "Host" "$_host"
-    fi
 }
 
 #  Get the credential part for
@@ -1167,48 +1148,9 @@ _get_config_keys() {
         done
     fi
 }
-expr "$*" : ".*--get-keys" > /dev/null \
+expr "$*" : ".*--keys" > /dev/null \
     && _get_config_keys \
     && exit 0
-
-#  Set host value to 'ws/config.json'.
-#  Execution takes the following steps:
-#    1. Get host from the parameter.
-#    2. Get current host from
-#+      'ws/config.json', if parameter
-#+      is empty.
-#    3. Look for a host from listed
-#+      array 'hosts' defined in
-#+      'ws/config.json'. Array
-#+      must have the form:
-#+      '[{key:"" , value:""}]''
-#    4. If exist host in listed
-#+      hosts, that will be the
-#+      current host.
-#
-#  -param $1 Name of the host or
-#+           host value
-_set_host() {
-    local _host=${1:-''}
-    local _val=""
-    local _length=0
-    if [ -z "$_host" ]; then
-        _host=$( get host )
-    fi
-    _length=$( < "ws/config.json" jq ".hosts | length" )
-    if (( _length > 0 )); then
-        _val=$( < "ws/config.json" \
-            jq ".hosts | .[] | select(.key==\"$_host\") | .value" )
-        _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
-        if [ -n "$_val" ] && [ "$_val" != "null" ]; then
-            _host="$_val"
-        fi
-    fi
-    domain "$_host"
-    put host "\"$_host\""
-}
-expr "$*" : ".*--host" > /dev/null \
-    && _look_for_params "_set_host" "--host" "$@"
 
 #  Set '_shttp_domain' to 'localhost'. Default
 #+ port is 8080 but it can be specified

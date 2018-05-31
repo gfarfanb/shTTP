@@ -618,22 +618,115 @@ _init_vars() {
     fi
 }
 
-#  Put default values to
-#+ preferably not empty
+#  Put default values to empty
+#+ variables. The default
+#+ not null values are taken
+#+ from 'ws/config.json'.
+#    1. '_shttp_protocol': 'get protocol'
+#    2. '_shttp_domain': 'get domain'
+#    3. '_shttp_base_path': 'get basePath'
+#    4. '_shttp_endpoint': 'get endpoint'
+#    5. '_shttp_method': 'get method'
+#    6. '_shttp_auth_mode': 'get authMode'
+#    7. '_shttp_auth_credential': 'get authCredential'
+#    8. '_shttp_editor_command': 'get editorCommand'
+#    9. '_shttp_headers': (for each in)
+#+      'get headers'
+#    10. '_shttp_body': (for each in)
+#+       'get body'
+#    11. '_shttp_form': (for each in)
+#+       'get form'
+#    12. '_shttp_query_params': (for each in)
+#+        'get queryParams'
+#    13. '_shttp_curl_opts': (for each in)
+#+       'get curlOpts'
+_default_config() {
+    local _name=""
+    local _val=""
+    local _vals=()
+    local _length=0
+    if [ -z "$_shttp_protocol" ]; then
+        _val=$( get protocol )
+        if [ "$_val" != "null" ]; then protocol "$_val" ; fi
+    fi
+    if [ -z "$_shttp_domain" ]; then
+        _val=$( get domain )
+        if [ "$_val" != "null" ]; then domain "$_val" ; fi
+    fi
+    if [ -z "$_shttp_base_path" ]; then
+        _val=$( get basePath )
+        if [ "$_val" != "null" ]; then basePath "$_val" ; fi
+    fi
+    if [ -z "$_shttp_endpoint" ]; then
+        _val=$( get endpoint )
+        if [ "$_val" != "null" ]; then endpoint "$_val" ; fi
+    fi
+    if [ -z "$_shttp_method" ]; then
+        _val=$( get method )
+        if [ "$_val" != "null" ]; then method "$_val" ; fi
+    fi
+    if [ -z "$_shttp_auth_mode" ]; then
+        _val=$( get authMode )
+        if [ "$_val" != "null" ]; then authMode "$_val" ; fi
+    fi
+    if [ -z "$_shttp_auth_credential" ]; then
+        _val=$( get authCredential )
+       if [ "$_val" != "null" ]; then credential "$_val" ; fi
+    fi
+    if [ -z "$_shttp_editor_command" ]; then
+        _val=$( get editorCommand )
+        if [ "$_val" != "null" ]; then editor "$_val" ; fi
+    fi
+    _length=${#_shttp_headers[@]}
+    if (( _length == 0 )); then
+        _length=$( jq  '.headers | length' "ws/config.json" )
+        if (( _length > 0)); then
+            _vals=( $( jq ".headers | .[]" "ws/config.json" ) )
+            for _i in "${_vals[@]}"; do headers "$_i" ; done
+        fi
+    fi
+    _length=${#_shttp_body[@]}
+    if (( _length == 0 )); then
+        _length=$( jq  '.body | length' "ws/config.json" )
+        if (( _length > 0)); then
+            _vals=( $( jq ".body | .[]" "ws/config.json" ) )
+            for _i in "${_vals[@]}"; do body "$_i" ; done
+        fi
+    fi
+    _length=${#_shttp_form[@]}
+    if (( _length == 0 )); then
+        _length=$( jq  '.form | length' "ws/config.json" )
+        if (( _length > 0)); then
+            _vals=( $( jq ".form | .[]" "ws/config.json" ) )
+            for _i in "${_vals[@]}"; do form "$_i" ; done
+        fi
+    fi
+    _length=${#_shttp_query_params[@]}
+    if (( _length == 0 )); then
+        _length=$( jq  '.queryParams | length' "ws/config.json" )
+        if (( _length > 0)); then
+            _vals=( $( jq ".queryParams | .[]" "ws/config.json" ) )
+            for _i in "${_vals[@]}"; do queryParams "$_i" ; done
+        fi
+    fi
+    _length=${#_shttp_curl_opts[@]}
+    if (( _length == 0 )); then
+        _length=$( jq  '.curlOpts | length' "ws/config.json" )
+        if (( _length > 0)); then
+            _vals=( $( jq ".curlOpts | .[]" "ws/config.json" ) )
+            for _i in "${_vals[@]}"; do curlOpts "$_i" ; done
+        fi
+    fi
+}
+
+#  Put default values to empty
 #+ variables.
-#    1. Set as default 'https' for
-#+      '_shttp_protocol' if value
-#+      was not set.
-#    2. Build the '_shttp_url' value by
-#+      <protocol>://<domain><base-path><endpoint>.
-#+      If previously '_shttp_url' had a
-#+      value no build is performed.
-#    3. Set as default 'SKIP' for
-#+      '_shttp_auth_mode' if value
-#+      was not set.
-#    4. Set the '_shttp_output' basename with
-#+      format: 'output/<main-script>.
-#+      yyyy-mm-dd.hh_mm_ss'.
+#    1. '_shttp_protocol': 'https'
+#    2. '_shttp_url':
+#+      <protocol>://<domain><base-path><endpoint>
+#    3. '_shttp_auth_mode': 'SKIP'
+#    4. '_shttp_output': 
+#+      'output/<main-script>.yyyy-mm-dd.hh_mm_ss'
 _default_vars() {
     if [ -z "$_shttp_protocol" ]; then
         protocol "https"
@@ -651,24 +744,27 @@ _default_vars() {
 
 #  This lifecycle function is called
 #+ for request execution:
-#    1. Set default request variables.
-#    2. Append default 'Content-Type' to
+#    1. Set default request variables
+#+      using 'ws/config.json'.
+#    2. Set default request variables.
+#    3. Append default 'Content-Type' to
 #+      headers.
-#    3. Append authentication to request.
-#    4. Set body to a body file.
-#    5. Build 'cURL' command.
-#    6. Execute 'before_<command>' function
+#    4. Append authentication to request.
+#    5. Set body to a body file.
+#    6. Build 'cURL' command.
+#    7. Execute 'before_<command>' function
 #+      if it is declared.
-#    7. Execute 'cURL' command.
-#    8. Execute 'after_<command>' function
+#    8. Execute 'cURL' command.
+#    9. Execute 'after_<command>' function
 #+      if it is declared.
-#    9. Clean and append details into
+#    10. Clean and append details into
 #+       '_shttp_output.trace' file.
 #
 #  -param $1 Request command
 _request() {
     local _command=${1:-''}
-    
+
+    _default_config
     _default_vars
     _append_content_type
     _append_auth
@@ -838,7 +934,7 @@ _append_auth() {
 }
 
 #  Get the credential part for
-#+ '_shttp_auth_credentials'.
+#+ '_shttp_auth_credential'.
 #
 #  -param $1 Part name
 #  -param $2 Default name
@@ -1141,7 +1237,6 @@ _get_config_keys() {
         $( jq "keys | .[]" "ws/config.json" )
     )
     local _length=${#_keys[@]}
-
     if (( _length > 0 )); then
         for _key in "${_keys[@]}"; do
             echo "$_key" | sed -e 's/^"//' -e 's/"$//'

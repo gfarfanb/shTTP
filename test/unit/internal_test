@@ -113,6 +113,75 @@ assertTrue "'_shttp_editor_command' is not empty" "-z \"$_shttp_editor_command\"
 assertTrue "'_shttp_output' is not empty" "-z \"$_shttp_output\""
 
 
+#  -test Default values from config
+update "ws/config.json" '. + {
+        "protocol": "any-protocol",
+    	"domain": "any-domain",
+    	"basePath": "any-base-path",
+    	"endpoint": "any-endpoint",
+    	"method": "GET",
+    	"headers": [
+    	    "Any-Header: test/value"
+    	 ],
+    	"body": [
+    	    "any-body-part"
+    	],
+    	"form": [
+    	    "key=value"
+    	],
+    	"queryParams": [
+    	    "param=value"
+    	],
+    	"curlOpts": [
+    	    "--basic"
+    	],
+    	"authMode": "HEADER",
+    	"authCredential": "test.user",
+    	"editorCommand": "vim result.json"
+    }'
+_default_config
+
+assertEquals "'_shttp_protocol' not in config" "any-protocol" "$_shttp_protocol"
+assertEquals "'_shttp_domain' not in config" "any-domain" "$_shttp_domain"
+assertEquals "'_shttp_method' not in config" "GET" "$_shttp_method"
+assertEquals "'_shttp_base_path' not in config" "any-base-path" "$_shttp_base_path"
+assertEquals "'_shttp_endpoint' not in config" "any-endpoint" "$_shttp_endpoint"
+
+_length=${#_shttp_headers[@]}
+assertEquals "'_shttp_headers' not in config" 1 "$_length"
+
+_length=${#_shttp_body[@]}
+assertEquals "'_shttp_body' not in config" 1 "$_length"
+
+_length=${#_shttp_form[@]}
+assertEquals "'_shttp_form' not in config" 1 "$_length"
+
+_length=${#_shttp_query_params[@]}
+assertEquals "'_shttp_query_params' not in config" 1 "$_length"
+
+_length=${#_shttp_curl_opts[@]}
+assertEquals "'_shttp_curl_opts' not in config" 1 "$_length"
+
+assertEquals "'_shttp_auth_mode' not in config" "HEADER" "$_shttp_auth_mode"
+assertEquals "'_shttp_auth_credential' not in config" "test.user" "$_shttp_auth_credential"
+assertEquals "'_shttp_editor_command' not in config" "vim result.json" "$_shttp_editor_command"
+
+_init_vars
+remove protocol
+remove domain
+remove basePath
+remove endpoint
+remove method
+remove headers
+remove body
+remove form
+remove queryParams
+remove curlOpts
+remove authMode
+remove authCredential
+remove editorCommand
+
+
 #  -test Default values to request variables
 _default_vars
 

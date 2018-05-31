@@ -9,7 +9,6 @@ IFS=$'\n\t'
 #+ stop service.
 nginx -v
 service nginx stop
-service nginx status
 
 
 #  Remove services files.
@@ -20,6 +19,19 @@ rm -rf "${_nginx_share}shttp_mock"
 #  Clean-up Nginx server
 readonly _nginx_available="/etc/nginx/sites-available/"
 readonly _nginx_enabled="/etc/nginx/sites-enabled/"
+readonly _mock_conf="shttp_mock.conf"
 
-rm -rf "${_nginx_available}shttp"*
-rm -rf "${_nginx_enabled}shttp"*
+rm -rf $_nginx_available$_mock_conf
+rm -rf $_nginx_enabled$_mock_conf
+
+
+#  Validate set-down
+if [ -d ${_nginx_share}shttp_mock ] \
+    || [ -f $_nginx_available$_mock_conf ] \
+    || [ -f $_nginx_enabled$_mock_conf ]; then
+    printf "\r%*s\r%s\n" "$(tput cols)" "[ FAILED ] " "setup_mock: Mock services set-down failed";
+    exit 1
+else
+    printf "\r%*s\r%s\n" "$(tput cols)" "[ OK ] " "setup_mock: Mock services correctly set-down";
+fi
+

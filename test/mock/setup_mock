@@ -34,18 +34,27 @@ cp $_mock_conf $_nginx_available
 #  Put correct service location
 sed -i -e "s|{{_shttp_srv_location}}|$_srv_location|g" $_nginx_available$_mock_conf
 
-cat "/etc/nginx/sites-available/default"
-
 # Clean-up last files in enabled sites
 rm -rf "${_nginx_enabled}shttp"*
 
 #  Enable site by creating a symbolic link
 ln -s $_nginx_available$_mock_conf $_nginx_enabled
 
+
+#  Check configuration and
+#+ restart service.
 nginx -t
 service nginx restart
-service nginx status
 
 
-#  Ping Nginx
-curl http://127.0.0.1
+#  Validate set-up
+readonly _nginx_ping_status=$( curl -o /dev/null \
+    -sw '%{http_code}' \
+    http://127.0.0.1:5555/info
+)
+if [ "$_nginx_ping_status" = "200" ]; then
+    printf "\r%*s\r%s\n" "$(tput cols)" "[ OK ] " "setup_mock: Mock services correctly set-up";
+else
+    printf "\r%*s\r%s\n" "$(tput cols)" "[ FAILED ] " "setup_mock: Mock services set-up failed";
+    exit 1
+fi

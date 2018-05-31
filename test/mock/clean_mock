@@ -21,8 +21,8 @@ readonly _nginx_available="/etc/nginx/sites-available/"
 readonly _nginx_enabled="/etc/nginx/sites-enabled/"
 readonly _mock_conf="shttp_mock.conf"
 
-rm -rf $_nginx_available$_mock_conf
-rm -rf $_nginx_enabled$_mock_conf
+rm -f $_nginx_available$_mock_conf
+rm -f $_nginx_enabled$_mock_conf
 
 
 #  Validate set-down

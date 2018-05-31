@@ -26,7 +26,7 @@ readonly _nginx_available="/etc/nginx/sites-available/"
 readonly _nginx_enabled="/etc/nginx/sites-enabled/"
 
 # Clean-up last files in available sites
-rm -rf "${_nginx_available}shttp"*
+rm -f "${_nginx_available}shttp"*
 
 #  Copy server configuration
 cp $_mock_conf $_nginx_available
@@ -35,7 +35,7 @@ cp $_mock_conf $_nginx_available
 sed -i -e "s|{{_shttp_srv_location}}|$_srv_location|g" $_nginx_available$_mock_conf
 
 # Clean-up last files in enabled sites
-rm -rf "${_nginx_enabled}shttp"*
+rm -f "${_nginx_enabled}shttp"*
 
 #  Enable site by creating a symbolic link
 ln -s $_nginx_available$_mock_conf $_nginx_enabled

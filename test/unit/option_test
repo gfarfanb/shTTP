@@ -50,6 +50,31 @@ _priority_val=$( get priorityVal )
 assertEquals "Unexpected 'setConfig' value" "value" "$_priority_val"
 
 
+#  -test Set environment
+echo '{ }' > ws/config.test.json
+echo '[ ]' > ws/credentials.test.json
+
+_set_env "test"
+
+#  shellcheck disable=SC2154
+assertEquals "Configuration 'test' file not found" "ws/config.test.json" "$_shttp_env"
+#  shellcheck disable=SC2154
+assertEquals "Credentials 'test' file not found" "ws/credentials.test.json" "$_shttp_creds"
+
+_set_env
+rm -f ws/config.test.json
+rm -f ws/credentials.test.json
+
+
+#  -test Copy environment
+_copy_env default env
+assertTrue "Configuration 'env' file does not exists" "-f ws/config.env.json"
+assertTrue "Credentials 'env' file does not exists" "-f ws/credentials.env.json"
+
+rm -f ws/config.env.json
+rm -f ws/credentials.env.json
+
+
 #  -test Add option
 _add_config "addedVal" "\"value\""
 _added_val=$( get addedVal )

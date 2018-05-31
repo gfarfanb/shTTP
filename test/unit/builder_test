@@ -149,3 +149,19 @@ output 'output/response'
 #  shellcheck disable=SC2154
 assertEquals "Set output does not work" "output/response" "$_shttp_output"
 _init_vars
+
+
+#  -test Set environment
+echo '{ }' > ws/config.test.json
+echo '[ ]' > ws/credentials.test.json
+
+env "test"
+
+#  shellcheck disable=SC2154
+assertEquals "Configuration 'test' not found" "ws/config.test.json" "$_shttp_env"
+#  shellcheck disable=SC2154
+assertEquals "Credentials 'test' not found" "ws/credentials.test.json" "$_shttp_creds"
+
+env
+rm -f ws/config.test.json
+rm -f ws/credentials.test.json

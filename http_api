@@ -8,17 +8,22 @@ IFS=$'\n\t'
 _shttp_help_content() {
     local _content=(
         ""
-        " Usage: ./<file>.sh <command> [--set <key-name> <value>] [--get <key-name>] [--add <key-name> <value>]"
-        "                              [--remove <key-name>] [--keys] [--list] [--clean] [--local <port>]"
-        "                              [--auth-basic] [--auth-header] [--auth-qparam] [--auth-skip]"
+        " Usage: ./<file>.sh <command> [--env <env>] [--copy <from> <to>] [--set <key-name> <value>] [--get <key-name>]"
+        "                              [--add <key-name> <value>] [--remove <key-name>] [--keys] [--list] [--clean]"
+        "                              [--local <port>] [--auth-basic] [--auth-header] [--auth-qparam] [--auth-skip]"
         "                              [--open] [--help]"
         ""
         " Options:"
-        "   --set <key-name> <value>:    Set a temporal key-value config. This won't saved to 'ws/config.json'"
-        "   --get <key-name>:            Display the value for key from 'ws/config.json'"
-        "   --add <key-name> <value>:    Add new key-value to 'ws/config.json'"
-        "   --remove <key-name>:         Remove the key-value from 'ws/config.json'"
-        "   --keys:                      Display all keys from 'ws/config.json' file"
+        "   --env <env>:                 Set the environment for script by changing configuration and credentials files:"
+        "                                  'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
+        "   --copy <env-from> <env-to>:  Copy the environment configuration and credentials files. Must exist the 'from'"
+        "                                  configuration files. If already exist the 'to' files those will be replaced."
+        "                                  If is required to copy from 'default' the first parameters must contain 'default'"
+        "   --set <key-name> <value>:    Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
+        "   --get <key-name>:            Display the value for key from 'ws/config[.<env>].json'"
+        "   --add <key-name> <value>:    Add new key-value to 'ws/config[.<env>].json'"
+        "   --remove <key-name>:         Remove the key-value from 'ws/config[.<env>].json'"
+        "   --keys:                      Display all keys from 'ws/config[.<env>].json' file"
         "   --list:                      Display the <command> list (all functions defined into main script)"
         "   --clean:                     Clean up all output files 'output/*'"
         "   --local <port>:              Set variables to local execution:"
@@ -29,7 +34,7 @@ _shttp_help_content() {
         "   --auth-qparam <credential>:  Set 'QPARAM' mode to '_shttp_auth_mode'."
         "   --auth-skip:                 Set 'SKIP' mode to '_shttp_auth_mode'."
         "   --open:                      Set '_shttp_editor_command' with value defined on 'editorCommand'"
-        "                                  from 'ws/config.json'. This causes to execute '_shttp_editor_command'."
+        "                                  from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'."
         "   --help:                      Display this help message"
     )
     echo "${_content[*]}"
@@ -95,12 +100,26 @@ if ! [ -d ws ]; then
     mkdir ws || fatal "Imposible to create 'ws' dorectory"
 fi
 
-#  Config JSON file
+#  Default configuration JSON file
 if ! [ -f "ws/config.json" ]; then
-    echo '{ }' > "ws/config.json"
+    echo '{
+        "protocol": null,
+    	"domain": null,
+    	"basePath": null,
+    	"endpoint": null,
+    	"method": null,
+    	"headers": [],
+    	"body": [],
+    	"form": [],
+    	"queryParams": [],
+    	"curlOpts": [],
+    	"authMode": null,
+    	"authCredential": null,
+    	"editorCommand": null
+    }' > "ws/config.json"
 fi
 
-#  Credentials JSON file
+#  Default credentials JSON file
 if ! [ -f "ws/credentials.json" ]; then
     echo '[{
         "id": "Mandatory",
@@ -113,7 +132,7 @@ fi
 
 #  Override JSON file
 if [ -f "ws/override.json.tmp" ]; then
-    rm -rf "ws/override.json.tmp"
+    rm -f "ws/override.json.tmp"
 fi
 echo '{ }' > "ws/override.json.tmp"
 
@@ -150,7 +169,7 @@ update() {
     info "Updated [$_json] file"
 }
 
-#  Save key-value config to 'ws/config.json'.
+#  Save key-value config to 'ws/config[.<env>].json'.
 #  This function has three different forms:
 #    1. Only 'jq' query: put '.jq'
 #    2. Name and 'jq' query: put 'name' '.jq'
@@ -176,13 +195,13 @@ put() {
     if [ -n "$_jq" ]; then
         _val=$( < "$_shttp_output.output" jq "try $_jq catch null" )
     fi
-    update "ws/config.json" ". + { \"$_name\": $_val }"
+    update "$_shttp_env" ". + { \"$_name\": $_val }"
     info "Saved [$_name] with value [$_val] to workspace config"
 }
 
 #  Get key-value config in the following
 #+ order: script variables and then from
-#+ 'ws/config.json'.
+#+ 'ws/config[.<env>].json'.
 #
 #  -param $1 Name of the entry or 'jq'
 #+           query (without '.' at the
@@ -202,7 +221,7 @@ get() {
         _val=""
     fi
     if [ -z "$_val" ]; then
-        _val=$( jq ".$_name | tostring" "ws/config.json" )
+        _val=$( jq ".$_name | tostring" "$_shttp_env" )
         _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
         if [ "$_val" = "null" ]; then
             _val="$_default"
@@ -211,7 +230,7 @@ get() {
     echo "$_val"
 }
 
-#  Remove key-value from 'ws/config.json'.
+#  Remove key-value from 'ws/config[.<env>].json'.
 #  This function has two different forms:
 #    1. 'jq' query: remove '.jq'
 #    2. Field name: remove 'name'
@@ -221,16 +240,16 @@ remove() {
     local _name=${1:-''}
     if [[ "$_name" = \.* ]]; then
         local _val=""
-        _val=$( jq "try $_name catch null" "ws/config.json" )
+        _val=$( jq "try $_name catch null" "$_shttp_env" )
         if [ "$_val" != "null" ]; then
-            update "ws/config.json" "del($_name)"
+            update "$_shttp_env" "del($_name)"
             info "Removed [$_name] from workspace config"
         fi
     else
         local _found=""
-        _found=$( jq "has(\"$_name\")" "ws/config.json" )
+        _found=$( jq "has(\"$_name\")" "$_shttp_env" )
         if [ "$_found" = "true" ]; then
-            update "ws/config.json" "del(.$_name)"
+            update "$_shttp_env" "del(.$_name)"
             info "Removed [$_name] from workspace config"
         fi
     fi
@@ -303,7 +322,7 @@ _shttp_auth_mode=""
 
 #  Authentication credential identifier.
 #  The credential must be in 
-#+ 'ws/credentials.json'.
+#+ 'ws/credentials[.<env>].json'.
 #  Regarding to '_shttp_auth_mode'
 #+ credential must have the
 #+ following fields:
@@ -323,6 +342,18 @@ _shttp_editor_command=""
 #+ '<output>.output' and
 #+ '<output>.trace'.
 _shttp_output=""
+
+#  Configuration environment file.
+#+ If environment is assigned
+#+ file will have this form:
+#+ 'ws/config.<env>.json'.
+_shttp_env="ws/config.json"
+
+#  Credentials environment file.
+#+ If environment is assigned
+#+ file will have this form:
+#+ 'ws/credentials.<env>.json'.
+_shttp_creds="ws/credentials.json"
 
 #  Script input parameters.
 _shttp_input_params="${*}"
@@ -511,6 +542,28 @@ output() {
     info "Set [Output] with [$_shttp_output]"
 }
 
+#  Setter for '_shttp_env'.
+#
+#  -param $1 Environment suffix
+env() {
+    local _env=${1:-''}
+    if [ -n "$_env" ]; then
+        _shttp_env="ws/config.$_env.json"
+        _shttp_creds="ws/credentials.$_env.json"
+    else
+        _shttp_env="ws/config.json"
+        _shttp_creds="ws/credentials.json"
+    fi
+    if ! [ -f "$_shttp_env" ]; then
+        fatal "Configuration [$_shttp_env] does not exists"
+    fi
+    if ! [ -f "$_shttp_creds" ]; then
+        fatal "Credentials [$_shttp_creds] does not exists"
+    fi
+    info "Set [Configuration] with [$_shttp_env]"
+    info "Set [Credentials] with [$_shttp_creds]"
+}
+
 
 # ---------- Internal functions
 
@@ -621,7 +674,7 @@ _init_vars() {
 #  Put default values to empty
 #+ variables. The default
 #+ not null values are taken
-#+ from 'ws/config.json'.
+#+ from 'ws/config[.<env>].json'.
 #    1. '_shttp_protocol': 'get protocol'
 #    2. '_shttp_domain': 'get domain'
 #    3. '_shttp_base_path': 'get basePath'
@@ -679,41 +732,41 @@ _default_config() {
     fi
     _length=${#_shttp_headers[@]}
     if (( _length == 0 )); then
-        _length=$( jq  '.headers | length' "ws/config.json" )
+        _length=$( jq  '.headers | length' "$_shttp_env" )
         if (( _length > 0)); then
-            _vals=( $( jq ".headers | .[]" "ws/config.json" ) )
+            _vals=( $( jq ".headers | .[]" "$_shttp_env" ) )
             for _i in "${_vals[@]}"; do headers "$_i" ; done
         fi
     fi
     _length=${#_shttp_body[@]}
     if (( _length == 0 )); then
-        _length=$( jq  '.body | length' "ws/config.json" )
+        _length=$( jq  '.body | length' "$_shttp_env" )
         if (( _length > 0)); then
-            _vals=( $( jq ".body | .[]" "ws/config.json" ) )
+            _vals=( $( jq ".body | .[]" "$_shttp_env" ) )
             for _i in "${_vals[@]}"; do body "$_i" ; done
         fi
     fi
     _length=${#_shttp_form[@]}
     if (( _length == 0 )); then
-        _length=$( jq  '.form | length' "ws/config.json" )
+        _length=$( jq  '.form | length' "$_shttp_env" )
         if (( _length > 0)); then
-            _vals=( $( jq ".form | .[]" "ws/config.json" ) )
+            _vals=( $( jq ".form | .[]" "$_shttp_env" ) )
             for _i in "${_vals[@]}"; do form "$_i" ; done
         fi
     fi
     _length=${#_shttp_query_params[@]}
     if (( _length == 0 )); then
-        _length=$( jq  '.queryParams | length' "ws/config.json" )
+        _length=$( jq  '.queryParams | length' "$_shttp_env" )
         if (( _length > 0)); then
-            _vals=( $( jq ".queryParams | .[]" "ws/config.json" ) )
+            _vals=( $( jq ".queryParams | .[]" "$_shttp_env" ) )
             for _i in "${_vals[@]}"; do queryParams "$_i" ; done
         fi
     fi
     _length=${#_shttp_curl_opts[@]}
     if (( _length == 0 )); then
-        _length=$( jq  '.curlOpts | length' "ws/config.json" )
+        _length=$( jq  '.curlOpts | length' "$_shttp_env" )
         if (( _length > 0)); then
-            _vals=( $( jq ".curlOpts | .[]" "ws/config.json" ) )
+            _vals=( $( jq ".curlOpts | .[]" "$_shttp_env" ) )
             for _i in "${_vals[@]}"; do curlOpts "$_i" ; done
         fi
     fi
@@ -745,7 +798,7 @@ _default_vars() {
 #  This lifecycle function is called
 #+ for request execution:
 #    1. Set default request variables
-#+      using 'ws/config.json'.
+#+      using 'ws/config[.<env>].json'.
 #    2. Set default request variables.
 #    3. Append default 'Content-Type' to
 #+      headers.
@@ -943,7 +996,7 @@ _credential_part() {
     local _name=${1:-''}
     local _default=${2:-'null'}
     local _part=""
-    _part=$( < "ws/credentials.json" \
+    _part=$( < "$_shttp_creds" \
         jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_name")
     _part=$( echo "$_part" | sed -e 's/^"//' -e 's/"$//' )
     if [ "$_part" = "null" ]; then
@@ -1055,7 +1108,7 @@ _clean_trace() {
         echo "" | tee -a "$_shttp_output.trace" > /dev/null
         echo ">>>>> body" | tee -a "$_shttp_output.trace" > /dev/null
         < "$_body_file" tee -a "$_shttp_output.trace" > /dev/null # Append body content
-        rm -rf "$_body_file"
+        rm -f "$_body_file"
     fi
 
     echo "" | tee -a "$_shttp_output.trace" > /dev/null
@@ -1091,7 +1144,7 @@ _editor_command() {
 #+ get an error.
 _finally_http_api() {
     if [ -d ws ]; then
-        rm -rf ws/*.json.tmp
+        rm -f ws/*.json.tmp
     fi
 }
 
@@ -1186,7 +1239,69 @@ _set_config() {
 expr "$*" : ".*--set" > /dev/null \
     && _look_for_params "_set_config" "--set" "$@"
 
-#  Save key-value to 'ws/config.json'
+#  Set the configuration environment
+#+ suffix. This value will be used
+#+ for get current configuration
+#+ append it to 'ws/config-<env>.json'.
+#
+#  -param $1 Environment suffix
+_set_env() {
+    local _env=${1:-''}
+    env "$_env"
+}
+expr "$*" : ".*--env" > /dev/null \
+    && _look_for_params "_set_env" "--env" "$@"
+
+#  Copy the configuration and credentials
+#+ files. The 'from' files must exist. If
+#+ 'to' files already exist those will be
+#+ replaced with new ones.
+#
+#  --param $1 From environment
+#  --param $2 From environment
+_copy_env() {
+    local _from=${1:-''}
+    local _to=${2:-''}
+    if [ -z "$_to" ]; then
+        fatal "Required [$2:env-to] parameter"
+    fi
+    if [ "$_from" = "$_to" ]; then
+        fatal "Parameters are the same [$_from = $_to]"
+    fi
+    if [ "$_from" = "default" ]; then
+        _from=""
+    else
+        _from=".$_from"
+    fi
+    if [ "$_to" = "default" ]; then
+        _to=""
+    else
+        _to=".$_to"
+    fi
+    if ! [ -f "ws/config$_from.json" ]; then
+        fatal "File [ws/config$_from.json] does not exist"
+    fi
+    if ! [ -f "ws/credentials$_from.json" ]; then
+        fatal "File [ws/credentials$_from.json] does not exist"
+    fi
+    if [ -f "ws/config$_to.json" ]; then
+        rm -f "ws/config$_to.json"
+        info "Deleted [ws/config$_to.json] file"
+    fi
+    if [ -f "ws/credentials$_to.json" ]; then
+        rm -f "ws/credentials$_to.json"
+        info "Deleted [ws/credentials$_to.json] file"
+    fi
+    cp "ws/config$_from.json" "ws/config$_to.json"
+    cp "ws/credentials$_from.json" "ws/credentials$_to.json"
+    info "Added [ws/config$_to.json] file"
+    info "Added [ws/credentials$_to.json] file"
+}
+expr "$*" : ".*--copy" > /dev/null \
+    && _look_for_params "_copy_env" "--copy" "$@" \
+    && exit 0
+
+#  Save key-value to 'ws/config[.<env>].json'
 #+ using 'put' function.
 #
 #  -param $1 Name of the entry
@@ -1200,7 +1315,7 @@ expr "$*" : ".*--add" > /dev/null \
     && _look_for_params "_add_config" "--add" "$@" \
     && exit 0
 
-#  Get key-value from 'ws/config.json'
+#  Get key-value from 'ws/config[.<env>].json'
 #+ using 'get' function.
 #
 #  -param $1 Name of the entry
@@ -1217,7 +1332,7 @@ expr "$*" : ".*--get" > /dev/null \
     && _look_for_params "_get_config" "--get" "$@" \
     && exit 0
 
-#  Remove key-value to 'ws/config.json'
+#  Remove key-value to 'ws/config[.<env>].json'
 #+ using 'remove' function.
 #
 #  -param $1 Name of the entry
@@ -1229,12 +1344,12 @@ expr "$*" : ".*--remove" > /dev/null \
     && _look_for_params "_remove_config" "--remove" "$@" \
     && exit 0
 
-#  List the keys of 'ws/config.json'.
+#  List the keys of 'ws/config[.<env>].json'.
 #
-#  -return 'ws/config.json' keys
+#  -return 'ws/config[.<env>].json' keys
 _get_config_keys() {
     local _keys=(
-        $( jq "keys | .[]" "ws/config.json" )
+        $( jq "keys | .[]" "$_shttp_env" )
     )
     local _length=${#_keys[@]}
     if (( _length > 0 )); then
@@ -1284,7 +1399,7 @@ expr "$*" : ".*--auth-skip" > /dev/null \
     && authMode "SKIP"
 
 #  Get saved editor command from
-#+ 'ws/config.json and the value
+#+ 'ws/config[.<env>].json and the value
 #+ is assigned to '_shttp_editor_command'.
 _open_editor() {
     editor "$( get editorCommand )"

@@ -89,27 +89,27 @@ expr "$*" : ".*--list" > /dev/null \
 # ---------- Variables initialization
 
 #  Assertions count.
-_assertions=0
+_test_runner_assertions=0
 
 #  Failed assertions count.
-_failures=0
+_test_runner_failures=0
 
 #  All tests executed flag.
-_completed=0
+_test_runner_completed=0
 
 
 # ---------- Internal functions
 
-#  Increase by 1 the '_assertions' count.
+#  Increase by 1 the '_test_runner_assertions' count.
 _inc_asserts() {
-    _assertions=$(( _assertions+1 ))
+    _test_runner_assertions=$(( _test_runner_assertions+1 ))
 }
 
 #  Print the failed test message and
-#+ increase the '_failures' count.
+#+ increase the '_test_runner_failures' count.
 _fail() {
     info ">>>   [FAILED]   $*"
-    _failures=$(( _failures+1 ))
+    _test_runner_failures=$(( _test_runner_failures+1 ))
 }
 
 #  Print the test results and execute
@@ -120,19 +120,19 @@ _fail() {
 _finally_test_runner() {
     local _code=$?
     if [ $_code != 0 ]; then
-        error "$( basename "$0" ): [INTERRUPTED] - [$_failures] of [$_assertions] assertions failed"
+        error "$( basename "$0" ): [INTERRUPTED] - [$_test_runner_failures] of [$_test_runner_assertions] assertions failed"
     else
-        if [ $_failures = 0 ]; then
-            info "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
+        if [ $_test_runner_failures = 0 ]; then
+            info "$( basename "$0" ): [PASSED] - [$_test_runner_assertions] of [$_test_runner_assertions] assertions passed"
         else
-            info "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
+            info "$( basename "$0" ): [FAILED] - [$_test_runner_failures] of [$_test_runner_assertions] assertions failed"
         fi
     fi
 
     #  shellcheck disable=SC1091
     . ./test_after_tests
 
-    if [ $_failures = 0 ] && [ $_completed = 1 ]; then
+    if [ $_test_runner_failures = 0 ] && [ $_test_runner_completed = 1 ]; then
         exit 0
     else
         exit $_code
@@ -149,7 +149,7 @@ _finally_test_runner() {
 #    3. Verify the kind of execution:
 #+      single test or all tests.
 #    4. Execute test(s).
-#    5. Check '_completed' flag.
+#    5. Check '_test_runner_completed' flag.
 #    6. Finally function is executed.
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     trap _finally_test_runner EXIT
@@ -179,5 +179,5 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
         fi
     fi
 
-    _completed=1
+    _test_runner_completed=1
 fi

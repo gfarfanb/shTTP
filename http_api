@@ -54,22 +54,22 @@ readonly _shttp_basename=$( basename "$0" )
 #  Log filename.
 readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' ).log"
 
-#  Log a message object with the INFO level.
+#  Log a message with the INFO level.
 #
 #  -param $* Log message
 info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_shttp_log_file" >&2 ; }
 
-#  Log a message object with the WARNING level.
+#  Log a message with the WARNING level.
 #
 #  -param $* Log message
 warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_shttp_log_file" >&2 ; }
 
-#  Log a message object with the ERROR level.
+#  Log a message with the ERROR level.
 #
 #  -param $* Log message
 error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_shttp_log_file" >&2 ; }
 
-#  Log a message object with the FATAL level, 
+#  Log a message with the FATAL level, 
 #+ exit execution with 1.
 #
 #  -param $* Log message
@@ -256,6 +256,78 @@ remove() {
     fi
 }
 
+#  Asserts that a given 'Bash Conditional
+#+ Expressions' is true.
+#
+#  -param $1 Fail message
+#  -param $2 Condition content:
+#+           '[ <$2> ]'
+isTrue() {
+    local _message=${1:-''}
+    local _condition=${2:-''}
+    local _ok=1
+    eval "if ! [ $_condition ]; then _ok=0 ; fi"
+    if [ $_ok = 0 ]; then
+        _shttp_failures=$(( _shttp_failures+1 ))
+        _assertion_fail "[ $_condition ]: $_message"
+    fi
+    _shttp_assertions=$(( _shttp_assertions+1 ))
+}
+
+#  Asserts that a given 'Bash Conditional
+#+ Expressions' is false.
+#
+#  -param $1 Fail message
+#  -param $2 Condition content:
+#+           '! [ <$2> ]'
+isFalse() {
+    local _message=${1:-''}
+    local _condition=${2:-''}
+    local _ok=1
+    eval "if [ $_condition ]; then _ok=0 ; fi"
+    if [ $_ok = 0 ]; then
+        _shttp_failures=$(( _shttp_failures+1 ))
+        _assertion_fail "! [ $_condition ]: $_message"
+    fi
+    _shttp_assertions=$(( _shttp_assertions+1 ))
+}
+
+#  Asserts that expected and actual
+#+ are equal to one another.
+#
+#  -param $1 Fail message
+#  -param $2 Expected value
+#  -param $3 Actual value
+areEquals() {
+    local _message=${1:-''}
+    local _expected=${2:-''}
+    local _actual=${3:-''}
+    local _ok=1
+    if [ "$_expected" != "$_actual" ]; then
+        _shttp_failures=$(( _shttp_failures+1 ))
+        _assertion_fail "[ $_expected = $_actual ]: $_message"
+    fi
+    _shttp_assertions=$(( _shttp_assertions+1 ))
+}
+
+#  Asserts that unexpected and actual
+#+ are not equal to one another.
+#
+#  -param $1 Fail message
+#  -param $2 Expected value
+#  -param $3 Actual value
+areNotEquals() {
+    local _message=${1:-''}
+    local _expected=${2:-''}
+    local _actual=${3:-''}
+    local _ok=1
+    if [ "$_expected" = "$_actual" ]; then
+        _shttp_failures=$(( _shttp_failures+1 ))
+        _assertion_fail "[ $_expected != $_actual ]: $_message"
+    fi
+    _shttp_assertions=$(( _shttp_assertions+1 ))
+}
+
 
 # ---------- Variables initialization
 
@@ -343,8 +415,8 @@ _shttp_editor_command=""
 #  Response output base filename.
 #  During request this filename
 #+ will be used for make files:
-#+ '<output>.output' and
-#+ '<output>.trace'.
+#+ '<output>.output', '<output>.trace'
+#+ and '<output>.asserts'.
 _shttp_output=""
 
 #  Configuration environment file.
@@ -368,6 +440,12 @@ _shttp_input_params="${*}"
 #  This value will be reset
 #+ after complete all iterations.
 _shttp_request_index=0
+
+#  Assertions count.
+_shttp_assertions=0
+
+#  Failed assertions count.
+_shttp_failures=0
 
 
 # ---------- Builder functions
@@ -664,6 +742,13 @@ _execute() {
         _execute_if_exist after_api
         _editor_command
         info "$_i: Request [$_command] completed"
+        if (( _shttp_assertions > 0 )); then
+            if [ $_shttp_failures = 0 ]; then
+                info "$( basename "$0" ): [PASSED] - [$_shttp_assertions] of [$_shttp_assertions] assertions passed"
+            else
+                info "$( basename "$0" ): [FAILED] - [$_shttp_failures] of [$_shttp_assertions] assertions failed"
+            fi
+        fi
     done
     _shttp_request_index=0
 }
@@ -684,6 +769,8 @@ _init_vars() {
     _shttp_curl_opts=()
     _shttp_editor_command=""
     _shttp_output=""
+    _shttp_assertions=0
+    _shttp_failures=0
     if [[ "$_shttp_input_params" != *"--local"* ]]; then
         _shttp_protocol=""
         _shttp_domain=""
@@ -1146,6 +1233,14 @@ _clean_trace() {
     echo ">>>>> curl" | tee -a "$_shttp_output.trace" > /dev/null
     #  shellcheck disable=SC2128
     echo "$_curl" | tee -a "$_shttp_output.trace" > /dev/null # Append CURL command
+}
+
+#  Log a message about assertion fail
+#+ into '_shttp_output.asserts'.
+#
+#  -param $* Log message
+_assertion_fail() {
+    echo "$( date '+%Y-%m-%d %T.%N' ) [FAILED]   $*" | tee -a "$_shttp_output.asserts" >&2
 }
 
 #  Editor command is used

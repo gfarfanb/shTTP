@@ -16,12 +16,12 @@ fail() {
     _inc_asserts
 }
 
-#  Asserts that a given shell test
+#  Asserts that a given shell
 #+ condition is true.
 #
 #  -param $1 Fail message
 #  -param $2 Test condition content:
-#+             '[ <$2> ]'
+#+           '[ <$2> ]'
 assertTrue() {
     local _message=${1:-''}
     local _condition=${2:-''}
@@ -33,7 +33,7 @@ assertTrue() {
     _inc_asserts
 }
 
-#  Asserts that a given shell test.
+#  Asserts that a given shell
 #+ condition is false.
 #
 #  -param $1 Fail message

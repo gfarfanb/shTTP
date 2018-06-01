@@ -85,6 +85,18 @@ _length=${#_shttp_body[@]}
 assertEquals "Set body does not work" 5 "$_length"
 _init_vars
 
+body 0 '5t' 'Lorem ipsum'
+_content="${_shttp_body[*]}"
+_length=${#_content}
+assertEquals "Set body does not work" 59 "$_length"
+_init_vars
+
+body 0 '110s' 'Lorem ipsum'
+_content="${_shttp_body[*]}"
+_length=${#_content}
+assertTrue "Set body does not work" "$_length -ge 110"
+_init_vars
+
 
 #  -test Set form
 form "key=value" "name=test"

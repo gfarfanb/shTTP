@@ -552,18 +552,75 @@ headers() {
 }
 
 #  Setter for '_shttp_body'.
+#+ Additional functionality
+#+ is to repeat the content
+#+ part as times as repeat
+#+ or size options are passed.
+#+ For repeat the content is
+#+ repeated '$2' times.
+#+ For size the content is
+#+ repeated until content
+#+ has the required size.
 #
-#  -param $@ Request body
+#  -param $1 Offset value
+#  -param $2 Repeat option:
+#+           '[0-9]+t' for times
+#+           '[0-9]+s' for size
+#+             in bytes
+#  -param $@ Request body parts
 body() {
-    local _length=$#
-    local _size=0
-    if (( _length > 0 )); then
-        for _part in "$@"; do
-            _shttp_body+=( "$_part" )
-            _size=$(( _size+${#_part}  ))
-        done
+    local _offset=0
+    local _repeat=0
+    local _max_size=0
+    if [ $# -gt 2 ]; then
+        if [[ "$1" =~ ^[0-9]+$ ]]; then
+            _offset=$1
+            shift
+            if [[ "$1" =~ ^[0-9]+t$ ]]; then
+                _repeat=$( echo "$1" | cut -d t -f 1 )
+                shift
+            elif [[ "$1" =~ ^[0-9]+s$ ]]; then
+                _max_size=$( echo "$1" | cut -d s -f 1 )
+                shift
+            fi
+        fi
     fi
-    info "Appended [$_size] bytes to [Body]"
+    local _length=${#_shttp_body[@]}
+    local _current_total=0
+    if (( _length > 0 )); then
+        local _current_body="${_shttp_body[*]}"
+        _current_total=${#_current_body}
+    fi
+    local _size=0
+    if (( $# > 0 )); then
+        if (( _repeat > 0 )); then
+            _repeat=$(( _repeat-_offset ))
+            for (( _i=1; _i<=_repeat; _i++ )); do
+                for _part in "$@"; do
+                    _shttp_body+=( "$_part" )
+                    _size=$(( _size+${#_part}  ))
+                done
+            done
+        elif (( _max_size > 0 )); then
+            _max_size=$(( _max_size-_current_total-_offset ))
+            for (( ; ; )); do
+                for _part in "$@"; do
+                    _shttp_body+=( "$_part" )
+                    _size=$(( _size+${#_part}  ))
+                done
+                if (( _size >= _max_size )); then
+                    break
+                fi
+            done
+        else
+            for _part in "$@"; do
+                _shttp_body+=( "$_part" )
+                _size=$(( _size+${#_part}  ))
+            done
+        fi
+    fi
+    _current_total=$(( _current_total+_size ))
+    info "Appended [$_size] bytes to [Body], total [$_current_total]"
 }
 
 #  Setter for '_shttp_form'.

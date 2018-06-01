@@ -207,7 +207,7 @@ put() {
 #  -param $1 Name of the entry or 'jq'
 #+           query (without '.' at the
 #+           beginning of the query)
-#  -param $1 Default value if required
+#  -param $2 Default value if required
 #+           is not found. If it is not
 #+           specified 'null' will be
 #+           default value.
@@ -256,6 +256,29 @@ remove() {
     fi
 }
 
+#  Get JSON value from
+#+ '$_shttp.output.output'.
+#
+#  -param $1 Name of the entry or 'jq'
+#+           query (without '.' at the
+#+           beginning of the query)
+#  -param $2 Default value if required
+#+           is not found. If it is not
+#+           specified 'null' will be
+#+           default value.
+#  -return JSON value
+getOutput() {
+    local _name=${1:-''}
+    local _default=${2:-'null'}
+    local _val=""
+    _val=$( < "$_shttp_output.output" jq ".$_name | tostring" )
+    _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
+    if [ "$_val" = "null" ]; then
+        _val="$_default"
+    fi
+    echo "$_val"
+}
+
 #  Asserts that a given 'Bash Conditional
 #+ Expressions' is true.
 #
@@ -269,7 +292,7 @@ isTrue() {
     eval "if ! [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
-        _assertion_fail "[ $_condition ]: $_message"
+        _assertion_log "[ $_condition ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
 }
@@ -287,7 +310,7 @@ isFalse() {
     eval "if [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
-        _assertion_fail "! [ $_condition ]: $_message"
+        _assertion_log "! [ $_condition ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
 }
@@ -302,10 +325,9 @@ areEquals() {
     local _message=${1:-''}
     local _expected=${2:-''}
     local _actual=${3:-''}
-    local _ok=1
     if [ "$_expected" != "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
-        _assertion_fail "[ $_expected = $_actual ]: $_message"
+        _assertion_log "[ $_expected = $_actual ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
 }
@@ -320,10 +342,9 @@ areNotEquals() {
     local _message=${1:-''}
     local _expected=${2:-''}
     local _actual=${3:-''}
-    local _ok=1
     if [ "$_expected" = "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
-        _assertion_fail "[ $_expected != $_actual ]: $_message"
+        _assertion_log "[ $_expected != $_actual ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
 }
@@ -718,6 +739,7 @@ _execute_if_exist() {
 #    6. Execute 'after_api' function
 #+      if it is declared.
 #    7. Execute open editor task.
+#    8. Show assertion results.
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number. 
@@ -733,6 +755,8 @@ _execute() {
     fi
     for (( _i=1; _i<=_times; _i++ )); do
         _shttp_request_index="$_i"
+        _shttp_assertions=0
+        _shttp_failures=0
         info "$_i: Init request [$_command]"
         _init_vars
         _execute_if_exist before_api
@@ -741,14 +765,8 @@ _execute() {
         _request "$_command"
         _execute_if_exist after_api
         _editor_command
-        info "$_i: Request [$_command] completed"
-        if (( _shttp_assertions > 0 )); then
-            if [ $_shttp_failures = 0 ]; then
-                info "$( basename "$0" ): [PASSED] - [$_shttp_assertions] of [$_shttp_assertions] assertions passed"
-            else
-                info "$( basename "$0" ): [FAILED] - [$_shttp_failures] of [$_shttp_assertions] assertions failed"
-            fi
-        fi
+        _show_assertion_results
+        info "$_i: Request [$_command] completed"        
     done
     _shttp_request_index=0
 }
@@ -769,8 +787,6 @@ _init_vars() {
     _shttp_curl_opts=()
     _shttp_editor_command=""
     _shttp_output=""
-    _shttp_assertions=0
-    _shttp_failures=0
     if [[ "$_shttp_input_params" != *"--local"* ]]; then
         _shttp_protocol=""
         _shttp_domain=""
@@ -1239,8 +1255,22 @@ _clean_trace() {
 #+ into '_shttp_output.asserts'.
 #
 #  -param $* Log message
-_assertion_fail() {
-    echo "$( date '+%Y-%m-%d %T.%N' ) [FAILED]   $*" | tee -a "$_shttp_output.asserts" >&2
+_assertion_log() {
+    echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERTION]   $*" | tee -a "$_shttp_output.asserts" >&2
+}
+
+#  Show assertion results if
+#+ assetion count is greater
+#+ than '0'.
+_show_assertion_results() {
+    if (( _shttp_assertions > 0 )); then
+        info "Created $_shttp_output.asserts"
+        if [ $_shttp_failures = 0 ]; then
+            _assertion_log "$( basename "$0" ): [PASSED] - [$_shttp_assertions] of [$_shttp_assertions] assertions passed"
+        else
+            _assertion_log "$( basename "$0" ): [FAILED] - [$_shttp_failures] of [$_shttp_assertions] assertions failed"
+        fi
+    fi
 }
 
 #  Editor command is used

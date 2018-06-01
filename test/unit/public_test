@@ -117,6 +117,11 @@ _unknown=$( get unknown )
 assertEquals "'unknown' found" "null" "$_unknown"
 
 
+#  -test Get JSON output
+_output_value=$( getOutput id )
+assertEquals "Output 'id' not found" "5s43u-323we" "$_output_value"
+
+
 #  -test Is true assertion
 _input="true"
 isTrue "Is false" "-n \"$_input\""

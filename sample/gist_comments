@@ -26,7 +26,12 @@ post_comment() {
 }
 
 after_post_comment() {
-    put commentId '.id'
+    local _id=""
+    _id=$( getOutput id )
+    isTrue "Id not found" "\"$_id\" != \"null\""
+    if [ "$_id" != "null" ]; then
+        put commentId '.id'
+    fi
 }
 
 patch_comment() {

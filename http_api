@@ -500,18 +500,8 @@ curlOpts() {
 #  -param $1 Request authorization mode
 authMode() {
     local _mode=${1:-''}
-    case "$_mode" in
-        BASIC \
-        | HEADER \
-        | QPARAM \
-        | SKIP)
-            _shttp_auth_mode="$_mode"
-            info "Set [Authentication-mode] with [$_shttp_auth_mode]"
-        ;;
-        *)
-            fatal "Invalid [$_mode] authentication mode"
-        ;;
-    esac
+    _shttp_auth_mode="$_mode"
+    info "Set [Authentication-mode] with [$_shttp_auth_mode]"
 }
 
 #  Setter for '_shttp_auth_credential'.
@@ -981,7 +971,13 @@ _append_auth() {
             :
         ;;
         *)
-        fatal "Invalid authorization mode [$_shttp_auth_mode]"
+            local _has_ext_auth=""
+            _has_ext_auth=$( _has_func process_auth )
+            if (( _has_ext_auth == 1 )); then
+                process_auth
+            else
+                fatal "Invalid authorization mode [$_shttp_auth_mode]"
+            fi
         ;;
     esac
 }

@@ -47,5 +47,9 @@ after_api() {
     :
 }
 
+flow_comments() {
+    :
+}
+
 #  shellcheck disable=SC1091
 . ../http_api

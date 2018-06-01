@@ -3,27 +3,14 @@
 #  -author Giovanni Farfán B.
 
 
-#  -test List available commands
-_commands=( $( _list_commands ) )
-_found=0
-for _command in "${_commands[@]}"; do
-    case "$_command" in
-        info | warning | error | fatal)
-            _found=$(( _found+1 ))
-        ;;
-    esac
-done
-
-assertEquals "Command not found" 4 "$_found"
-
-
 #  -test Look for parameters
+_shttp_registered_opts["--new"]="_callback_function"
 _previous_value=()
 _callback_function() {
     local _new=${1:-''}
     _previous_value+=( "$_new" )
 }
-_look_for_params "_callback_function" "--new" "command" \
+_look_for_params "--new" "command" \
     "--new" "A" \
     "--save" "key" "\"value\"" \
     "--new" "B" \
@@ -41,6 +28,26 @@ for _val in "${_previous_value[@]}"; do
     esac
 done
 assertEquals "Invalid parameters length" 4 "$_found"
+
+
+#  -test Register option
+_add_option --change _change_func
+_callback_func="${_shttp_registered_opts[--change]}"
+assertEquals "Option not registered" "_change_func" "$_callback_func"
+
+
+#  -test List available commands
+_commands=( $( _list_commands ) )
+_found=0
+for _command in "${_commands[@]}"; do
+    case "$_command" in
+        info | warning | error | fatal)
+            _found=$(( _found+1 ))
+        ;;
+    esac
+done
+
+assertEquals "Command not found" 4 "$_found"
 
 
 #  -test Set option

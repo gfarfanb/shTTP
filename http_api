@@ -468,6 +468,9 @@ _shttp_assertions=0
 #  Failed assertions count.
 _shttp_failures=0
 
+#  List of registered options.
+declare -A _shttp_registered_opts
+
 
 # ---------- Builder functions
 
@@ -783,6 +786,22 @@ _execute_if_exist() {
     fi
 }
 
+#  Not documented yet!!
+_execute_flow() {
+    local _command=${1:-''}
+    local _times=${2:-1}
+    if (( _times < 1 )); then
+        _times=1
+    fi
+    for (( _i=1; _i<=_times; _i++ )); do
+        _shttp_request_index="$_i"
+        info "$_i: Init flow [$_command]"
+        $_command "$_shttp_request_index"
+        info "$_i: Flow [$_command] completed"
+    done
+    _shttp_request_index=0
+}
+
 #  Execute request lifecycle:
 #    1. Initialize request variables.
 #    2. Execute 'before_api' function
@@ -823,7 +842,7 @@ _execute() {
         _execute_if_exist after_api
         _editor_command
         _show_assertion_results
-        info "$_i: Request [$_command] completed"        
+        info "$_i: Request [$_command] completed"
     done
     _shttp_request_index=0
 }
@@ -1374,19 +1393,25 @@ _finally_http_api() {
 #  Valid options have the form:
 #+ '--<option>'.
 #
-#  -param $1 Callback function
-#  -param $2 Looked option
+#  -param $1 Looked option
 #  -param $* Input parameters
 _look_for_params() {
-    local _callback=${1:-''}
-    local _option=${2:-''}
+    local _option=${1:-''}
     local _params=()
     local _found=0
-    shift 2
+    local _length=0
+    local _callback=""
+    shift
     for _param in "$@"; do
         if [ $_found = 1 ]; then
             if [[ "$_param" == "--"* ]]; then
-                $_callback "${_params[@]}"
+                _length=${#_params[@]}
+                _callback=${_shttp_registered_opts[$_option]}
+                if (( _length > 0 )); then
+                    $_callback "${_params[@]}"
+                else
+                    $_callback
+                fi
                 _found=2 # Option executed flag
                 _params=()
             else
@@ -1398,13 +1423,30 @@ _look_for_params() {
         fi
     done
     if [ $_found = 1 ]; then
-        $_callback "${_params[@]}"
+        _length=${#_params[@]}
+        _callback=${_shttp_registered_opts[$_option]}
+        if (( _length > 0 )); then
+            $_callback "${_params[@]}"
+        else
+            $_callback
+        fi
     fi
     if (( _found > 0 )); then
         return 0
     else
         return 1
     fi
+}
+
+#  Register an option to
+#+ '_shttp_registered_opts'.
+#
+#  -param $1 Option
+#  -param $1 Callback function
+_add_option() {
+    local _option=${1:-''}
+    local _callback=${2:-''}
+    _shttp_registered_opts[$_option]="$_callback"
 }
 
 #  List the names of main script
@@ -1433,8 +1475,9 @@ _list_commands() {
         done
     fi
 }
+_add_option --list _list_commands
 expr "$*" : ".*--list" > /dev/null \
-    && _list_commands \
+    && _look_for_params --list "$@" \
     && exit 0
 
 #  Add a new variable, into script,
@@ -1449,8 +1492,9 @@ _set_config() {
     update "ws/override.json.tmp" ". + { \"$_name\": $_val }"
     info "Set temporal [$_name] with value [$_val]"
 }
+_add_option --set _set_config
 expr "$*" : ".*--set" > /dev/null \
-    && _look_for_params "_set_config" "--set" "$@"
+    && _look_for_params --set "$@"
 
 #  Set the configuration environment
 #+ suffix. This value will be used
@@ -1462,8 +1506,9 @@ _set_env() {
     local _env=${1:-''}
     env "$_env"
 }
+_add_option --env _set_env
 expr "$*" : ".*--env" > /dev/null \
-    && _look_for_params "_set_env" "--env" "$@"
+    && _look_for_params --env "$@"
 
 #  Copy the configuration and credentials
 #+ files. The 'from' files must exist. If
@@ -1510,8 +1555,9 @@ _copy_env() {
     info "Added [ws/config$_to.json] file"
     info "Added [ws/credentials$_to.json] file"
 }
+_add_option --copy _copy_env
 expr "$*" : ".*--copy" > /dev/null \
-    && _look_for_params "_copy_env" "--copy" "$@" \
+    && _look_for_params --copy "$@" \
     && exit 0
 
 #  Save key-value to 'ws/config[.<env>].json'
@@ -1524,8 +1570,9 @@ _add_config() {
     local _val=${2:-''}
     put "$_name" "$_val"
 }
+_add_option --add _add_config
 expr "$*" : ".*--add" > /dev/null \
-    && _look_for_params "_add_config" "--add" "$@" \
+    && _look_for_params --add "$@" \
     && exit 0
 
 #  Get key-value from 'ws/config[.<env>].json'
@@ -1541,8 +1588,9 @@ _get_config() {
     fi
     echo "$_val"
 }
+_add_option --get _get_config
 expr "$*" : ".*--get" > /dev/null \
-    && _look_for_params "_get_config" "--get" "$@" \
+    && _look_for_params --get "$@" \
     && exit 0
 
 #  Remove key-value to 'ws/config[.<env>].json'
@@ -1553,8 +1601,9 @@ _remove_config() {
     local _name=${1:-''}
     remove "$_name"
 }
+_add_option --remove _remove_config
 expr "$*" : ".*--remove" > /dev/null \
-    && _look_for_params "_remove_config" "--remove" "$@" \
+    && _look_for_params --remove "$@" \
     && exit 0
 
 #  List the keys of 'ws/config[.<env>].json'.
@@ -1571,8 +1620,9 @@ _get_config_keys() {
         done
     fi
 }
+_add_option --keys _get_config_keys
 expr "$*" : ".*--keys" > /dev/null \
-    && _get_config_keys \
+    && _look_for_params --keys "$@" \
     && exit 0
 
 #  Set '_shttp_domain' to 'localhost'. Default
@@ -1591,24 +1641,30 @@ _set_localhost() {
     protocol "http"
     domain "localhost:$_port"
 }
+_add_option --local _set_localhost
 expr "$*" : ".*--local" > /dev/null \
-    && _look_for_params "_set_localhost" "--local" "$@"
+    && _look_for_params --local "$@"
 
 #  Set credential to '_shttp_auth_credential'.
 _set_credentials() {
     local _credential=${1:-''}
     credential "$_credential"
 }
+_add_option --auth-basic _set_credentials
 expr "$*" : ".*--auth-basic" > /dev/null \
-    && _look_for_params "_set_credentials" "--auth-basic" "$@" \
+    && _look_for_params --auth-basic "$@" \
     && authMode "BASIC"
+_add_option --auth-header _set_credentials
 expr "$*" : ".*--auth-header" > /dev/null \
-    && _look_for_params "_set_credentials" "--auth-header" "$@" \
+    && _look_for_params --auth-header "$@" \
     && authMode "HEADER"
+_add_option --auth-qparam _set_credentials
 expr "$*" : ".*--auth-qparam" > /dev/null \
-    && _look_for_params "_set_credentials" "--auth-qparam" "$@" \
+    && _look_for_params --auth-qparam "$@" \
     && authMode "QPARAM"
+_add_option --auth-skip _set_credentials
 expr "$*" : ".*--auth-skip" > /dev/null \
+    && _look_for_params --auth-skip "$@" \
     && authMode "SKIP"
 
 #  Set request execution times
@@ -1617,8 +1673,9 @@ _set_times() {
     local _times=${1:-''}
     times "$_times"
 }
+_add_option --times _set_times
 expr "$*" : ".*--times" > /dev/null \
-    && _look_for_params "_set_times" "--times" "$@"
+    && _look_for_params --times "$@"
 
 #  Get saved editor command from
 #+ 'ws/config[.<env>].json and the value
@@ -1626,8 +1683,9 @@ expr "$*" : ".*--times" > /dev/null \
 _open_editor() {
     editor "$( get editorCommand )"
 }
+_add_option --open _open_editor
 expr "$*" : ".*--open" > /dev/null \
-    && _open_editor "$@"
+    && _look_for_params --open "$@"
 
 #  Clean all files from 'output'
 #+ directory.
@@ -1642,12 +1700,15 @@ _clean_output_files() {
                 info "Removed [$_file] output"
             done
             rm -rf output/*
+            info "Cleaning completed"
+        else
+            info "Output directory is empty"
         fi
     fi
 }
+_add_option --clean _clean_output_files
 expr "$*" : ".*--clean" > /dev/null \
-    && _clean_output_files \
-    && info "Cleaning completed" \
+    && _look_for_params --clean "$@" \
     && exit 0
 
 
@@ -1698,11 +1759,13 @@ if [ "$_shttp_skip" != "true" ]; then
         _shttp_command=""
     fi
 
-    if [ -n "$_shttp_command" ]; then
-        _execute "$_shttp_command" "$_shttp_times"
+    if [ -z "$_shttp_command" ]; then
+        info "No command to execute"
+    elif [[ "$_shttp_command" == "flow"* ]]; then
+        _execute_flow "$_shttp_command" "$_shttp_times"
     elif (( _has_shttp_main == 1 )); then
         _execute main "$_shttp_times"
     else
-        info "No command to execute"
+        _execute "$_shttp_command" "$_shttp_times"        
     fi
 fi

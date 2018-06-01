@@ -40,6 +40,10 @@ _execute_if_exist complete_check
 assertEquals "'complete_check' function not found" 1 "$_check_exist"
 
 
+#  -test Flow lifecycle
+fail "_execute_flow not tested either documented yet!!"
+
+
 #  -test Request lifecycle
 _before_api_var="Not executed yet"
 _after_api_var="Not executed yet"

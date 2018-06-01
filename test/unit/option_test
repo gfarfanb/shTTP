@@ -120,6 +120,13 @@ _set_credentials "test.user"
 assertEquals "Credential not assigned" "test.user" "$_shttp_auth_credential"
 
 
+#  -test Set request execution times option
+_set_times 5
+#  shellcheck disable=SC2154
+assertEquals "Request execution times not assigned" 5 "$_shttp_times"
+_shttp_times=0
+
+
 #  -test Open editor option
 put editorCommand "\"vi results.json\""
 _open_editor

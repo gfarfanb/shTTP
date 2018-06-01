@@ -137,6 +137,13 @@ assertEquals "Set credential does not work" "user" "$_shttp_auth_credential"
 _init_vars
 
 
+#  -test Set request execution times
+times 5
+#  shellcheck disable=SC2154
+assertEquals "Set request times does not work" 5 "$_shttp_times"
+_shttp_times=0
+
+
 #  -test Set editor command
 editor 'vim script'
 #  shellcheck disable=SC2154

@@ -11,7 +11,7 @@ _shttp_help_content() {
         " Usage: ./<file>.sh <command> [--env <env>] [--copy <from> <to>] [--set <key-name> <value>] [--get <key-name>]"
         "                              [--add <key-name> <value>] [--remove <key-name>] [--keys] [--list] [--clean]"
         "                              [--local <port>] [--auth-basic] [--auth-header] [--auth-qparam] [--auth-skip]"
-        "                              [--open] [--help]"
+        "                              [--times <value>] [--open] [--help]"
         ""
         " Options:"
         "   --env <env>:                 Set the environment for script by changing configuration and credentials files:"
@@ -33,8 +33,9 @@ _shttp_help_content() {
         "   --auth-header <credential>:  Set 'HEADER' mode to '_shttp_auth_mode'."
         "   --auth-qparam <credential>:  Set 'QPARAM' mode to '_shttp_auth_mode'."
         "   --auth-skip:                 Set 'SKIP' mode to '_shttp_auth_mode'."
+        "   --times <value>:             Set the number of executions required for the request into '_shttp_times'"
         "   --open:                      Set '_shttp_editor_command' with value defined on 'editorCommand'"
-        "                                  from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'."
+        "                                  from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
         "   --help:                      Display this help message"
     )
     echo "${_content[*]}"
@@ -331,6 +332,9 @@ _shttp_auth_mode=""
 #    3. QPARAM: 'type', 'secret'.
 _shttp_auth_credential=""
 
+#  Number of request executions.
+_shttp_times=0
+
 #  If value is defined, that command
 #+ will be executed as last tasks
 #+ of the request.
@@ -357,6 +361,13 @@ _shttp_creds="ws/credentials.json"
 
 #  Script input parameters.
 _shttp_input_params="${*}"
+
+#  Current number of execution.
+#  This field is updated by 
+#+ '_execute' for each iteration.
+#  This value will be reset
+#+ after complete all iterations.
+_shttp_request_index=0
 
 
 # ---------- Builder functions
@@ -514,6 +525,15 @@ credential() {
     info "Set [Credential] with [$_shttp_auth_credential]"
 }
 
+#  Setter for '_shttp_times'.
+#
+#  -param $1 Request times
+times() {
+    local _times=${1:-''}
+    _shttp_times="$_times"
+    info "Set [Times] with [$_shttp_times]"
+}
+
 #  Setter for '_shttp_editor_command'.
 #
 #  -param $1 Editor command
@@ -620,19 +640,32 @@ _execute_if_exist() {
 #    6. Execute 'after_api' function
 #+      if it is declared.
 #    7. Execute open editor task.
+#  If times parameter is passed
+#+ the execution will be performed
+#+ for that number. 
 #
 #  -param $1 Request command
+#  -param $2 Request execution times
+#+           (positive values)
 _execute() {
     local _command=${1:-''}
-    info "Init request [$_command]"
-    _init_vars
-    _execute_if_exist before_api
-    $_command
-    _set_method "$_command"
-    _request "$_command"
-    _execute_if_exist after_api
-    _editor_command
-    info "Request [$_command] completed"
+    local _times=${2:-1}
+    if (( _times < 1 )); then
+        _times=1
+    fi
+    for (( _i=1; _i<=_times; _i++ )); do
+        _shttp_request_index="$_i"
+        info "$_i: Init request [$_command]"
+        _init_vars
+        _execute_if_exist before_api
+        $_command "$_shttp_request_index"
+        _set_method "$_command"
+        _request "$_command"
+        _execute_if_exist after_api
+        _editor_command
+        info "$_i: Request [$_command] completed"
+    done
+    _shttp_request_index=0
 }
 
 #  Initilize request variables.
@@ -1035,7 +1068,8 @@ _append_body_to_file() {
 
 #  Build 'cURL' command. This
 #+ uses the following template:
-#    'curl -X <_shttp_method> -s -v -o "<_shttp_output>.output" \
+#    'curl -X <_shttp_method> -s -v \
+#+       -o "<_shttp_output>.output" \
 #+       -H "<_shttp_headers[1..n]>" \
 #+       -d "<_shttp_query_params[1..n]>" \
 #+       -F "<_shttp_form[1..n]>" \
@@ -1048,7 +1082,8 @@ _append_body_to_file() {
 _build_curl() {
     local _body_file=${1:-''}
     local _curl=(
-        "curl -X $_shttp_method -s -v -o \"$_shttp_output.output\" \\"
+        "curl -X $_shttp_method -s -v \\"
+        "-o \"$_shttp_output.output\" \\"
     )
     local _length=${#_shttp_headers[@]}
     if (( _length > 0 )); then
@@ -1394,6 +1429,15 @@ expr "$*" : ".*--auth-qparam" > /dev/null \
 expr "$*" : ".*--auth-skip" > /dev/null \
     && authMode "SKIP"
 
+#  Set request execution times
+#+ to '_shttp_times'.
+_set_times() {
+    local _times=${1:-''}
+    times "$_times"
+}
+expr "$*" : ".*--times" > /dev/null \
+    && _look_for_params "_set_times" "--times" "$@"
+
 #  Get saved editor command from
 #+ 'ws/config[.<env>].json and the value
 #+ is assigned to '_shttp_editor_command'.
@@ -1473,9 +1517,9 @@ if [ "$_shttp_skip" != "true" ]; then
     fi
 
     if [ -n "$_shttp_command" ]; then
-        _execute "$_shttp_command"
+        _execute "$_shttp_command" "$_shttp_times"
     elif (( _has_shttp_main == 1 )); then
-        _execute main
+        _execute main "$_shttp_times"
     else
         info "No command to execute"
     fi

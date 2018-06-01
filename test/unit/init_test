@@ -4,16 +4,20 @@
 
 
 #  -test Output directory exists
-assertTrue "Output directory is not found" "-d output"
+assertTrue "Output directory not found" "-d output"
 
 
 #  -test Workspace directory exists
-assertTrue "Workspace directory is not found" "-d ws"
+assertTrue "Workspace directory not found" "-d ws"
 
 
 #  -test Config file exists
-assertTrue "Config JSON is not found" "-f ws/config.json"
+assertTrue "Config JSON not found" "-f ws/config.json"
+
+
+#  -test Credentials file exists
+assertTrue "Credentials JSON not found" "-f ws/credentials.json"
 
 
 #  -test Override file exists
-assertTrue "Override JSON is not found" "-f ws/override.json.tmp"
+assertTrue "Override JSON not found" "-f ws/override.json.tmp"

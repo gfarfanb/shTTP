@@ -43,6 +43,7 @@ assertEquals "'complete_check' function not found" 1 "$_check_exist"
 #  -test Request lifecycle
 _before_api_var="Not executed yet"
 _after_api_var="Not executed yet"
+_execution_count=0
 
 before_api() {
     _before_api_var="Executed"
@@ -54,16 +55,30 @@ get_repo() {
 
 after_api() {
     _after_api_var="Executed"
+    put '.name'
 }
 
 _execute get_repo
-put '.name'
 
 _info_name=$( get name )
 
 assertEquals "'before_api' not executed" "Executed" "$_before_api_var"
 assertEquals "Lifecycle not executed" "shTTP" "$_info_name"
 assertEquals "'after_api' not executed" "Executed" "$_after_api_var"
+
+_execution_count=0
+
+after_api() {
+    _execution_count=$(( _execution_count+1 ))
+    #  shellcheck disable=SC2154
+    assertEquals "Incorrect index execution" "$_shttp_request_index" "$_execution_count"
+}
+
+_execute get_repo 5
+
+assertEquals "Incorrect number of executions" 5 "$_execution_count"
+#  shellcheck disable=SC2154
+assertEquals "Request index was not reset" 0 "$_shttp_request_index"
 
 
 #  -test Initialize request variables
@@ -478,7 +493,8 @@ form "key=value"
 curlOpts "--basic" "-u user:password"
 
 _expected=(
-    "curl -X POST -s -v -o \"result.output\" \\"
+    "curl -X POST -s -v \\"
+    "-o \"result.output\" \\"
     "-H \"Defined-Header: test/value\" \\"
     "-d \"param=value\" \\"
     "-F \"key=value\" \\"

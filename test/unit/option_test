@@ -128,10 +128,10 @@ _shttp_times=0
 
 
 #  -test Open editor option
-put editorCommand "\"vi results.json\""
+put editorCommand "\"echo 'opening... results.json'\""
 _open_editor
 #  shellcheck disable=SC2154
-assertEquals "'_shttp_editor_command' not assigned" "vi results.json" "$_shttp_editor_command"
+assertEquals "'_shttp_editor_command' not assigned" "echo 'opening... results.json'" "$_shttp_editor_command"
 
 
 #  -test Clean option

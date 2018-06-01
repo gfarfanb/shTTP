@@ -152,7 +152,7 @@ update "ws/config.json" '. + {
     	],
     	"authMode": "HEADER",
     	"authCredential": "test.user",
-    	"editorCommand": "vim result.json"
+    	"editorCommand": "echo opening"
     }'
 _default_config
 
@@ -179,7 +179,7 @@ assertEquals "'_shttp_curl_opts' not in config" 1 "$_length"
 
 assertEquals "'_shttp_auth_mode' not in config" "HEADER" "$_shttp_auth_mode"
 assertEquals "'_shttp_auth_credential' not in config" "test.user" "$_shttp_auth_credential"
-assertEquals "'_shttp_editor_command' not in config" "vim result.json" "$_shttp_editor_command"
+assertEquals "'_shttp_editor_command' not in config" "echo opening" "$_shttp_editor_command"
 
 _init_vars
 remove protocol

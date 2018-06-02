@@ -880,7 +880,7 @@ _execute_flow() {
         _execute_if_exist before_api
         $_command "$_shttp_flow_index"
         _execute_if_exist after_api
-        _show_assertion_results
+        _show_assertion_results "FLOW"
         info "$_i: Flow [$_command] completed"
     done
     _shttp_flow_index=0
@@ -929,7 +929,7 @@ _execute() {
             _execute_if_exist after_api
         fi
         _editor_command
-        _show_assertion_results
+        _show_assertion_results "REQUEST"
         info "$_i: Request [$_command] completed"
     done
     _shttp_request_index=0
@@ -1420,33 +1420,35 @@ _clean_trace() {
 #
 #  -param $* Log message
 _assertion_log() {
-    if [ "$_shttp_execution_type" = "REQUEST" ]; then
-        echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERTION]   $*" | tee -a "$_shttp_output.asserts" >&2
-    else
-        echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERTION]   $*" | tee -a "$_shttp_output.flow.asserts" >&2
-    fi
+    echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERTION]   $*" | tee -a "$_shttp_output.asserts" >&2
 }
 
 #  Show assertion results if
 #+ assetion count is greater
 #+ than '0'.
+#
+#  -param $1 Execution type
 _show_assertion_results() {
-    if [ "$_shttp_execution_type" = "REQUEST" ]; then
-        if (( _shttp_assertions > 0 )); then
+    local _type=${1:-''}
+    local _assertions=0
+    local _failures=0
+    case "$_shttp_execution_type" in
+        REQUEST)
+            _assertions=$_shttp_assertions
+            _failures=$_shttp_failures
+        ;;
+        FLOW)
+            _assertions=$_shttp_assertions_flow
+            _failures=$_shttp_failures_flow
+        ;;
+    esac
+    if [ "$_shttp_execution_type" = "$_type" ]; then
+        if (( _assertions > 0 )); then
             info "Created $_shttp_output.asserts"
-            if [ $_shttp_failures = 0 ]; then
-                _assertion_log "$( basename "$0" ): [PASSED] - [$_shttp_assertions] of [$_shttp_assertions] assertions passed"
+            if [ $_failures = 0 ]; then
+                _assertion_log "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
             else
-                _assertion_log "$( basename "$0" ): [FAILED] - [$_shttp_failures] of [$_shttp_assertions] assertions failed"
-            fi
-        fi
-    else
-        if (( _shttp_assertions_flow > 0 )); then
-            info "Created $_shttp_output.flow.asserts"
-            if [ $_shttp_failures_flow = 0 ]; then
-                _assertion_log "$( basename "$0" ): [PASSED] - [$_shttp_assertions_flow] of [$_shttp_assertions_flow] assertions passed"
-            else
-                _assertion_log "$( basename "$0" ): [FAILED] - [$_shttp_failures_flow] of [$_shttp_assertions_flow] assertions failed"
+                _assertion_log "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
             fi
         fi
     fi

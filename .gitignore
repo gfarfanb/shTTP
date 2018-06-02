@@ -2,7 +2,9 @@
 output/
 /ws/
 /test/ws/
-/sample/ws/*.json.tmp
+/sample/ws/
+!/sample/ws/config*.json
+!/sample/ws/credentials*.json
 
 tmp/
 log/

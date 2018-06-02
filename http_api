@@ -8,10 +8,14 @@ IFS=$'\n\t'
 _shttp_help_content() {
     local _content=(
         ""
-        " Usage: ./<file>.sh <command> [--env <env>] [--copy <from> <to>] [--set <key-name> <value>] [--get <key-name>]"
-        "                              [--add <key-name> <value>] [--remove <key-name>] [--keys] [--list] [--clean]"
-        "                              [--local <port>] [--auth-basic] [--auth-header] [--auth-qparam] [--auth-skip]"
-        "                              [--times <value>] [--open] [--help]"
+        " Usage: ./<file>.sh <command> [--list] [--copy <from> <to>] [--get <key-name>] [--add <key-name> <value>]"
+        "                              [--remove <key-name>] [--keys] [--clean]"
+        ""
+        "                              [--env <env>]  [--set <key-name> <value>] [--local <port>]"
+        "                              [--auth-basic] [--auth-header] [--auth-qparam] [--auth-skip]"
+        "                              [--times <value>] [--open]"
+        ""
+        "                              [--help]"
         ""
         " Manage options:"
         "   --list:                      Display the <command> list (all functions defined into main script)"

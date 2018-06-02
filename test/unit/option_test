@@ -52,11 +52,21 @@ assertEquals "Command not found" 4 "$_found"
 
 #  -test Copy environment
 _copy_env default env
-assertTrue "Configuration 'env' file does not exists" "-f ws/config.env.json"
-assertTrue "Credentials 'env' file does not exists" "-f ws/credentials.env.json"
+assertTrue "Configuration 'env' file does not exist" "-f ws/config.env.json"
+assertTrue "Credentials 'env' file does not exist" "-f ws/credentials.env.json"
 
 rm -f ws/config.env.json
 rm -f ws/credentials.env.json
+
+
+#  -test Remove environment
+echo '{ }' > ws/config.temp.json
+echo '[ ]' > ws/credentials.temp.json
+
+_del_env temp
+
+assertFalse "Configuration 'env' file exists" "-f ws/config.temp.json"
+assertFalse "Credentials 'env' file exists" "-f ws/credentials.temp.json"
 
 
 #  -test Add option

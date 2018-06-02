@@ -8,8 +8,8 @@ IFS=$'\n\t'
 _shttp_help_content() {
     local _content=(
         ""
-        " Usage: ./<file>.sh <command> [--list] [--copy <from> <to>] [--get <key-name>] [--add <key-name> <value>]"
-        "                              [--remove <key-name>] [--keys] [--clean]"
+        " Usage: ./<file>.sh <command> [--list] [--copy <from> <to>] [--del <env>] [--get <key-name>]"
+        "                              [--add <key-name> <value>] [--remove <key-name>] [--keys] [--clean]"
         ""
         "                              [--env <env>]  [--set <key-name> <value>] [--local <port>]"
         "                              [--auth-basic] [--auth-header] [--auth-qparam] [--auth-skip]"
@@ -21,7 +21,10 @@ _shttp_help_content() {
         "   --list:                      Display the <command> list (all functions defined into main script)"
         "   --copy <env-from> <env-to>:  Copy the environment configuration and credentials files. Must exist the 'from'"
         "                                  configuration files. If already exist the 'to' files those will be replaced."
-        "                                  If is required to copy from 'default' the first parameters must contain 'default'"
+        "                                  If is required to copy from 'default' environment, the first parameters must"
+        "                                  contain 'default'"
+        "   --dev <env>:                 Remove the selected environment: configuration and credentials files. If is"
+        "                                  required to remove 'default' environment, the parameter must contain 'default'"
         "   --get <key-name>:            Display the value for key from 'ws/config[.<env>].json'"
         "   --add <key-name> <value>:    Add new key-value to 'ws/config[.<env>].json'"
         "   --remove <key-name>:         Remove the key-value from 'ws/config[.<env>].json'"
@@ -1548,6 +1551,12 @@ _look_for_params() {
 #  Register an option to
 #+ '_shttp_request_opts' and
 #+ '_shttp_registered_opts'.
+#  The '_look_for_params'
+#+ function requires the
+#+ options registered by
+#+ function in order to
+#+ find out the correct
+#+ callback function.
 #
 #  -param $1 Option
 #  -param $2 Callback function
@@ -1643,6 +1652,33 @@ _copy_env() {
 _register_opt --copy _copy_env 0
 expr "$*" : ".*--copy" > /dev/null \
     && _look_for_params --copy "$@" \
+    && exit 0
+
+#  Remove the configuration and credentials
+#+ files for specified environment.
+#
+#  --param $1 Environment suffix
+_del_env() {
+    local _env=${1:-''}
+    if [ "$_env" = "default" ]; then
+        _env=""
+    else
+        _env=".$_env"
+    fi
+    if ! [ -f "ws/config$_env.json" ]; then
+        fatal "File [ws/config$_env.json] does not exist"
+    fi
+    if ! [ -f "ws/credentials$_env.json" ]; then
+        fatal "File [ws/credentials$_env.json] does not exist"
+    fi
+    rm -f "ws/config$_env.json"
+    rm -f "ws/credentials$_env.json"
+    info "Deleted [ws/config$_env.json] file"
+    info "Deleted [ws/credentials$_env.json] file"
+}
+_register_opt --del _del_env 0
+expr "$*" : ".*--del" > /dev/null \
+    && _look_for_params --del "$@" \
     && exit 0
 
 #  Save key-value to 'ws/config[.<env>].json'

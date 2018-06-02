@@ -5,8 +5,28 @@ before_api() {
     :
 }
 
+#  External command:
+#  ./gist_comments post_authorization --auth-basic gfb --set otp <2fa-token>
+post_authorization() {
+    basePath "/authorizations"
+    headers "X-GitHub-OTP: $( get otp )"
+    body "{
+            \"scopes\": [
+                \"public_repo\"
+            ],
+            \"note\": \"execute shTTP samples\",
+            \"client_id\": \"$( get clientId )\",
+            \"client_secret\": \"$( get clientSecret )\"
+        }"
+}
+
+after_post_authorization() {
+    isTrue "Empty authorization token" "-n \"$( getOutput token )\""
+    put 'token' '.hashed_token'
+}
+
 get_all() {
-    endpoint "$( get gistId )/comments"
+    basePath "/gists/$( get gistId )/comments"
 }
 
 get_comment() {
@@ -18,20 +38,15 @@ before_post_comment() {
 }
 
 post_comment() {
-    endpoint "$( get gistId )/comments"
+    basePath "/gists/$( get gistId )/comments"
     headers \
-        "Content-Type: application/vnd.github.$( get githubApiVersion ).full+json" \
-        "Accept: application/vnd.github.$( get githubApiVersion ).full+json"
-    body '{ "body": "shTTP comment" }'
+        "Authorization: token $( get token )"
+    body '{ "body": "shTTP-samples comment" }'
 }
 
 after_post_comment() {
-    local _id=""
-    _id=$( getOutput id )
-    isTrue "Id not found" "\"$_id\" != \"null\""
-    if [ "$_id" != "null" ]; then
-        put commentId '.id'
-    fi
+    isTrue "Id not found" "\"$( getOutput id )\" != \"null\""
+    put commentId '.id'
 }
 
 patch_comment() {

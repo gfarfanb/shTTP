@@ -155,7 +155,7 @@ echo '{ }' > "ws/override.json.tmp"
 #  -param $1 String input
 #  -return Reversed string
 _rev() {
-    local _input=${1:-''}
+    local _input=${1:-}
     local _rev=""
     for (( i=${#_input}-1; i>=0; i-- )); do 
         _rev="$_rev${_input:$i:1}"
@@ -181,7 +181,7 @@ _rev() {
 #  -param $1 Request command
 #  -param $@ Request options
 step() {
-    local _command=${1:-''}
+    local _command=${1:-}
     shift
     _shttp_input_params="${*}"
     for _opt in "${_shttp_request_opts[@]}"; do
@@ -200,8 +200,8 @@ step() {
 #  -param $1 JSON file
 #  -param $2 Change by 'jq'
 update() {
-    local _json=${1:-''}
-    local _jq=${2:-''}
+    local _json=${1:-}
+    local _jq=${2:-}
     local _temp=""
     _temp="ws/pivot.$( date '+%s.%N' ).json.tmp"
     < "$_json" jq "$_jq" > "$_temp"
@@ -220,8 +220,8 @@ update() {
 #  -param $1 Name of the entry or 'jq' for value
 #  -param $2 Value of the entry or 'jq' for value
 put() {
-    local _name=${1:-''}
-    local _val=${2:-''}
+    local _name=${1:-}
+    local _val=${2:-}
     local _jq=""
     if [ -z "$_val" ]; then
         _jq="$_name"
@@ -252,7 +252,7 @@ put() {
 #+           default value.
 #  -return Config value
 get() {
-    local _name=${1:-''}
+    local _name=${1:-}
     local _default=${2:-'null'}
     local _val=""
     _val=$( < "ws/override.json.tmp" jq ".$_name | tostring" )
@@ -277,7 +277,7 @@ get() {
 #
 #  -param $1 Name of the entry
 remove() {
-    local _name=${1:-''}
+    local _name=${1:-}
     if [[ "$_name" = \.* ]]; then
         local _val=""
         _val=$( jq "try $_name catch null" "$_shttp_env" )
@@ -307,7 +307,7 @@ remove() {
 #+           default value.
 #  -return JSON value
 getOutput() {
-    local _name=${1:-''}
+    local _name=${1:-}
     local _default=${2:-'null'}
     local _val=""
     _val=$( < "$_shttp_output.output" jq ".$_name | tostring" )
@@ -325,8 +325,8 @@ getOutput() {
 #  -param $2 Condition content:
 #+           '[ <$2> ]'
 isTrue() {
-    local _message=${1:-''}
-    local _condition=${2:-''}
+    local _message=${1:-}
+    local _condition=${2:-}
     local _ok=1
     eval "if ! [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
@@ -345,8 +345,8 @@ isTrue() {
 #  -param $2 Condition content:
 #+           '! [ <$2> ]'
 isFalse() {
-    local _message=${1:-''}
-    local _condition=${2:-''}
+    local _message=${1:-}
+    local _condition=${2:-}
     local _ok=1
     eval "if [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
@@ -365,9 +365,9 @@ isFalse() {
 #  -param $2 Expected value
 #  -param $3 Actual value
 areEquals() {
-    local _message=${1:-''}
-    local _expected=${2:-''}
-    local _actual=${3:-''}
+    local _message=${1:-}
+    local _expected=${2:-}
+    local _actual=${3:-}
     if [ "$_expected" != "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
@@ -384,9 +384,9 @@ areEquals() {
 #  -param $2 Expected value
 #  -param $3 Actual value
 areNotEquals() {
-    local _message=${1:-''}
-    local _expected=${2:-''}
-    local _actual=${3:-''}
+    local _message=${1:-}
+    local _expected=${2:-}
+    local _actual=${3:-}
     if [ "$_expected" = "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
@@ -547,7 +547,7 @@ declare -A _shttp_registered_opts
 #
 #  -param $1 Request URL
 url() {
-    local _url=${1:-''}
+    local _url=${1:-}
     _shttp_url="$_url"
     info "Set [URL] with [$_shttp_url]"
 }
@@ -556,7 +556,7 @@ url() {
 #
 #  -param $1 Request Protocol
 protocol() {
-    local _protocol=${1:-''}
+    local _protocol=${1:-}
     _shttp_protocol="$_protocol"
     info "Set [Protocol] with [$_shttp_protocol]"
 }
@@ -565,7 +565,7 @@ protocol() {
 #
 #  -param $1 Request domain
 domain() {
-    local _domain=${1:-''}
+    local _domain=${1:-}
     _shttp_domain="$_domain"
     info "Set [Domain] with [$_shttp_domain]"
 }
@@ -574,7 +574,7 @@ domain() {
 #
 #  -param $1 Request base path
 basePath() {
-    local _path=${1:-''}
+    local _path=${1:-}
     _shttp_base_path="$_path"
     info "Set [Base-path] with [$_shttp_base_path]"
 }
@@ -583,7 +583,7 @@ basePath() {
 #
 #  -param $1 Request endpoint
 endpoint() {
-    local _endpoint=${1:-''}
+    local _endpoint=${1:-}
     _shttp_endpoint="$_endpoint"
     info "Set [Endpoint] with [$_shttp_endpoint]"
 }
@@ -592,7 +592,7 @@ endpoint() {
 #
 #  -param $1 Request method
 method() {
-    local _method=${1:-''}
+    local _method=${1:-}
     case "$_method" in
         GET \
         | POST \
@@ -738,7 +738,7 @@ curlOpts() {
 #
 #  -param $1 Request authorization mode
 authMode() {
-    local _mode=${1:-''}
+    local _mode=${1:-}
     _shttp_auth_mode="$_mode"
     info "Set [Authentication-mode] with [$_shttp_auth_mode]"
 }
@@ -748,7 +748,7 @@ authMode() {
 #  -param $1 Request authentication
 #+           credential
 credential() {
-    local _credential=${1:-''}
+    local _credential=${1:-}
     _shttp_auth_credential="$_credential"
     info "Set [Credential] with [$_shttp_auth_credential]"
 }
@@ -757,7 +757,7 @@ credential() {
 #
 #  -param $1 Request times
 times() {
-    local _times=${1:-''}
+    local _times=${1:-}
     _shttp_request_times="$_times"
     info "Set [Times] with [$_shttp_request_times]"
 }
@@ -766,7 +766,7 @@ times() {
 #
 #  -param $1 Editor command
 editor() {
-    local _editor=${1:-''}
+    local _editor=${1:-}
     _shttp_editor_command="$_editor"
     info "Set [Editor] with [$_shttp_editor_command]"
 }
@@ -775,7 +775,7 @@ editor() {
 #
 #  -param $1 Response output
 output() {
-    local _output=${1:-''}
+    local _output=${1:-}
     _shttp_output="$_output"
     info "Set [Output] with [$_shttp_output]"
 }
@@ -784,7 +784,7 @@ output() {
 #
 #  -param $1 Environment suffix
 env() {
-    local _env=${1:-''}
+    local _env=${1:-}
     if [ -n "$_env" ]; then
         _shttp_env="ws/config.$_env.json"
         _shttp_creds="ws/credentials.$_env.json"
@@ -814,7 +814,7 @@ env() {
 #  -return '1' if keyword exist
 #+         otherwise '0'
 _is_keyword() {
-    local _name=${1:-''}
+    local _name=${1:-}
     local _found=0
     case "$_name" in
         before_* | after_*)
@@ -831,7 +831,7 @@ _is_keyword() {
 #  -return '1' if exist function
 #+         otherwise '0'
 _has_func() {
-    local _func=${1:-''}
+    local _func=${1:-}
     local _exists=1
     #  shellcheck disable=SC2034
     _exists=$( declare -f "$_func" > /dev/null ; echo $? )
@@ -847,7 +847,7 @@ _has_func() {
 #
 #  -param $1 Function name
 _execute_if_exist() {
-    local _func=${1:-''}
+    local _func=${1:-}
     local _has_func=0
     _has_func=$( _has_func "$_func" )
     if (( _has_func == 1 )); then
@@ -870,7 +870,7 @@ _execute_if_exist() {
 #  -param $2 Request flow times
 #+           (positive values)
 _execute_flow() {
-    local _command=${1:-''}
+    local _command=${1:-}
     local _times=${2:-1}
     if (( _times < 1 )); then
         _times=1
@@ -911,7 +911,7 @@ _execute_flow() {
 #  -param $2 Request execution times
 #+           (positive values)
 _execute() {
-    local _command=${1:-''}
+    local _command=${1:-}
     local _times=${2:-1}
     if (( _times < 1 )); then
         _times=1
@@ -1108,7 +1108,7 @@ _default_vars() {
 #
 #  -param $1 Request command
 _request() {
-    local _command=${1:-''}
+    local _command=${1:-}
 
     _default_config
     _default_vars
@@ -1150,7 +1150,7 @@ _request() {
 #  -param $1 Command name
 _set_method() {
     if [ -z "$_shttp_method" ]; then
-        local _command=${1:-''}
+        local _command=${1:-}
         shopt -s nocasematch
         case "$_command" in
             get*)
@@ -1187,8 +1187,8 @@ _set_method() {
 #  -param $1 Header name
 #  -param $2 Header value
 _append_if_missing_header() {
-    local _name=${1:-''}
-    local _val=${2:-''}
+    local _name=${1:-}
+    local _val=${2:-}
     shopt -s nocasematch
     local _found=0
     local _length=${#_shttp_headers[@]}
@@ -1254,20 +1254,20 @@ _append_auth() {
             if [ "$_password" = "null" ]; then
                 curlOpts "--basic" "-u $_username"
             else
-                eval "_password=$_password"
+                eval "_password=\"$_password\""
                 curlOpts "--basic" "-u $_username:$_password"
             fi
         ;;
         HEADER)
             _type=$( _credential_part type "token" )
             _secret=$( _credential_part secret )
-            eval "_secret=$_secret"
+            eval "_secret=\"$_secret\""
             _append_if_missing_header "Authorization" "$_type $_secret"
         ;;
         QPARAM)
             _type=$( _credential_part type "access_token" )
             _secret=$( _credential_part secret )
-            eval "_secret=$_secret"
+            eval "_secret=\"$_secret\""
             queryParams "$_type=$_secret"
         ;;
         SKIP)
@@ -1292,7 +1292,7 @@ _append_auth() {
 #  -param $2 Default name
 #  -return Credential part value
 _credential_part() {
-    local _name=${1:-''}
+    local _name=${1:-}
     local _default=${2:-'null'}
     local _part=""
     _part=$( < "$_shttp_creds" \
@@ -1350,7 +1350,7 @@ _append_body_to_file() {
 #  -param $1 Body temporal file
 #  -return cURL command as string
 _build_curl() {
-    local _body_file=${1:-''}
+    local _body_file=${1:-}
     local _curl=(
         "curl -X $_shttp_method -s -v \\"
         "-o \"$_shttp_output.output\" \\"
@@ -1398,8 +1398,8 @@ _build_curl() {
 #  -param $2 Body temporal file
 _clean_trace() {
     #  shellcheck disable=SC2178
-    local _curl=${1:-''}
-    local _body_file=${2:-''}
+    local _curl=${1:-}
+    local _body_file=${2:-}
 
     sed -i -e '/^[*{} ]/d' "$_shttp_output.trace" # Remove unnecessary log lines
     sed -i -e "/^> $/a> {{body}}\n" "$_shttp_output.trace" # Append body tag 
@@ -1432,7 +1432,7 @@ _assertion_log() {
 #
 #  -param $1 Execution type
 _show_assertion_results() {
-    local _type=${1:-''}
+    local _type=${1:-}
     local _assertions=0
     local _failures=0
     case "$_shttp_execution_type" in
@@ -1506,7 +1506,7 @@ _finally_http_api() {
 #  -param $1 Looked option
 #  -param $* Input parameters
 _look_for_params() {
-    local _option=${1:-''}
+    local _option=${1:-}
     local _params=()
     local _found=0
     local _length=0
@@ -1564,8 +1564,8 @@ _look_for_params() {
 #+           '1' for 'true'
 #+           '0' for 'false'
 _register_opt() {
-    local _option=${1:-''}
-    local _callback=${2:-''}
+    local _option=${1:-}
+    local _callback=${2:-}
     local _is_req_opt=${3:-0}
     _shttp_registered_opts[$_option]="$_callback"
     if [ "$_is_req_opt" = "1" ]; then
@@ -1612,8 +1612,8 @@ expr "$*" : ".*--list" > /dev/null \
 #  --param $1 From environment
 #  --param $2 From environment
 _copy_env() {
-    local _from=${1:-''}
-    local _to=${2:-''}
+    local _from=${1:-}
+    local _to=${2:-}
     if [ -z "$_to" ]; then
         fatal "Required [$2:env-to] parameter"
     fi
@@ -1659,7 +1659,7 @@ expr "$*" : ".*--copy" > /dev/null \
 #
 #  --param $1 Environment suffix
 _del_env() {
-    local _env=${1:-''}
+    local _env=${1:-}
     if [ "$_env" = "default" ]; then
         _env=""
     else
@@ -1687,8 +1687,8 @@ expr "$*" : ".*--del" > /dev/null \
 #  -param $1 Name of the entry
 #  -param $2 Value of the entry
 _add_config() {
-    local _name=${1:-''}
-    local _val=${2:-''}
+    local _name=${1:-}
+    local _val=${2:-}
     put "$_name" "$_val"
 }
 _register_opt --add _add_config 0
@@ -1702,7 +1702,7 @@ expr "$*" : ".*--add" > /dev/null \
 #  -param $1 Name of the entry
 #  -return Value of the entry
 _get_config() {
-    local _name=${1:-''}
+    local _name=${1:-}
     local _val=""
     if [ -n "$_name" ]; then
         _val=$( get "$_name" )
@@ -1719,7 +1719,7 @@ expr "$*" : ".*--get" > /dev/null \
 #
 #  -param $1 Name of the entry
 _remove_config() {
-    local _name=${1:-''}
+    local _name=${1:-}
     remove "$_name"
 }
 _register_opt --remove _remove_config 0
@@ -1777,7 +1777,7 @@ expr "$*" : ".*--clean" > /dev/null \
 #
 #  -param $1 Environment suffix
 _set_env() {
-    local _env=${1:-''}
+    local _env=${1:-}
     env "$_env"
 }
 _register_opt --env _set_env 1
@@ -1791,8 +1791,8 @@ expr "$*" : ".*--env" > /dev/null \
 #  -param $1 Name of the entry
 #  -param $2 Value of the entry
 _set_config() {
-    local _name=${1:-''}
-    local _val=${2:-''}
+    local _name=${1:-}
+    local _val=${2:-}
     update "ws/override.json.tmp" ". + { \"$_name\": $_val }"
     info "Set temporal [$_name] with value [$_val]"
 }
@@ -1809,7 +1809,7 @@ expr "$*" : ".*--set" > /dev/null \
 #
 #  -param $1 Port value
 _set_localhost() {
-    local _port=${1:-''}
+    local _port=${1:-}
     if [ -z "$_port" ]; then
         _port="8080"
     fi
@@ -1822,7 +1822,7 @@ expr "$*" : ".*--local" > /dev/null \
 
 #  Set credential to '_shttp_auth_credential'.
 _set_credentials() {
-    local _credential=${1:-''}
+    local _credential=${1:-}
     credential "$_credential"
 }
 _register_opt --auth-basic _set_credentials 1
@@ -1845,7 +1845,7 @@ expr "$*" : ".*--auth-skip" > /dev/null \
 #  Set request execution times
 #+ to '_shttp_request_times'.
 _set_times() {
-    local _times=${1:-''}
+    local _times=${1:-}
     times "$_times"
 }
 _register_opt --times _set_times 1
@@ -1890,7 +1890,7 @@ fi
 # ---------- Main
 
 #  Skip main code flag
-readonly _shttp_skip=${SKIP_HTTP_API:-''}
+readonly _shttp_skip=${SKIP_HTTP_API:-}
 
 #  Main code:
 #    1. Get the 'command' input.
@@ -1903,7 +1903,7 @@ readonly _shttp_skip=${SKIP_HTTP_API:-''}
 if [ "$_shttp_skip" != "true" ]; then
     trap _finally_http_api EXIT
 
-    _shttp_command=${1:-''}
+    _shttp_command=${1:-}
     _has_shttp_main=$( _has_func main )
 
     if [[ "$_shttp_command" == "--"* ]]; then

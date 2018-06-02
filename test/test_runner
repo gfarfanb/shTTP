@@ -159,7 +159,7 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     #  shellcheck disable=SC1091
     . ./test_asserts
 
-    readonly _single=${1:-''}
+    readonly _single=${1:-}
 
     if [ -n "$_single" ]; then
         info "+++ Test [./${_single}_test] sourced"

@@ -6,7 +6,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-readonly _script=${1:-''}
+readonly _script=${1:-}
 
 if [[ "$*" = *"-x"* ]]; then
     sudo chmod -x "$_script"

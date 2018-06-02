@@ -7,7 +7,7 @@
 _shttp_registered_opts["--new"]="_callback_function"
 _previous_value=()
 _callback_function() {
-    local _new=${1:-''}
+    local _new=${1:-}
     _previous_value+=( "$_new" )
 }
 _look_for_params "--new" "command" \
@@ -153,7 +153,8 @@ _shttp_request_times=0
 
 
 #  -test Open editor option
-put editorCommand "\"echo 'opening... results.json'\""
+put editorCommand "\"echo \\\"opening... results.json\\\"\""
 _open_editor
 #  shellcheck disable=SC2154
-assertEquals "'_shttp_editor_command' not assigned" "echo 'opening... results.json'" "$_shttp_editor_command"
+assertEquals "'_shttp_editor_command' not assigned" \
+    "echo \\\"opening... results.json\\\"" "$_shttp_editor_command"

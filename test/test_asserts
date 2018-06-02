@@ -23,8 +23,8 @@ fail() {
 #  -param $2 Test condition content:
 #+           '[ <$2> ]'
 assertTrue() {
-    local _message=${1:-''}
-    local _condition=${2:-''}
+    local _message=${1:-}
+    local _condition=${2:-}
     local _ok=1
     eval "if ! [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
@@ -40,8 +40,8 @@ assertTrue() {
 #  -param $2 Test condition content:
 #+           '! [ <$2> ]'
 assertFalse() {
-    local _message=${1:-''}
-    local _condition=${2:-''}
+    local _message=${1:-}
+    local _condition=${2:-}
     local _ok=1
     eval "if [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
@@ -57,9 +57,9 @@ assertFalse() {
 #  -param $2 Expected value
 #  -param $3 Actual value
 assertEquals() {
-    local _message=${1:-''}
-    local _expected=${2:-''}
-    local _actual=${3:-''}
+    local _message=${1:-}
+    local _expected=${2:-}
+    local _actual=${3:-}
     if [ "$_expected" != "$_actual" ]; then
         _fail "[ $_expected = $_actual ]: $_message"
     fi
@@ -73,9 +73,9 @@ assertEquals() {
 #  -param $2 Expected value
 #  -param $3 Actual value
 assertNotEquals() {
-    local _message=${1:-''}
-    local _expected=${2:-''}
-    local _actual=${3:-''}
+    local _message=${1:-}
+    local _expected=${2:-}
+    local _actual=${3:-}
     if [ "$_expected" = "$_actual" ]; then
         _fail "[ $_expected != $_actual ]: $_message"
     fi

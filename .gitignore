@@ -2,6 +2,7 @@
 output/
 /ws/
 /test/ws/
+/sample/ws/*.json.tmp
 
 tmp/
 log/

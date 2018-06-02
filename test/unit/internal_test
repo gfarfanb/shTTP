@@ -41,10 +41,44 @@ assertEquals "'complete_check' function not found" 1 "$_check_exist"
 
 
 #  -test Flow lifecycle
-fail "_execute_flow not tested either documented yet!!"
+
+#  shellcheck disable=SC2034
+_shttp_execution_type="FLOW"
+_flow_before_api_var="Not executed yet"
+_flow_after_api_var="Not executed yet"
+_flow_execution_count=0
+
+before_api() {
+    _flow_before_api_var="Executed-flow"
+}
+
+get_repo_flow() {
+    url "http://127.0.0.1:5555/info"
+    _flow_execution_count=$(( _flow_execution_count+1 ))
+}
+
+flow_get_repo() {
+    step get_repo_flow --times 2 --local
+    step get_repo_flow --auth-basic user
+    step get_repo_flow
+    step get_repo_flow --set a 5
+}
+
+after_api() {
+    _flow_after_api_var="Executed-flow"
+}
+
+_execute_flow flow_get_repo
+
+assertEquals "'flow_before_api' not executed" "Executed-flow" "$_flow_before_api_var"
+assertEquals "'flow_get_repo' not executed" 5 "$_flow_execution_count"
+assertEquals "'flow_after_api' not executed" "Executed-flow" "$_flow_after_api_var"
 
 
 #  -test Request lifecycle
+
+#  shellcheck disable=SC2034
+_shttp_execution_type="REQUEST"
 _before_api_var="Not executed yet"
 _after_api_var="Not executed yet"
 _execution_count=0
@@ -53,7 +87,7 @@ before_api() {
     _before_api_var="Executed"
 }
 
-get_repo() {
+get_repo_lifecycle() {
     url "http://127.0.0.1:5555/info"
 }
 
@@ -62,7 +96,7 @@ after_api() {
     put '.name'
 }
 
-_execute get_repo
+_execute get_repo_lifecycle
 
 _info_name=$( get name )
 
@@ -72,13 +106,14 @@ assertEquals "'after_api' not executed" "Executed" "$_after_api_var"
 
 _execution_count=0
 
-after_api() {
+get_repo_times() {
+    url "http://127.0.0.1:5555/info"
     _execution_count=$(( _execution_count+1 ))
     #  shellcheck disable=SC2154
     assertEquals "Incorrect index execution" "$_shttp_request_index" "$_execution_count"
 }
 
-_execute get_repo 5
+_execute get_repo_times 5
 
 assertEquals "Incorrect number of executions" 5 "$_execution_count"
 #  shellcheck disable=SC2154

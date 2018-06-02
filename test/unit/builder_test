@@ -152,8 +152,8 @@ _init_vars
 #  -test Set request execution times
 times 5
 #  shellcheck disable=SC2154
-assertEquals "Set request times does not work" 5 "$_shttp_times"
-_shttp_times=0
+assertEquals "Set request times does not work" 5 "$_shttp_request_times"
+_shttp_request_times=0
 
 
 #  -test Set editor command

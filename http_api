@@ -33,7 +33,7 @@ _shttp_help_content() {
         "   --auth-header <credential>:  Set 'HEADER' mode to '_shttp_auth_mode'."
         "   --auth-qparam <credential>:  Set 'QPARAM' mode to '_shttp_auth_mode'."
         "   --auth-skip:                 Set 'SKIP' mode to '_shttp_auth_mode'."
-        "   --times <value>:             Set the number of executions required for the request into '_shttp_times'"
+        "   --times <value>:             Set the number of executions required for the request into '_shttp_request_times'"
         "   --open:                      Set '_shttp_editor_command' with value defined on 'editorCommand'"
         "                                  from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
         "   --help:                      Display this help message"
@@ -155,6 +155,35 @@ _rev() {
 
 
 # ---------- Public functions
+
+#  Request flow step. Simulate
+#+ and external request call:
+#+ input parameters processing,
+#+ and request execution.
+#  It is recommended to use
+#+ inside a flow function.
+#  This is the step process:
+#    1. Execute option functions
+#+      based on input parameters.
+#    2. Execute request command.
+#    3. Reset request variables.
+#
+#  -param $1 Request command
+#  -param $@ Request options
+step() {
+    local _command=${1:-''}
+    shift
+    _shttp_input_params="${*}"
+    for _opt in "${_shttp_sorted_opts[@]}"; do
+        _look_for_params "$_opt" "$@" || continue
+    done
+    _execute "$_command" "$_shttp_request_times"
+    _shttp_input_params=""
+    _shttp_request_times=0
+    _shttp_assertions=0
+    _shttp_failures=0
+    _init_vars
+}
 
 #  Update a JSON file using 'jq'.
 #
@@ -292,9 +321,11 @@ isTrue() {
     eval "if ! [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
+        _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
         _assertion_log "[ $_condition ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
+    _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
 }
 
 #  Asserts that a given 'Bash Conditional
@@ -310,9 +341,11 @@ isFalse() {
     eval "if [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
+        _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
         _assertion_log "! [ $_condition ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
+    _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
 }
 
 #  Asserts that expected and actual
@@ -327,9 +360,11 @@ areEquals() {
     local _actual=${3:-''}
     if [ "$_expected" != "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
+        _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
         _assertion_log "[ $_expected = $_actual ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
+    _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
 }
 
 #  Asserts that unexpected and actual
@@ -344,9 +379,11 @@ areNotEquals() {
     local _actual=${3:-''}
     if [ "$_expected" = "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
+        _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
         _assertion_log "[ $_expected != $_actual ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
+    _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
 }
 
 
@@ -421,12 +458,12 @@ _shttp_auth_mode=""
 #+ credential must have the
 #+ following fields:
 #    1. BASIC: 'username', 'password'
-#    2. BEARER: 'type', 'secret'
-#    3. QPARAM: 'type', 'secret'.
+#    2. HEADER: 'type', 'secret'
+#    3. QPARAM: 'type', 'secret'
 _shttp_auth_credential=""
 
 #  Number of request executions.
-_shttp_times=0
+_shttp_request_times=0
 
 #  If value is defined, that command
 #+ will be executed as last tasks
@@ -455,6 +492,19 @@ _shttp_creds="ws/credentials.json"
 #  Script input parameters.
 _shttp_input_params="${*}"
 
+#  Execution type, allowed values:
+#    1. FLOW: End-to-end process
+#    2. REQUEST: Single request
+_shttp_execution_type=""
+
+#  Current number of flow.
+#  This field is updated by 
+#+ '_execute_flow' for each
+#+ iteration.
+#  This value will be reset
+#+ after complete all iterations.
+_shttp_flow_index=0
+
 #  Current number of execution.
 #  This field is updated by 
 #+ '_execute' for each iteration.
@@ -463,10 +513,19 @@ _shttp_input_params="${*}"
 _shttp_request_index=0
 
 #  Assertions count.
+_shttp_assertions_flow=0
+
+#  Failed assertions count.
+_shttp_failures_flow=0
+
+#  Assertions count.
 _shttp_assertions=0
 
 #  Failed assertions count.
 _shttp_failures=0
+
+#  List of sorted options.
+_shttp_sorted_opts=()
 
 #  List of registered options.
 declare -A _shttp_registered_opts
@@ -684,13 +743,13 @@ credential() {
     info "Set [Credential] with [$_shttp_auth_credential]"
 }
 
-#  Setter for '_shttp_times'.
+#  Setter for '_shttp_request_times'.
 #
 #  -param $1 Request times
 times() {
     local _times=${1:-''}
-    _shttp_times="$_times"
-    info "Set [Times] with [$_shttp_times]"
+    _shttp_request_times="$_times"
+    info "Set [Times] with [$_shttp_request_times]"
 }
 
 #  Setter for '_shttp_editor_command'.
@@ -786,7 +845,20 @@ _execute_if_exist() {
     fi
 }
 
-#  Not documented yet!!
+#  Execute flow lifecycle:
+#    1. Execute 'before_api' function
+#+      if it is declared.
+#    2. Execute the flow.
+#    3. Execute 'after_api' function
+#+      if it is declared.
+#    4. Show assertion results.
+#  If times parameter is passed
+#+ the execution will be performed
+#+ for that number. 
+#
+#  -param $1 Request flow
+#  -param $2 Request flow times
+#+           (positive values)
 _execute_flow() {
     local _command=${1:-''}
     local _times=${2:-1}
@@ -794,12 +866,17 @@ _execute_flow() {
         _times=1
     fi
     for (( _i=1; _i<=_times; _i++ )); do
-        _shttp_request_index="$_i"
+        _shttp_flow_index="$_i"
+        _shttp_assertions_flow=0
+        _shttp_failures_flow=0
         info "$_i: Init flow [$_command]"
-        $_command "$_shttp_request_index"
+        _execute_if_exist before_api
+        $_command "$_shttp_flow_index"
+        _execute_if_exist after_api
+        _show_assertion_results
         info "$_i: Flow [$_command] completed"
     done
-    _shttp_request_index=0
+    _shttp_flow_index=0
 }
 
 #  Execute request lifecycle:
@@ -835,11 +912,15 @@ _execute() {
         _shttp_failures=0
         info "$_i: Init request [$_command]"
         _init_vars
-        _execute_if_exist before_api
+        if [ "$_shttp_execution_type" = "REQUEST" ]; then
+            _execute_if_exist before_api
+        fi
         $_command "$_shttp_request_index"
         _set_method "$_command"
         _request "$_command"
-        _execute_if_exist after_api
+        if [ "$_shttp_execution_type" = "REQUEST" ]; then
+            _execute_if_exist after_api
+        fi
         _editor_command
         _show_assertion_results
         info "$_i: Request [$_command] completed"
@@ -1332,19 +1413,34 @@ _clean_trace() {
 #
 #  -param $* Log message
 _assertion_log() {
-    echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERTION]   $*" | tee -a "$_shttp_output.asserts" >&2
+    if [ "$_shttp_execution_type" = "REQUEST" ]; then
+        echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERTION]   $*" | tee -a "$_shttp_output.asserts" >&2
+    else
+        echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERTION]   $*" | tee -a "$_shttp_output.flow.asserts" >&2
+    fi
 }
 
 #  Show assertion results if
 #+ assetion count is greater
 #+ than '0'.
 _show_assertion_results() {
-    if (( _shttp_assertions > 0 )); then
-        info "Created $_shttp_output.asserts"
-        if [ $_shttp_failures = 0 ]; then
-            _assertion_log "$( basename "$0" ): [PASSED] - [$_shttp_assertions] of [$_shttp_assertions] assertions passed"
-        else
-            _assertion_log "$( basename "$0" ): [FAILED] - [$_shttp_failures] of [$_shttp_assertions] assertions failed"
+    if [ "$_shttp_execution_type" = "REQUEST" ]; then
+        if (( _shttp_assertions > 0 )); then
+            info "Created $_shttp_output.asserts"
+            if [ $_shttp_failures = 0 ]; then
+                _assertion_log "$( basename "$0" ): [PASSED] - [$_shttp_assertions] of [$_shttp_assertions] assertions passed"
+            else
+                _assertion_log "$( basename "$0" ): [FAILED] - [$_shttp_failures] of [$_shttp_assertions] assertions failed"
+            fi
+        fi
+    else
+        if (( _shttp_assertions_flow > 0 )); then
+            info "Created $_shttp_output.flow.asserts"
+            if [ $_shttp_failures_flow = 0 ]; then
+                _assertion_log "$( basename "$0" ): [PASSED] - [$_shttp_assertions_flow] of [$_shttp_assertions_flow] assertions passed"
+            else
+                _assertion_log "$( basename "$0" ): [FAILED] - [$_shttp_failures_flow] of [$_shttp_assertions_flow] assertions failed"
+            fi
         fi
     fi
 }
@@ -1386,7 +1482,9 @@ _finally_http_api() {
 #  Look for parameters belong
 #+ to option. Parameters are
 #+ collected and they are sent
-#+ to 'callback' function.
+#+ to a 'callback' function.
+#+ The 'callback' is collected
+#+ from '_shttp_registered_opts'.
 #  Search is interrupted
 #+ if another option is found
 #+ in the parameters.
@@ -1439,13 +1537,15 @@ _look_for_params() {
 }
 
 #  Register an option to
+#+ '_shttp_sorted_opts' and
 #+ '_shttp_registered_opts'.
 #
 #  -param $1 Option
 #  -param $1 Callback function
-_add_option() {
+_register_opt() {
     local _option=${1:-''}
     local _callback=${2:-''}
+    _shttp_sorted_opts+=( "$_option" )
     _shttp_registered_opts[$_option]="$_callback"
 }
 
@@ -1475,7 +1575,7 @@ _list_commands() {
         done
     fi
 }
-_add_option --list _list_commands
+_register_opt --list _list_commands
 expr "$*" : ".*--list" > /dev/null \
     && _look_for_params --list "$@" \
     && exit 0
@@ -1492,7 +1592,7 @@ _set_config() {
     update "ws/override.json.tmp" ". + { \"$_name\": $_val }"
     info "Set temporal [$_name] with value [$_val]"
 }
-_add_option --set _set_config
+_register_opt --set _set_config
 expr "$*" : ".*--set" > /dev/null \
     && _look_for_params --set "$@"
 
@@ -1506,7 +1606,7 @@ _set_env() {
     local _env=${1:-''}
     env "$_env"
 }
-_add_option --env _set_env
+_register_opt --env _set_env
 expr "$*" : ".*--env" > /dev/null \
     && _look_for_params --env "$@"
 
@@ -1555,7 +1655,7 @@ _copy_env() {
     info "Added [ws/config$_to.json] file"
     info "Added [ws/credentials$_to.json] file"
 }
-_add_option --copy _copy_env
+_register_opt --copy _copy_env
 expr "$*" : ".*--copy" > /dev/null \
     && _look_for_params --copy "$@" \
     && exit 0
@@ -1570,7 +1670,7 @@ _add_config() {
     local _val=${2:-''}
     put "$_name" "$_val"
 }
-_add_option --add _add_config
+_register_opt --add _add_config
 expr "$*" : ".*--add" > /dev/null \
     && _look_for_params --add "$@" \
     && exit 0
@@ -1588,7 +1688,7 @@ _get_config() {
     fi
     echo "$_val"
 }
-_add_option --get _get_config
+_register_opt --get _get_config
 expr "$*" : ".*--get" > /dev/null \
     && _look_for_params --get "$@" \
     && exit 0
@@ -1601,7 +1701,7 @@ _remove_config() {
     local _name=${1:-''}
     remove "$_name"
 }
-_add_option --remove _remove_config
+_register_opt --remove _remove_config
 expr "$*" : ".*--remove" > /dev/null \
     && _look_for_params --remove "$@" \
     && exit 0
@@ -1620,7 +1720,7 @@ _get_config_keys() {
         done
     fi
 }
-_add_option --keys _get_config_keys
+_register_opt --keys _get_config_keys
 expr "$*" : ".*--keys" > /dev/null \
     && _look_for_params --keys "$@" \
     && exit 0
@@ -1641,7 +1741,7 @@ _set_localhost() {
     protocol "http"
     domain "localhost:$_port"
 }
-_add_option --local _set_localhost
+_register_opt --local _set_localhost
 expr "$*" : ".*--local" > /dev/null \
     && _look_for_params --local "$@"
 
@@ -1650,30 +1750,30 @@ _set_credentials() {
     local _credential=${1:-''}
     credential "$_credential"
 }
-_add_option --auth-basic _set_credentials
+_register_opt --auth-basic _set_credentials
 expr "$*" : ".*--auth-basic" > /dev/null \
     && _look_for_params --auth-basic "$@" \
     && authMode "BASIC"
-_add_option --auth-header _set_credentials
+_register_opt --auth-header _set_credentials
 expr "$*" : ".*--auth-header" > /dev/null \
     && _look_for_params --auth-header "$@" \
     && authMode "HEADER"
-_add_option --auth-qparam _set_credentials
+_register_opt --auth-qparam _set_credentials
 expr "$*" : ".*--auth-qparam" > /dev/null \
     && _look_for_params --auth-qparam "$@" \
     && authMode "QPARAM"
-_add_option --auth-skip _set_credentials
+_register_opt --auth-skip _set_credentials
 expr "$*" : ".*--auth-skip" > /dev/null \
     && _look_for_params --auth-skip "$@" \
     && authMode "SKIP"
 
 #  Set request execution times
-#+ to '_shttp_times'.
+#+ to '_shttp_request_times'.
 _set_times() {
     local _times=${1:-''}
     times "$_times"
 }
-_add_option --times _set_times
+_register_opt --times _set_times
 expr "$*" : ".*--times" > /dev/null \
     && _look_for_params --times "$@"
 
@@ -1683,7 +1783,7 @@ expr "$*" : ".*--times" > /dev/null \
 _open_editor() {
     editor "$( get editorCommand )"
 }
-_add_option --open _open_editor
+_register_opt --open _open_editor
 expr "$*" : ".*--open" > /dev/null \
     && _look_for_params --open "$@"
 
@@ -1706,7 +1806,7 @@ _clean_output_files() {
         fi
     fi
 }
-_add_option --clean _clean_output_files
+_register_opt --clean _clean_output_files
 expr "$*" : ".*--clean" > /dev/null \
     && _look_for_params --clean "$@" \
     && exit 0
@@ -1762,10 +1862,13 @@ if [ "$_shttp_skip" != "true" ]; then
     if [ -z "$_shttp_command" ]; then
         info "No command to execute"
     elif [[ "$_shttp_command" == "flow"* ]]; then
-        _execute_flow "$_shttp_command" "$_shttp_times"
+        _shttp_execution_type="FLOW"
+        _execute_flow "$_shttp_command" "$_shttp_request_times"
     elif (( _has_shttp_main == 1 )); then
-        _execute main "$_shttp_times"
+        _shttp_execution_type="REQUEST"
+        _execute main "$_shttp_request_times"
     else
-        _execute "$_shttp_command" "$_shttp_times"        
+        _shttp_execution_type="REQUEST"
+        _execute "$_shttp_command" "$_shttp_request_times"
     fi
 fi

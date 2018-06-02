@@ -3,7 +3,17 @@
 #  -author Giovanni Farfán B.
 
 
-#  -beforeTest
+#  -test Request step flow
+_step_executed="Not executed yet"
+get_repo_step() {
+    url "http://127.0.0.1:5555/info"
+    _step_executed="Executed-step"
+}
+step get_repo_step
+assertEquals "'step_get_repo' not executed" "Executed-step" "$_step_executed"
+
+
+#  -beforeTests
 output "output/public-output.$( date '+%s.%N' )"
 #  shellcheck disable=SC2154
 echo '{"id":"5s43u-323we"}' > "$_shttp_output.output"

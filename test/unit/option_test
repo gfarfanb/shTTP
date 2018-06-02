@@ -50,29 +50,6 @@ done
 assertEquals "Command not found" 4 "$_found"
 
 
-#  -test Set option
-_set_config "priorityVal" "\"value\""
-put priorityVal "\"new.value\""
-_priority_val=$( get priorityVal )
-assertEquals "Unexpected 'setConfig' value" "value" "$_priority_val"
-
-
-#  -test Set environment
-echo '{ }' > ws/config.test.json
-echo '[ ]' > ws/credentials.test.json
-
-_set_env "test"
-
-#  shellcheck disable=SC2154
-assertEquals "Configuration 'test' file not found" "ws/config.test.json" "$_shttp_env"
-#  shellcheck disable=SC2154
-assertEquals "Credentials 'test' file not found" "ws/credentials.test.json" "$_shttp_creds"
-
-_set_env
-rm -f ws/config.test.json
-rm -f ws/credentials.test.json
-
-
 #  -test Copy environment
 _copy_env default env
 assertTrue "Configuration 'env' file does not exists" "-f ws/config.env.json"
@@ -115,6 +92,37 @@ done
 assertEquals "'namedKey' key not found" 1 "$_found"
 
 
+#  -test Clean option
+echo '{}' > output/cleanable_output.json
+
+_clean_output_files
+
+assertFalse "Output file is currently exists" "-f output/cleanable_output.json"
+
+
+#  -test Set environment
+echo '{ }' > ws/config.test.json
+echo '[ ]' > ws/credentials.test.json
+
+_set_env "test"
+
+#  shellcheck disable=SC2154
+assertEquals "Configuration 'test' file not found" "ws/config.test.json" "$_shttp_env"
+#  shellcheck disable=SC2154
+assertEquals "Credentials 'test' file not found" "ws/credentials.test.json" "$_shttp_creds"
+
+_set_env
+rm -f ws/config.test.json
+rm -f ws/credentials.test.json
+
+
+#  -test Set option
+_set_config "priorityVal" "\"value\""
+put priorityVal "\"new.value\""
+_priority_val=$( get priorityVal )
+assertEquals "Unexpected 'setConfig' value" "value" "$_priority_val"
+
+
 #  -test Local option
 _set_localhost "5555"
 #  shellcheck disable=SC2154
@@ -139,11 +147,3 @@ put editorCommand "\"echo 'opening... results.json'\""
 _open_editor
 #  shellcheck disable=SC2154
 assertEquals "'_shttp_editor_command' not assigned" "echo 'opening... results.json'" "$_shttp_editor_command"
-
-
-#  -test Clean option
-echo '{}' > output/cleanable_output.json
-
-_clean_output_files
-
-assertFalse "Output file is currently exists" "-f output/cleanable_output.json"

@@ -2,35 +2,15 @@
 #  -author Giovanni Farfán B.
 
 before_api() {
-    :
-}
-
-#  External command:
-#  ./gist_comments post_authorization --auth-basic gfb --set otp <2fa-token>
-post_authorization() {
-    basePath "/authorizations"
-    headers "X-GitHub-OTP: $( get otp )"
-    body "{
-            \"scopes\": [
-                \"public_repo\"
-            ],
-            \"note\": \"execute shTTP samples\",
-            \"client_id\": \"$( get clientId )\",
-            \"client_secret\": \"$( get clientSecret )\"
-        }"
-}
-
-after_post_authorization() {
-    isTrue "Empty authorization token" "-n \"$( getOutput token )\""
-    put 'token' '.hashed_token'
-}
-
-get_all() {
     basePath "/gists/$( get gistId )/comments"
 }
 
+get_all() {
+    :
+}
+
 get_comment() {
-    endpoint "$( get gistId )/comments/$( get commentId )"
+    endpoint "/$( get commentId )"
 }
 
 before_post_comment() {
@@ -38,10 +18,11 @@ before_post_comment() {
 }
 
 post_comment() {
-    basePath "/gists/$( get gistId )/comments"
     headers \
-        "Authorization: token $( get token )"
-    body '{ "body": "shTTP-samples comment" }'
+        "Authorization: token $( get token )" \
+        "Accept: application/vnd.github.$( get apiVersion ).full+json" \
+        "Content-Type: application/vnd.github.$( get apiVersion ).full+json"
+    body '{ "body": "**shTTP-samples** comment" }'
 }
 
 after_post_comment() {
@@ -50,12 +31,12 @@ after_post_comment() {
 }
 
 patch_comment() {
-    endpoint "$( get gistId )/comments/$( get commentId )"
+    endpoint "/$( get commentId )"
     body '{ "body": "shTTP comment update" }'
 }
 
 delete_comment() {
-    endpoint "$( get gistId )/comments/$( get commentId )"
+    endpoint "/$( get commentId )"
 }
 
 after_api() {

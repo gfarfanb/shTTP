@@ -8,3 +8,25 @@ _rev_input="reverse"
 _rev_input=$( _rev "$_rev_input" )
 
 assertEquals "Reverse is not working" "esrever" "$_rev_input"
+
+
+#  -test Random string
+_generated_strings=()
+
+for (( _i=1; _i<=100; _i++ )); do
+    _random_string=$( _random_str 10 )
+    _generated_length=${#_generated_strings[@]}
+    _found=0
+    if (( _generated_length > 0 )); then
+        for _generated in "${_generated_strings[@]}"; do
+            if [ "$_generated" = "_random_string" ]; then
+                _found=1
+            fi
+        done
+    fi
+    if [ "$_found" = "0" ]; then
+        _generated_strings+=( "$_random_string" )
+    fi
+done
+
+assertEquals "Random repeated values found" 100 "${#_generated_strings[@]}"

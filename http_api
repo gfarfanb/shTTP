@@ -103,30 +103,30 @@ fi
 
 #  Output directory for trace and results files
 if ! [ -d output ]; then 
-    mkdir output || fatal "Imposible to create 'output' dorectory"
+    mkdir output || fatal "Imposible to create 'output' directory"
 fi
 
 #  Workspace directory for data execution
 if ! [ -d ws ]; then 
-    mkdir ws || fatal "Imposible to create 'ws' dorectory"
+    mkdir ws || fatal "Imposible to create 'ws' directory"
 fi
 
 #  Default configuration JSON file
 if ! [ -f "ws/config.json" ]; then
     echo '{
         "protocol": null,
-    	"domain": null,
-    	"basePath": null,
-    	"endpoint": null,
-    	"method": null,
-    	"headers": [],
-    	"body": [],
-    	"form": [],
-    	"queryParams": [],
-    	"curlOpts": [],
-    	"authMode": null,
-    	"authCredential": null,
-    	"editorCommand": null
+        "domain": null,
+        "basePath": null,
+        "endpoint": null,
+        "method": null,
+        "headers": [],
+        "body": [],
+        "form": [],
+        "queryParams": [],
+        "curlOpts": [],
+        "authMode": null,
+        "authCredential": null,
+        "editorCommand": null
     }' > "ws/config.json"
 fi
 
@@ -157,10 +157,25 @@ echo '{ }' > "ws/override.json.tmp"
 _rev() {
     local _input=${1:-}
     local _rev=""
-    for (( i=${#_input}-1; i>=0; i-- )); do 
+    for (( i=${#_input}-1; i>=0; i-- )); do
         _rev="$_rev${_input:$i:1}"
     done
     echo "$_rev"
+}
+
+#  Generates a random string
+#+ value with specified length.
+#
+#  -param $1 Required string
+#+           length
+#  -return Random string
+_random_str() {
+    local _length=${1:-10}
+    local _val=""
+    _val=$( < /dev/urandom tr -dc 'a-zA-Z0-9' \
+        | fold -w "$_length" \
+        | head -n 1 )
+    echo "$_val"
 }
 
 
@@ -317,6 +332,9 @@ getOutput() {
     fi
     echo "$_val"
 }
+
+
+# ---------- Assertion functions
 
 #  Asserts that a given 'Bash Conditional
 #+ Expressions' is true.
@@ -1084,7 +1102,7 @@ _default_vars() {
         authMode "SKIP"
     fi
     if [ -z "$_shttp_output" ]; then
-        output "output/$( basename "$0" ).$( date '+%Y-%m-%d.%H_%M_%S' )"
+        output "output/$( basename "$0" ).$( date '+%y%m%d.%H%M%S' )"
     fi
 }
 

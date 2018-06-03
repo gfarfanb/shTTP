@@ -3,6 +3,11 @@
 
 before_api() {
     basePath "/gists/$( get gistId )/comments"
+    headers \
+        "User-Agent: $( get appName )" \
+        "Authorization: token $( get token )" \
+        "Accept: application/vnd.github.$( get apiVersion ).full+json" \
+        "Content-Type: application/vnd.github.$( get apiVersion ).full+json"
 }
 
 get_all() {
@@ -18,11 +23,7 @@ before_post_comment() {
 }
 
 post_comment() {
-    headers \
-        "Authorization: token $( get token )" \
-        "Accept: application/vnd.github.$( get apiVersion ).full+json" \
-        "Content-Type: application/vnd.github.$( get apiVersion ).full+json"
-    body '{ "body": "**shTTP-samples** comment" }'
+    body '{ "body": "shTTP-samples comment" }'
 }
 
 after_post_comment() {
@@ -32,19 +33,25 @@ after_post_comment() {
 
 patch_comment() {
     endpoint "/$( get commentId )"
-    body '{ "body": "shTTP comment update" }'
+    body '{ "body": "shTTP-samples comment update" }'
 }
 
 delete_comment() {
     endpoint "/$( get commentId )"
 }
 
+after_delete_comment() {
+    remove commentId
+}
+
 after_api() {
     :
 }
 
-flow_comments() {
-    :
+flow_comment() {
+    step post_comment
+    step patch_comment
+    step delete_comment
 }
 
 #  shellcheck disable=SC1091

@@ -10,25 +10,6 @@ get_auths() {
     headers "X-GitHub-OTP: $( get otp )"
 }
 
-#  ./github_oauth post_auth --auth-basic gfb --set otp <2fa-token>
-post_auth() {
-    headers "X-GitHub-OTP: $( get otp )"
-    body "{
-            \"scopes\": [
-                \"public_repo\"
-            ],
-            \"note\": \"Execute shTTP samples\",
-            \"client_id\": \"$( get clientId )\",
-            \"client_secret\": \"$( get clientSecret )\"
-        }"
-}
-
-after_post_auth() {
-    isTrue "Empty authorization token" "-n \"$( getOutput token )\""
-    put 'authId' '.id'
-    put 'token' '.token'
-}
-
 before_put_auth() {
     put fingerprint "\"$( _random_str 25 )\""
 }
@@ -39,7 +20,7 @@ put_auth() {
     headers "X-GitHub-OTP: $( get otp )"
     body "{
             \"scopes\": [
-                \"public_repo\"
+                \"gist\"
             ],
             \"note\": \"Execute shTTP samples\",
             \"client_secret\": \"$( get clientSecret )\",

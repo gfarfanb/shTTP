@@ -874,12 +874,8 @@ _execute_if_exist() {
 }
 
 #  Execute flow lifecycle:
-#    1. Execute 'before_api' function
-#+      if it is declared.
-#    2. Execute the flow.
-#    3. Execute 'after_api' function
-#+      if it is declared.
-#    4. Show assertion results.
+#    1. Execute the flow.
+#    2. Show assertion results.
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number. 
@@ -893,16 +889,14 @@ _execute_flow() {
     if (( _times < 1 )); then
         _times=1
     fi
-    for (( _i=1; _i<=_times; _i++ )); do
-        _shttp_flow_index="$_i"
+    for (( _flow_idx=1; _flow_idx<=_times; _flow_idx++ )); do
+        _shttp_flow_index="$_flow_idx"
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
-        info "$_i: Init flow [$_command]"
-        _execute_if_exist before_api
+        info "$_flow_idx: [FLOW] Init [$_command]"
         $_command "$_shttp_flow_index"
-        _execute_if_exist after_api
         _show_assertion_results "FLOW"
-        info "$_i: Flow [$_command] completed"
+        info "$_flow_idx: [FLOW] Done [$_command]"
     done
     _shttp_flow_index=0
 }
@@ -934,24 +928,20 @@ _execute() {
     if (( _times < 1 )); then
         _times=1
     fi
-    for (( _i=1; _i<=_times; _i++ )); do
-        _shttp_request_index="$_i"
+    for (( _req_idx=1; _req_idx<=_times; _req_idx++ )); do
+        _shttp_request_index="$_req_idx"
         _shttp_assertions=0
         _shttp_failures=0
-        info "$_i: Init request [$_command]"
+        info "$_req_idx: [REQUEST] Init [$_command]"
         _init_vars
-        if [ "$_shttp_execution_type" = "REQUEST" ]; then
-            _execute_if_exist before_api
-        fi
+        _execute_if_exist before_api
         $_command "$_shttp_request_index"
         _set_method "$_command"
         _request "$_command"
-        if [ "$_shttp_execution_type" = "REQUEST" ]; then
-            _execute_if_exist after_api
-        fi
+        _execute_if_exist after_api
         _editor_command
         _show_assertion_results "REQUEST"
-        info "$_i: Request [$_command] completed"
+        info "$_req_idx: [REQUEST] Done [$_command]"
     done
     _shttp_request_index=0
 }

@@ -383,8 +383,13 @@ update "ws/credentials.json" '. + [{
         "id": "auth",
         "username": "auth",
         "password": "t35t",
+        "token": "uqweq8u23j23e",
+        "type": "Bearer",
+        "key": "j77qwj",
         "secret": "uqweq8u23j23e",
-        "type": "api_token"
+        "tokenParam": "api_token",
+        "keyParam": "clientId",
+        "secretParam": "clientSecret"
     }]'
 
 credential "auth"
@@ -415,7 +420,7 @@ _append_auth
 
 _found=0
 for _header in "${_shttp_headers[@]}"; do
-    if [ "$_header" = "Authorization: api_token uqweq8u23j23e" ]; then
+    if [ "$_header" = "Authorization: Bearer uqweq8u23j23e" ]; then
         _found=1
     fi
 done
@@ -424,7 +429,7 @@ assertEquals "'HEADER' mode not set" 1 "$_found"
 
 _init_vars
 credential "auth"
-authMode "QPARAM"
+authMode "QTOKEN"
 
 _append_auth
 
@@ -433,11 +438,33 @@ _found=0
 #  shellcheck disable=SC2154
 for _param in "${_shttp_query_params[@]}"; do
     if [ "$_param" = "api_token=uqweq8u23j23e" ]; then
-    _found=1
-fi
+        _found=1
+    fi
 done
 
-assertEquals "'QPARAM' mode not set" 1 "$_found"
+assertEquals "'QTOKEN' mode not set" 1 "$_found"
+
+_init_vars
+credential "auth"
+authMode "QKEYSEC"
+
+_append_auth
+
+_found=0
+
+#  shellcheck disable=SC2154
+for _param in "${_shttp_query_params[@]}"; do
+    case "$_param" in
+        clientId=j77qwj)
+            _found=$(( _found+1 ))
+        ;;
+        clientSecret=uqweq8u23j23e)
+            _found=$(( _found+1 ))
+        ;;
+    esac
+done
+
+assertEquals "'QKEYSEC' mode not set" 2 "$_found"
 
 _init_vars
 credential "auth"
@@ -452,39 +479,6 @@ _length=${#_shttp_query_params[@]}
 assertEquals "'SKIP' mode not set for query params" 0 "$_length"
 
 remove apiToken
-_init_vars
-
-
-#  -test Get credential part
-credential "test"
-update "ws/credentials.json" '. + [{
-        "id": "test",
-        "username": "test",
-        "password": "t35t",
-        "secret": "1234567890",
-        "type": "token"
-    }]'
-
-_credential_username=""
-_credential_password=""
-_credential_secret=""
-_credential_type=""
-
-_credential_username=$( _credential_part username )
-assertEquals "Username part not found" "test" "$_credential_username"
-
-_credential_password=$( _credential_part password )
-assertEquals "Password part not found" "t35t" "$_credential_password"
-
-_credential_secret=$( _credential_part secret )
-assertEquals "Secret part not found" "1234567890" "$_credential_secret"
-
-_credential_type=$( _credential_part type )
-assertEquals "Type part not found" "token" "$_credential_type"
-
-_credential_unknown=$( _credential_part unknown "apiToken" )
-assertEquals "Unknown part found" "apiToken" "$_credential_unknown"
-
 _init_vars
 
 

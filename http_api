@@ -12,8 +12,8 @@ _shttp_help_content() {
         "                              [--add <key-name> <value>] [--remove <key-name>] [--keys] [--clean]"
         ""
         "                              [--env <env>]  [--set <key-name> <value>] [--local <port>]"
-        "                              [--auth-basic] [--auth-header] [--auth-qparam] [--auth-skip]"
-        "                              [--times <value>] [--open]"
+        "                              [--auth-basic] [--auth-header] [--auth-qtoken] [--auth-qkeysec]"
+        "                              [--auth-skip] [--times <value>] [--open]"
         ""
         "                              [--help]"
         ""
@@ -40,7 +40,8 @@ _shttp_help_content() {
         "                                  _shttp_domain: localhost:<port> (default 8080)"
         "   --auth-basic <credential>:   Set 'BASIC' mode to '_shttp_auth_mode'."
         "   --auth-header <credential>:  Set 'HEADER' mode to '_shttp_auth_mode'."
-        "   --auth-qparam <credential>:  Set 'QPARAM' mode to '_shttp_auth_mode'."
+        "   --auth-qtoken <credential>:  Set 'QTOKEN' mode to '_shttp_auth_mode'."
+        "   --auth-qkeysec <credential>: Set 'QKEYSEC' mode to '_shttp_auth_mode'."
         "   --auth-skip:                 Set 'SKIP' mode to '_shttp_auth_mode'."
         "   --times <value>:             Set the number of executions required for the request into '_shttp_request_times'"
         "   --open:                      Set '_shttp_editor_command' with value defined on 'editorCommand'"
@@ -102,12 +103,12 @@ if [ -z "$_jq_version" ]; then
 fi
 
 #  Output directory for trace and results files
-if ! [ -d output ]; then 
+if ! [ -d output ]; then
     mkdir output || fatal "Imposible to create 'output' directory"
 fi
 
 #  Workspace directory for data execution
-if ! [ -d ws ]; then 
+if ! [ -d ws ]; then
     mkdir ws || fatal "Imposible to create 'ws' directory"
 fi
 
@@ -133,11 +134,23 @@ fi
 #  Default credentials JSON file
 if ! [ -f "ws/credentials.json" ]; then
     echo '[{
-        "id": "Mandatory",
-        "username": "Mandatory for: BASIC",
-        "password": "Optional for: BASIC. Evaluated it during request.",
-        "secret": "Mandatory for: BEARER, QPARAM. Evaluated it during request.",
-        "type": "Optional for: BEARER, QPARAM"
+        "id": "basic",
+        "username": "Mandatory. Evaluated it during request.",
+        "password": "Optional. Evaluated it during request."
+    }, {
+        "id": "header",
+        "token": "Mandatory. Evaluated it during request.",
+        "type": "[Basic | token | Bearer]"
+    }, {
+        "id": "qtoken",
+        "token": "Mandatory. Evaluated it during request.",
+        "tokenParam": "Optional. Default: access_token."
+    }, {
+        "id": "qkeysecret",
+        "key": "Mandatory. Evaluated it during request.",
+        "secret": "Mandatory. Evaluated it during request.",
+        "keyParam": "Optional. Default: key.",
+        "secretParam": "Optional. Default: secret."
     }]' > "ws/credentials.json"
 fi
 
@@ -157,8 +170,8 @@ echo '{ }' > "ws/override.json.tmp"
 _rev() {
     local _input=${1:-}
     local _rev=""
-    for (( i=${#_input}-1; i>=0; i-- )); do
-        _rev="$_rev${_input:$i:1}"
+    for (( _input_idx=${#_input}-1; _input_idx>=0; _input_idx-- )); do
+        _rev="$_rev${_input:$_input_idx:1}"
     done
     echo "$_rev"
 }
@@ -333,6 +346,25 @@ getOutput() {
     echo "$_val"
 }
 
+#  Get the credential part for
+#+ '_shttp_auth_credential'.
+#
+#  -param $1 Part name
+#  -param $2 Default name
+#  -return Credential part value
+getPart() {
+    local _name=${1:-}
+    local _default=${2:-'null'}
+    local _part=""
+    _part=$( < "$_shttp_creds" \
+        jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_name")
+    _part=$( echo "$_part" | sed -e 's/^"//' -e 's/"$//' )
+    if [ "$_part" = "null" ]; then
+        _part="$_default"
+    fi
+    echo "$_part"
+}
+
 
 # ---------- Assertion functions
 
@@ -486,8 +518,10 @@ _shttp_auth_mode=""
 #+ credential must have the
 #+ following fields:
 #    1. BASIC: 'username', 'password'
-#    2. HEADER: 'type', 'secret'
-#    3. QPARAM: 'type', 'secret'
+#    2. HEADER: 'token', 'type'
+#    3. QTOKEN: 'token', 'tokenParam'
+#    3. QKEYSEC: 'key', 'secret',
+#+      'keyParam', 'secretParam'
 _shttp_auth_credential=""
 
 #  Number of request executions.
@@ -526,7 +560,7 @@ _shttp_input_params="${*}"
 _shttp_execution_type=""
 
 #  Current number of flow.
-#  This field is updated by 
+#  This field is updated by
 #+ '_execute_flow' for each
 #+ iteration.
 #  This value will be reset
@@ -534,7 +568,7 @@ _shttp_execution_type=""
 _shttp_flow_index=0
 
 #  Current number of execution.
-#  This field is updated by 
+#  This field is updated by
 #+ '_execute' for each iteration.
 #  This value will be reset
 #+ after complete all iterations.
@@ -696,7 +730,7 @@ body() {
             for (( ; ; )); do
                 for _part in "$@"; do
                     _shttp_body+=( "$_part" )
-                    _size=$(( _size+${#_part}  ))
+                    _size=$(( _size+${#_part} ))
                 done
                 if (( _size >= _max_size )); then
                     break
@@ -705,7 +739,7 @@ body() {
         else
             for _part in "$@"; do
                 _shttp_body+=( "$_part" )
-                _size=$(( _size+${#_part}  ))
+                _size=$(( _size+${#_part} ))
             done
         fi
     fi
@@ -811,10 +845,10 @@ env() {
         _shttp_creds="ws/credentials.json"
     fi
     if ! [ -f "$_shttp_env" ]; then
-        fatal "Configuration [$_shttp_env] does not exists"
+        fatal "Configuration [$_shttp_env] does not exist"
     fi
     if ! [ -f "$_shttp_creds" ]; then
-        fatal "Credentials [$_shttp_creds] does not exists"
+        fatal "Credentials [$_shttp_creds] does not exist"
     fi
     info "Set [Configuration] with [$_shttp_env]"
     info "Set [Credentials] with [$_shttp_creds]"
@@ -861,7 +895,7 @@ _has_func() {
 }
 
 #  Execute function if it is
-#+ already decared.
+#+ already declared.
 #
 #  -param $1 Function name
 _execute_if_exist() {
@@ -878,7 +912,7 @@ _execute_if_exist() {
 #    2. Show assertion results.
 #  If times parameter is passed
 #+ the execution will be performed
-#+ for that number. 
+#+ for that number.
 #
 #  -param $1 Request flow
 #  -param $2 Request flow times
@@ -917,7 +951,7 @@ _execute_flow() {
 #    8. Show assertion results.
 #  If times parameter is passed
 #+ the execution will be performed
-#+ for that number. 
+#+ for that number.
 #
 #  -param $1 Request command
 #  -param $2 Request execution times
@@ -1237,28 +1271,41 @@ _append_content_type() {
 #+      'password'.
 #    2. HEADER: Set authentication
 #+      token by request header.
-#+      Use from credential: 'type',
-#+      'secret'. If 'type' is not
+#+      Use from credential: 'token',
+#+      'type'. If 'type' is not
 #+      found, default value will be
 #+      'token'.
-#    3. QPARAM: Set to 'URL' a
+#    3. QTOKEN: Set to 'URL' a
 #+      token as query parameter.
-#+      Use from credential: 'type',
-#+      'secret'. If 'type' is not
-#+      found, default value will be
-#+      'access_token'.
-#    4. SKIP: Skip authorization setup.
-#    5. Another value: Exit script using
+#+      Use from credential: 'token',
+#+      'tokenParam'. If 'tokenParam'
+#+      is not found or empty, default
+#+      value will be 'access_token'.
+#    4. QKEYSEC: Set to 'URL' a
+#+      key and secret as query parameter.
+#+      Use from credential: 'key',
+#+      'secret', 'keyParam' and
+#+      'secretParam'. If 'keyParam' and
+#+      'secretParam' are not found or
+#+      empty, default value will be
+#+      'key' and 'secret'.
+#    5. SKIP: Skip authorization setup.
+#    6. Another value: Exit script using
 #+      'fatal' logging function.
 _append_auth() {
     local _username=""
     local _password=""
-    local _secret=""
+    local _token=""
     local _type=""
+    local _key=""
+    local _secret=""
+    local _token_param=""
+    local _key_param=""
+    local _secret_param=""
     case "$_shttp_auth_mode" in
         BASIC)
-            _username=$( _credential_part username )
-            _password=$( _credential_part password )
+            _username=$( getPart username )
+            _password=$( getPart password )
             if [ "$_password" = "null" ]; then
                 curlOpts "--basic" "-u $_username"
             else
@@ -1267,49 +1314,39 @@ _append_auth() {
             fi
         ;;
         HEADER)
-            _type=$( _credential_part type "token" )
-            _secret=$( _credential_part secret )
-            eval "_secret=\"$_secret\""
-            _append_if_missing_header "Authorization" "$_type $_secret"
+            _type=$( getPart type "token" )
+            _token=$( getPart token )
+            eval "_token=\"$_token\""
+            _append_if_missing_header "Authorization" "$_type $_token"
         ;;
-        QPARAM)
-            _type=$( _credential_part type "access_token" )
-            _secret=$( _credential_part secret )
+        QTOKEN)
+            _token=$( getPart token )
+            _token_param=$( getPart tokenParam "access_token" )
+            eval "_token=\"$_token\""
+            queryParams "$_token_param=$_token"
+        ;;
+        QKEYSEC)
+            _key=$( getPart key )
+            _secret=$( getPart secret )
+            _key_param=$( getPart keyParam "key" )
+            _secret_param=$( getPart secretParam "secret" )
+            eval "_key=\"$_key\""
             eval "_secret=\"$_secret\""
-            queryParams "$_type=$_secret"
+            queryParams "$_key_param=$_key" "$_secret_param=$_secret"
         ;;
         SKIP)
             :
         ;;
         *)
             local _has_ext_auth=""
-            _has_ext_auth=$( _has_func process_auth )
+            _has_ext_auth=$( _has_func proceed_auth )
             if (( _has_ext_auth == 1 )); then
-                process_auth
+                proceed_auth
             else
                 fatal "Invalid authorization mode [$_shttp_auth_mode]"
             fi
         ;;
     esac
-}
-
-#  Get the credential part for
-#+ '_shttp_auth_credential'.
-#
-#  -param $1 Part name
-#  -param $2 Default name
-#  -return Credential part value
-_credential_part() {
-    local _name=${1:-}
-    local _default=${2:-'null'}
-    local _part=""
-    _part=$( < "$_shttp_creds" \
-        jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_name")
-    _part=$( echo "$_part" | sed -e 's/^"//' -e 's/"$//' )
-    if [ "$_part" = "null" ]; then
-        _part="$_default"
-    fi
-    echo "$_part"
 }
 
 #  Append every '_shttp_body' element
@@ -1410,7 +1447,7 @@ _clean_trace() {
     local _body_file=${2:-}
 
     sed -i -e '/^[*{} ]/d' "$_shttp_output.trace" # Remove unnecessary log lines
-    sed -i -e "/^> $/a> {{body}}\n" "$_shttp_output.trace" # Append body tag 
+    sed -i -e "/^> $/a> {{body}}\n" "$_shttp_output.trace" # Append body tag
     sed -i -e 's/^..//' "$_shttp_output.trace" # Remove first two characters in each line
 
     if [ -n "$_body_file" ]; then
@@ -1808,10 +1845,10 @@ _register_opt --set _set_config 1
 expr "$*" : ".*--set" > /dev/null \
     && _look_for_params --set "$@"
     
-#  Set '_shttp_domain' to 'localhost'. Default
-#+ port is 8080 but it can be specified
-#+ as first parameter and will override
-#+ default port.
+#  Set '_shttp_domain' to 'localhost'.
+#+ Default port is 8080 but it can be
+#+ specified as first parameter and
+#+ will override default port.
 #  Protocol is changed as well and takes
 #+ 'http' as value.
 #

@@ -5,7 +5,7 @@ before_api() {
     basePath "/authorizations"
 }
 
-#  ./github_oauth get_auths --auth-basic gfb --set otp <2fa-token>
+#  ./github_oauth get_auths --auth-basic sample --set otp <2fa-token>
 get_auths() {
     headers "X-GitHub-OTP: $( get otp )"
 }
@@ -14,16 +14,16 @@ before_put_auth() {
     put fingerprint "\"$( _random_str 25 )\""
 }
 
-#  ./github_oauth put_auth --auth-basic gfb --set otp <2fa-token>
+#  ./github_oauth put_auth --auth-basic sample --set otp <2fa-token>
 put_auth() {
-    endpoint "/clients/$( get clientId )"
+    endpoint "/clients/$( getPart key )"
     headers "X-GitHub-OTP: $( get otp )"
     body "{
             \"scopes\": [
                 \"gist\"
             ],
             \"note\": \"Execute shTTP samples\",
-            \"client_secret\": \"$( get clientSecret )\",
+            \"client_secret\": \"$( getPart secret )\",
             \"fingerprint\": \"$( get fingerprint )\"
         }"
 }
@@ -32,7 +32,7 @@ after_put_auth() {
     local _last_token=""
     _last_token=$( getOutput token )
     if [ -n "$_last_token" ]; then
-        put 'token' '.token'
+        export SHTTP_SAMPLES_TOKEN="$_last_token"
     fi
     put 'authId' '.id'
 }
@@ -40,16 +40,17 @@ after_put_auth() {
 #  ./github_oauth check_auth
 check_auth() {
     method GET
-    basePath "/applications/$( get clientId )/tokens/$( get token )"
-    curlOpts "--basic" "-u $( get clientId ):$( get clientSecret )"
+    basePath "/applications/$( getPart key )/tokens/$( getPart token )"
+    curlOpts "--basic" "-u $( getPart key ):$( getPart secret )"
 }
 
 after_check_auth() {
-    isTrue "Empty authorization token" "-n \"$( getOutput token )\""
-    put 'token' '.token'
+    local _token=""
+    _token=$( getOutput token )
+    export SHTTP_SAMPLES_TOKEN="$_token"
 }
 
-#  ./github_oauth delete_auth --auth-basic gfb --set otp <2fa-token>
+#  ./github_oauth delete_auth --auth-basic sample --set otp <2fa-token>
 delete_auth() {
     endpoint "/$( get authId )"
     headers "X-GitHub-OTP: $( get otp )"

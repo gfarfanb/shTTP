@@ -13,3 +13,4 @@ shellcheck test/test_*
 shellcheck test/unit/*
 shellcheck test/mock/*_mock
 shellcheck sample/gist_comments
+shellcheck sample/github_oauth

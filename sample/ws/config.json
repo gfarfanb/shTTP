@@ -2,7 +2,5 @@
   "domain": "api.github.com",
   "apiVersion": "v3",
   "appName": "shTTP-samples",
-  "gistId": "fc33b868bb597c71c272d9b7f2815df7",
-  "clientId": "$SHTTP_SAMPLES_KEY",
-  "clientSecret": "$SHTTP_SAMPLES_SECRET"
+  "gistId": "fc33b868bb597c71c272d9b7f2815df7"
 }

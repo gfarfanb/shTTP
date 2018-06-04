@@ -5,7 +5,6 @@ before_api() {
     basePath "/gists/$( get gistId )/comments"
     headers \
         "User-Agent: $( get appName )" \
-        "Authorization: token $( get token )" \
         "Accept: application/vnd.github.$( get apiVersion ).full+json" \
         "Content-Type: application/vnd.github.$( get apiVersion ).full+json"
 }

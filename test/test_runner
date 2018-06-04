@@ -5,7 +5,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 #  Show the help content.
-_help_test_runner() { 
+_help_test_runner() {
     local _content=(
         " Test runner for unit tests."
         ""

@@ -130,3 +130,62 @@ assertEquals "'unknown' found" "null" "$_unknown"
 #  -test Get JSON output
 _output_value=$( getOutput id )
 assertEquals "Output 'id' not found" "5s43u-323we" "$_output_value"
+
+
+#  -test Get credential part
+_shttp_auth_credential="test"
+update "ws/credentials.json" '. + [{
+        "id": "test",
+        "username": "test",
+        "password": "t35t",
+        "token": "1234567890",
+        "type": "token",
+        "key": "12345",
+        "secret": "1234567890",
+        "tokenParam": "access_token",
+        "keyParam": "clientId",
+        "secretParam": "clientSecret",
+    }]'
+
+_credential_username=""
+_credential_password=""
+_credential_token=""
+_credential_type=""
+_credential_token=""
+_credential_secret=""
+_credential_token_param=""
+_credential_key_param=""
+_credential_secret_param=""
+
+_credential_username=$( getPart username )
+assertEquals "Username part not found" "test" "$_credential_username"
+
+_credential_password=$( getPart password )
+assertEquals "Password part not found" "t35t" "$_credential_password"
+
+_credential_token=$( getPart token )
+assertEquals "Token part not found" "1234567890" "$_credential_token"
+
+_credential_type=$( getPart type )
+assertEquals "Type part not found" "token" "$_credential_type"
+
+_credential_key=$( getPart key )
+assertEquals "Key part not found" "12345" "$_credential_key"
+
+_credential_secret=$( getPart secret )
+assertEquals "Secret part not found" "1234567890" "$_credential_secret"
+
+_credential_token_param=$( getPart tokenParam )
+assertEquals "Token parameter part not found" "access_token" "$_credential_token_param"
+
+_credential_key_param=$( getPart keyParam )
+assertEquals "Key parameter part not found" "clientId" "$_credential_key_param"
+
+_credential_secret_param=$( getPart secretParam )
+assertEquals "Secret parameter part not found" "clientSecret" "$_credential_secret_param"
+
+_credential_unknown=$( getPart unknown "apiToken" )
+assertEquals "Unknown part found" "apiToken" "$_credential_unknown"
+
+#  shellcheck disable=SC2034
+_shttp_auth_credential=""

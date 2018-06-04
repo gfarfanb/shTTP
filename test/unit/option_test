@@ -88,6 +88,21 @@ _null_val=$( get removedVal )
 assertEquals "'removedVal' found" "null" "$_null_val"
 
 
+#  -test Add part option
+update "ws/credentials.json" '. + [{
+        "id": "add-part-opt"
+    }]'
+_add_part default "add-part-opt" secret 1234567890
+_part_val=$( getPart secret )
+assertEquals "'secret' not found" "1234567890" "$_part_val"
+
+_add_part default "add-part-opt" public "\"name\"" 0
+_part_val=$( getPart public )
+assertEquals "'secret' not found" "name" "$_part_val"
+
+_shttp_auth_credential=""
+
+
 #  -test Get keys option
 put namedKey -1
 _keys=( $( _get_config_keys ) )

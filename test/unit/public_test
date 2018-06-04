@@ -212,7 +212,6 @@ assertEquals "Secret parameter part not found" "clientSecret" "$_credential_secr
 _credential_unknown=$( getPart unknown "apiToken" )
 assertEquals "Unknown part found" "apiToken" "$_credential_unknown"
 
-#  shellcheck disable=SC2034
 _shttp_auth_credential=""
 
 

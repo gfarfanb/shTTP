@@ -24,11 +24,14 @@ _shttp_help_content() {
         "                                  configuration files. If already exist the 'to' files those will be replaced."
         "                                  If is required to copy from 'default' environment, the first parameters must"
         "                                  contain 'default'"
-        "   --dev <env>:                 Remove the selected environment: configuration and credentials files. If is"
+        "   --del <env>:                 Remove the selected environment: configuration and credentials files. If is"
         "                                  required to remove 'default' environment, the parameter must contain 'default'"
         "   --get <key-name>:            Display the value for key from 'ws/config[.<env>].json'"
         "   --add <key-name> <value>:    Add new key-value to 'ws/config[.<env>].json'"
         "   --remove <key-name>:         Remove the key-value from 'ws/config[.<env>].json'"
+        "   --part <env> <cred-id>:      Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.credparts'."
+        "       <part> <value>             Secure flag can take two values: 1=secure value, 0=visible value"
+        "       <secure-flag>"
         "   --keys:                      Display all keys from 'ws/config[.<env>].json' file"
         "   --clean:                     Clean up all output files 'output/*'"
         ""
@@ -328,13 +331,14 @@ remove() {
     fi
 }
 
-#  Save credential part to
-#+ 'ws/.credparts' for
+#  Save credential part for
 #+ '_shttp_auth_credential'.
 # 
 #  -param $1 Part name
 #  -param $2 Part value
-#  -param $3 Secure flag
+#  -param $3 Secure flag:
+#+           1=secure value
+#+           0=visible value
 putPart() {
     local _part=${1:-}
     local _val=${2:-}
@@ -896,6 +900,9 @@ output() {
 #  -param $1 Environment suffix
 env() {
     local _env=${1:-}
+    if [ "$_env" = "default" ]; then
+        _env=""
+    fi
     if [ -n "$_env" ]; then
         _shttp_env="ws/config.$_env.json"
         _shttp_creds="ws/credentials.$_env.json"
@@ -993,10 +1000,10 @@ _execute_flow() {
         _shttp_failures_flow=0
         info "$_flow_idx: [$_shttp_flow_tag] Init [$_command]"
         $_command "$_shttp_flow_index"
-        _show_assertion_results "FLOW"
         info "$_flow_idx: [$_shttp_flow_tag] Done [$_command]"
     done
     info "Created $_shttp_output_flow.trace"
+    _show_assertion_results "FLOW"
     _shttp_flow_index=0
     _shttp_flow_tag=""
     _shttp_output_flow=""
@@ -1635,6 +1642,7 @@ _editor_command() {
 _finally_http_api() {
     if [ -d ws ]; then
         rm -f ws/*.json.tmp
+        rm -f ws/.*.json.tmp
     fi
 }
 
@@ -1885,6 +1893,32 @@ expr "$*" : ".*--remove" > /dev/null \
     && _look_for_params --remove "$@" \
     && _exit
 
+#  Add credential part for
+#+ credential in a specific
+#+ environment.
+#
+#  -param $1 Environment suffix
+#  -param $2 Credential identifier
+#  -param $3 Part name
+#  -param $4 Part value
+#  -param $5 Secure flag:
+#+           1=secure value
+#+           0=visible value
+_add_part() {
+    local _env=${1:-}
+    local _cred=${2:-}
+    local _part=${3:-}
+    local _val=${4:-}
+    local _flag=${5:-1}
+    env "$_env"
+    credential "$_cred"
+    putPart "$_part" "$_val" "$_flag"
+}
+_register_opt --part _add_part 0
+expr "$*" : ".*--part" > /dev/null \
+    && _look_for_params --part "$@" \
+    && _exit
+
 #  List the keys of 'ws/config[.<env>].json'.
 #
 #  -return 'ws/config[.<env>].json' keys
@@ -1979,6 +2013,8 @@ expr "$*" : ".*--local" > /dev/null \
     && _look_for_params --local "$@"
 
 #  Set credential to '_shttp_auth_credential'.
+#
+#  -param $1 Credential identifier
 _set_credentials() {
     local _credential=${1:-}
     credential "$_credential"

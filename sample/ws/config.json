@@ -2,5 +2,7 @@
   "domain": "api.github.com",
   "apiVersion": "v3",
   "appName": "shTTP-samples",
-  "gistId": "fc33b868bb597c71c272d9b7f2815df7"
+  "gistId": "fc33b868bb597c71c272d9b7f2815df7",
+  "fingerprint": "5oZ5FDMrp5LSpsJrGIhWLMGvW",
+  "authId": 193610400
 }

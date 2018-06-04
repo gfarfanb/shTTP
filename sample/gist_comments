@@ -48,9 +48,9 @@ after_api() {
 }
 
 flow_comment() {
-    step post_comment
-    step patch_comment
-    step delete_comment
+    step post_comment --auth-header sample
+    step patch_comment --auth-header sample
+    step delete_comment --auth-header sample
 }
 
 #  shellcheck disable=SC1091

@@ -329,7 +329,8 @@ remove() {
 }
 
 #  Save credential part to
-#+ 'ws/.credparts'.
+#+ 'ws/.credparts' for
+#+ '_shttp_auth_credential'.
 # 
 #  -param $1 Part name
 #  -param $2 Part value
@@ -345,9 +346,10 @@ putPart() {
         fatal "Credential [$_shttp_auth_credential] not found"
     fi
     if [ "$_sec_flag" = "1" ]; then
-        local _desc=$( < "$_shttp_creds" \
-            jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
         local _entry="$_shttp_auth_credential->$_part:="
+        local _desc=""
+        _desc=$( < "$_shttp_creds" \
+            jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
         _entry=$( echo "$_entry" | base64 )
         _val=$( echo "$_val" | base64 )
         if [ -f "ws/.credparts" ]; then
@@ -369,12 +371,20 @@ putPart() {
 getPart() {
     local _part=${1:-}
     local _default=${2:-'null'}
+    local _entry="$_shttp_auth_credential->$_part:="
     local _val=""
-    _val=$( < "$_shttp_creds" \
-        jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
-    _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
-    if [ "$_val" = "null" ]; then
-        _val="$_default"
+    _entry=$( echo "$_entry" | base64 )
+    _val=$( grep -e "^$_entry" "ws/.credparts" )
+    if [ -n "$_val" ]; then
+        _val="${_val/$_entry/}"
+        _val=$( echo "$_val" | base64 --decode )
+    else
+        _val=$( < "$_shttp_creds" \
+            jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
+        _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
+        if [ "$_val" = "null" ]; then
+            _val="$_default"
+        fi
     fi
     echo "$_val"
 }

@@ -133,17 +133,23 @@ update "ws/credentials.json" '. + [{
         "id": "put-part-test"
     }]'
 putPart secret hidden
-putPart visible shown 0
+putPart visible "\"shown\"" 0
 
 _put_part_idx=$( < "ws/credentials.json" \
     jq "map(.id==\"$_shttp_auth_credential\") | index(true)" )
 
-_hidden_val=$( < "ws/credentials.json" jq ".[$_put_part_idx].visible" )
+_hidden_val=$( < "ws/credentials.json" jq ".[$_put_part_idx].secret" )
 _visible_val=$( < "ws/credentials.json" jq ".[$_put_part_idx].visible" )
 
 assertTrue "Credential parts not found" "-f ws/.credparts"
 assertEquals "Hidden credential part not found" "null" "$_hidden_val"
 assertEquals "Visible credential part not found" "\"shown\"" "$_visible_val"
+
+_hidden_key="$_shttp_auth_credential->secret:="
+_hidden_key=$( echo "$_hidden_key" | base64 )
+_hidden_val=$( grep -e "^$_hidden_key" "ws/.credparts" )
+
+assertEquals "Hidden value not found" "cHV0LXBhcnQtdGVzdC0+c2VjcmV0Oj0KaGlkZGVuCg==" "$_hidden_val"
 
 _shttp_auth_credential=""
 
@@ -153,15 +159,18 @@ _shttp_auth_credential="get-part-test"
 update "ws/credentials.json" '. + [{
         "id": "get-part-test",
         "username": "test",
-        "password": "t35t",
-        "token": "1234567890",
+        "password": "Hidden value",
+        "token": "Hidden value",
         "type": "token",
         "key": "12345",
-        "secret": "1234567890",
+        "secret": "Hidden value",
         "tokenParam": "access_token",
         "keyParam": "clientId",
         "secretParam": "clientSecret",
     }]'
+echo "Z2V0LXBhcnQtdGVzdC0+cGFzc3dvcmQ6PQo=dDM1dAo=" | tee -a "ws/.credparts" > /dev/null
+echo "Z2V0LXBhcnQtdGVzdC0+dG9rZW46PQo=MTIzNDU2Nzg5MAo=" | tee -a "ws/.credparts" > /dev/null
+echo "Z2V0LXBhcnQtdGVzdC0+c2VjcmV0Oj0KMTIzNDU2Nzg5MAo=" | tee -a "ws/.credparts" > /dev/null
 
 _credential_username=""
 _credential_password=""

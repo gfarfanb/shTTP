@@ -429,7 +429,7 @@ getOutput() {
 getHeader() {
     local _header=${1:-}
     local _default=${2:-'null'}
-    local _val=()
+    local _val=""
     _header="$_header:"
     _val=$( grep -e "^$_header" "$_shttp_output.trace" | tail -1 )
     if [ -n "$_val" ]; then

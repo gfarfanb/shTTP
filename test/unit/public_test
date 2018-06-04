@@ -127,15 +127,31 @@ _unknown=$( get unknown )
 assertEquals "'unknown' found" "null" "$_unknown"
 
 
-#  -test Get JSON output
-_output_value=$( getOutput id )
-assertEquals "Output 'id' not found" "5s43u-323we" "$_output_value"
+#  -test Put credential part
+_shttp_auth_credential="put-part-test"
+update "ws/credentials.json" '. + [{
+        "id": "put-part-test"
+    }]'
+putPart secret hidden
+putPart visible shown 0
+
+_put_part_idx=$( < "ws/credentials.json" \
+    jq "map(.id==\"$_shttp_auth_credential\") | index(true)" )
+
+_hidden_val=$( < "ws/credentials.json" jq ".[$_put_part_idx].visible" )
+_visible_val=$( < "ws/credentials.json" jq ".[$_put_part_idx].visible" )
+
+assertTrue "Credential parts not found" "-f ws/.credparts"
+assertEquals "Hidden credential part not found" "null" "$_hidden_val"
+assertEquals "Visible credential part not found" "\"shown\"" "$_visible_val"
+
+_shttp_auth_credential=""
 
 
 #  -test Get credential part
-_shttp_auth_credential="test"
+_shttp_auth_credential="get-part-test"
 update "ws/credentials.json" '. + [{
-        "id": "test",
+        "id": "get-part-test",
         "username": "test",
         "password": "t35t",
         "token": "1234567890",
@@ -189,3 +205,8 @@ assertEquals "Unknown part found" "apiToken" "$_credential_unknown"
 
 #  shellcheck disable=SC2034
 _shttp_auth_credential=""
+
+
+#  -test Get JSON output
+_output_value=$( getOutput id )
+assertEquals "Output 'id' not found" "5s43u-323we" "$_output_value"

@@ -328,6 +328,57 @@ remove() {
     fi
 }
 
+#  Save credential part to
+#+ 'ws/.credparts'.
+# 
+#  -param $1 Part name
+#  -param $2 Part value
+#  -param $3 Secure flag
+putPart() {
+    local _part=${1:-}
+    local _val=${2:-}
+    local _sec_flag=${3:-1}
+    local _cred_idx=-1
+    _cred_idx=$( < "$_shttp_creds" \
+        jq "map(.id==\"$_shttp_auth_credential\") | index(true)" )
+    if [ "$_cred_idx" = "null" ]; then
+        fatal "Credential [$_shttp_auth_credential] not found"
+    fi
+    if [ "$_sec_flag" = "1" ]; then
+        local _desc=$( < "$_shttp_creds" \
+            jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
+        local _entry="$_shttp_auth_credential->$_part:="
+        _entry=$( echo "$_entry" | base64 )
+        _val=$( echo "$_val" | base64 )
+        if [ -f "ws/.credparts" ]; then
+            sed -i "/^$_entry/d" "ws/.credparts"
+        fi
+        echo "$_entry$_val" | tee -a "ws/.credparts" > /dev/null
+        _val="$_desc"
+    fi
+    update "$_shttp_creds" ".[$_cred_idx].$_part=$_val"
+    info "Saved [$_part] with value [$_val] to credential [$_shttp_auth_credential]"
+}
+
+#  Get the credential part for
+#+ '_shttp_auth_credential'.
+#
+#  -param $1 Part name
+#  -param $2 Default name
+#  -return Credential part value
+getPart() {
+    local _part=${1:-}
+    local _default=${2:-'null'}
+    local _val=""
+    _val=$( < "$_shttp_creds" \
+        jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
+    _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
+    if [ "$_val" = "null" ]; then
+        _val="$_default"
+    fi
+    echo "$_val"
+}
+
 #  Get JSON value from
 #+ '$_shttp.output.output'.
 #
@@ -349,25 +400,6 @@ getOutput() {
         _val="$_default"
     fi
     echo "$_val"
-}
-
-#  Get the credential part for
-#+ '_shttp_auth_credential'.
-#
-#  -param $1 Part name
-#  -param $2 Default name
-#  -return Credential part value
-getPart() {
-    local _name=${1:-}
-    local _default=${2:-'null'}
-    local _part=""
-    _part=$( < "$_shttp_creds" \
-        jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_name")
-    _part=$( echo "$_part" | sed -e 's/^"//' -e 's/"$//' )
-    if [ "$_part" = "null" ]; then
-        _part="$_default"
-    fi
-    echo "$_part"
 }
 
 
@@ -1945,14 +1977,22 @@ _register_opt --auth-basic _set_credentials 1
 expr "$*" : ".*--auth-basic" > /dev/null \
     && _look_for_params --auth-basic "$@" \
     && authMode "BASIC"
+
 _register_opt --auth-header _set_credentials 1
 expr "$*" : ".*--auth-header" > /dev/null \
     && _look_for_params --auth-header "$@" \
     && authMode "HEADER"
-_register_opt --auth-qparam _set_credentials 1
-expr "$*" : ".*--auth-qparam" > /dev/null \
-    && _look_for_params --auth-qparam "$@" \
-    && authMode "QPARAM"
+
+_register_opt --auth-qtoken _set_credentials 1
+expr "$*" : ".*--auth-qtoken" > /dev/null \
+    && _look_for_params --auth-qtoken "$@" \
+    && authMode "QTOKEN"
+
+_register_opt --auth-qkeysec _set_credentials 1
+expr "$*" : ".*--auth-qkeysec" > /dev/null \
+    && _look_for_params --auth-qkeysec "$@" \
+    && authMode "QKEYSEC"
+
 _register_opt --auth-skip _set_credentials 1
 expr "$*" : ".*--auth-skip" > /dev/null \
     && _look_for_params --auth-skip "$@" \

@@ -32,7 +32,7 @@ after_put_auth() {
     local _last_token=""
     _last_token=$( getOutput token )
     if [ -n "$_last_token" ]; then
-        export SHTTP_SAMPLES_TOKEN="$_last_token"
+        putPart 'token' "$_last_token"
     fi
     put 'authId' '.id'
 }
@@ -47,7 +47,7 @@ check_auth() {
 after_check_auth() {
     local _token=""
     _token=$( getOutput token )
-    export SHTTP_SAMPLES_TOKEN="$_token"
+    putPart 'token' "$_token"
 }
 
 #  ./github_oauth delete_auth --auth-basic sample --set otp <2fa-token>

@@ -22,6 +22,8 @@ before_post_comment() {
 }
 
 post_comment() {
+    credential sample
+    authMode HEADER
     body '{ "body": "shTTP-samples comment" }'
 }
 
@@ -47,10 +49,11 @@ after_api() {
     :
 }
 
+# ./gist_comment flow_comment --auth-header sample
 flow_comment() {
-    step post_comment --auth-header sample
-    step patch_comment --auth-header sample
-    step delete_comment --auth-header sample
+    step post_comment # Internally has defined credential and auth mode
+    step patch_comment --auth-header sample # Explicit credential ans auth mode definition
+    step delete_comment # Inherit credential and auth mode
 }
 
 #  shellcheck disable=SC1091

@@ -7,7 +7,9 @@
 _shttp_registered_opts["--new"]="_callback_function"
 _previous_value=()
 _callback_function() {
-    local _new=${1:-}
+    #  shellcheck disable=SC2034
+    local _opt=${1:-}
+    local _new=${2:-}
     _previous_value+=( "$_new" )
 }
 _look_for_params "--new" "command" \
@@ -37,7 +39,7 @@ assertEquals "Option not registered" "_change_func" "$_callback_func"
 
 
 #  -test List available commands
-_commands=( $( _list_commands ) )
+_commands=( $( _list_commands --list ) )
 _found=0
 for _command in "${_commands[@]}"; do
     case "$_command" in
@@ -51,7 +53,7 @@ assertEquals "Command not found" 4 "$_found"
 
 
 #  -test Copy environment
-_copy_env default env
+_copy_env --copy default env
 assertTrue "Configuration 'env' file does not exist" "-f ws/config.env.json"
 assertTrue "Credentials 'env' file does not exist" "-f ws/credentials.env.json"
 
@@ -63,27 +65,27 @@ rm -f ws/credentials.env.json
 echo '{ }' > ws/config.temp.json
 echo '[ ]' > ws/credentials.temp.json
 
-_del_env temp
+_del_env --del temp
 
 assertFalse "Configuration 'env' file exists" "-f ws/config.temp.json"
 assertFalse "Credentials 'env' file exists" "-f ws/credentials.temp.json"
 
 
 #  -test Add option
-_add_config "addedVal" "\"value\""
+_add_config --add "addedVal" "\"value\""
 _added_val=$( get addedVal )
 assertEquals "'addedVal' not found" "value" "$_added_val"
 
 
 #  -test Get option
 put expectedVal "\"value\""
-_expected_val=$( _get_config "expectedVal" )
+_expected_val=$( _get_config --get "expectedVal" )
 assertEquals "'expectedVal' not found" "value" "$_expected_val"
 
 
 #  -test Remove option
 put removedVal "\"value\""
-_remove_config "removedVal"
+_remove_config --remove "removedVal"
 _null_val=$( get removedVal )
 assertEquals "'removedVal' found" "null" "$_null_val"
 
@@ -92,11 +94,11 @@ assertEquals "'removedVal' found" "null" "$_null_val"
 update "ws/credentials.json" '. + [{
         "id": "add-part-opt"
     }]'
-_add_part default "add-part-opt" secret 1234567890
+_add_part --part default "add-part-opt" secret 1234567890
 _part_val=$( getPart secret )
 assertEquals "'secret' not found" "1234567890" "$_part_val"
 
-_add_part default "add-part-opt" public "\"name\"" 0
+_add_part --part default "add-part-opt" public "\"name\"" 0
 _part_val=$( getPart public )
 assertEquals "'secret' not found" "name" "$_part_val"
 
@@ -105,7 +107,7 @@ _shttp_auth_credential=""
 
 #  -test Get keys option
 put namedKey -1
-_keys=( $( _get_config_keys ) )
+_keys=( $( _get_config_keys --keys ) )
 _found=0
 for _key in "${_keys[@]}"; do
     if [ "$_key" = "namedKey" ]; then
@@ -120,7 +122,7 @@ assertEquals "'namedKey' key not found" 1 "$_found"
 #  -test Clean option
 echo '{}' > output/cleanable_output.json
 
-_clean_output_files
+_clean_output_files --clean
 
 assertFalse "Output file is currently exists" "-f output/cleanable_output.json"
 
@@ -129,39 +131,42 @@ assertFalse "Output file is currently exists" "-f output/cleanable_output.json"
 echo '{ }' > ws/config.test.json
 echo '[ ]' > ws/credentials.test.json
 
-_set_env "test"
+_set_env --env "test"
 
 #  shellcheck disable=SC2154
 assertEquals "Configuration 'test' file not found" "ws/config.test.json" "$_shttp_env"
 #  shellcheck disable=SC2154
 assertEquals "Credentials 'test' file not found" "ws/credentials.test.json" "$_shttp_creds"
 
-_set_env
+_set_env --env
 rm -f ws/config.test.json
 rm -f ws/credentials.test.json
 
 
 #  -test Set option
-_set_config "priorityVal" "\"value\""
+_set_config --set "priorityVal" "\"value\""
 put priorityVal "\"new.value\""
 _priority_val=$( get priorityVal )
 assertEquals "Unexpected 'setConfig' value" "value" "$_priority_val"
 
 
 #  -test Local option
-_set_localhost "5555"
+_set_localhost --local "5555"
 #  shellcheck disable=SC2154
 assertEquals "Localhost not assigned" "localhost:5555" "$_shttp_domain"
 
 
 #  -test Set authentication credential option
-_set_credentials "test.user"
+_set_credentials --auth-basic "test.user"
 #  shellcheck disable=SC2154
 assertEquals "Credential not assigned" "test.user" "$_shttp_auth_credential"
+#  shellcheck disable=SC2154
+assertEquals "Authorization mode not assigned" "BASIC" "$_shttp_auth_mode"
+_shttp_auth_mode=""
 
 
 #  -test Set request execution times option
-_set_times 5
+_set_times --times 5
 #  shellcheck disable=SC2154
 assertEquals "Request execution times not assigned" 5 "$_shttp_request_times"
 _shttp_request_times=0
@@ -169,7 +174,7 @@ _shttp_request_times=0
 
 #  -test Open editor option
 put editorCommand "\"echo \\\"opening... results.json\\\"\""
-_open_editor
+_open_editor --open
 #  shellcheck disable=SC2154
 assertEquals "'_shttp_editor_command' not assigned" \
     "echo \\\"opening... results.json\\\"" "$_shttp_editor_command"

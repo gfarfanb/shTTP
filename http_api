@@ -218,13 +218,17 @@ _str() {
 #  -param $@ Request options
 step() {
     local _command=${1:-}
+    local _last_params="$_shttp_input_params"
     shift
-    _shttp_input_params="${*}"
+    local _length=$#
+    if (( _length > 0 )); then
+        _shttp_input_params="${*}"
+    fi
     for _opt in "${_shttp_request_opts[@]}"; do
         _look_for_params "$_opt" "$@" || continue
     done
     _execute "$_command" "$_shttp_request_times"
-    _shttp_input_params=""
+    _shttp_input_params="$_last_params"
     _shttp_request_times=0
     _shttp_assertions=0
     _shttp_failures=0
@@ -1672,8 +1676,8 @@ _exit() {
 #  -param $1 Looked option
 #  -param $* Input parameters
 _look_for_params() {
-    local _option=${1:-}
-    local _params=()
+    local _opt=${1:-}
+    local _params=( "$_opt" )
     local _found=0
     local _length=0
     local _callback=""
@@ -1682,25 +1686,25 @@ _look_for_params() {
         if [ $_found = 1 ]; then
             if [[ "$_param" == "--"* ]]; then
                 _length=${#_params[@]}
-                _callback=${_shttp_registered_opts[$_option]}
+                _callback=${_shttp_registered_opts[$_opt]}
                 if (( _length > 0 )); then
                     $_callback "${_params[@]}"
                 else
                     $_callback
                 fi
                 _found=2 # Option executed flag
-                _params=()
+                _params=( "$_opt" )
             else
                 _params+=( "$_param" )
             fi
         fi
-        if [ "$_param" = "$_option" ]; then
+        if [ "$_param" = "$_opt" ]; then
             _found=1 # Option found flag
         fi
     done
     if [ $_found = 1 ]; then
         _length=${#_params[@]}
-        _callback=${_shttp_registered_opts[$_option]}
+        _callback=${_shttp_registered_opts[$_opt]}
         if (( _length > 0 )); then
             $_callback "${_params[@]}"
         else
@@ -1743,8 +1747,10 @@ _register_opt() {
 #+ functions. Names contained
 #+ in the 'keywords' are discarded.
 #
+#  -param $1 Option
 #  -return Command list
 _list_commands() {
+    local _opt=${1:-}
     declare -a _functions=(
         $( declare -F )
     )
@@ -1775,11 +1781,13 @@ expr "$*" : ".*--list" > /dev/null \
 #+ 'to' files already exist those will be
 #+ replaced with new ones.
 #
-#  --param $1 From environment
-#  --param $2 From environment
+#  -param $1 Option
+#  -param $2 From environment
+#  -param $3 From environment
 _copy_env() {
-    local _from=${1:-}
-    local _to=${2:-}
+    local _opt=${1:-}
+    local _from=${2:-}
+    local _to=${3:-}
     if [ -z "$_to" ]; then
         fatal "Required [$2:env-to] parameter"
     fi
@@ -1823,9 +1831,11 @@ expr "$*" : ".*--copy" > /dev/null \
 #  Remove the configuration and credentials
 #+ files for specified environment.
 #
-#  --param $1 Environment suffix
+#  -param $1 Option
+#  -param $2 Environment suffix
 _del_env() {
-    local _env=${1:-}
+    local _opt=${1:-}
+    local _env=${2:-}
     if [ "$_env" = "default" ]; then
         _env=""
     else
@@ -1850,11 +1860,13 @@ expr "$*" : ".*--del" > /dev/null \
 #  Save key-value to 'ws/config[.<env>].json'
 #+ using 'put' function.
 #
-#  -param $1 Name of the entry
-#  -param $2 Value of the entry
+#  -param $1 Option
+#  -param $2 Name of the entry
+#  -param $3 Value of the entry
 _add_config() {
-    local _name=${1:-}
-    local _val=${2:-}
+    local _opt=${1:-}
+    local _name=${2:-}
+    local _val=${3:-}
     put "$_name" "$_val"
 }
 _register_opt --add _add_config 0
@@ -1865,10 +1877,12 @@ expr "$*" : ".*--add" > /dev/null \
 #  Get key-value from 'ws/config[.<env>].json'
 #+ using 'get' function.
 #
-#  -param $1 Name of the entry
+#  -param $1 Option
+#  -param $2 Name of the entry
 #  -return Value of the entry
 _get_config() {
-    local _name=${1:-}
+    local _opt=${1:-}
+    local _name=${2:-}
     local _val=""
     if [ -n "$_name" ]; then
         _val=$( get "$_name" )
@@ -1883,9 +1897,11 @@ expr "$*" : ".*--get" > /dev/null \
 #  Remove key-value to 'ws/config[.<env>].json'
 #+ using 'remove' function.
 #
+#  -param $1 Option
 #  -param $1 Name of the entry
 _remove_config() {
-    local _name=${1:-}
+    local _opt=${1:-}
+    local _name=${2:-}
     remove "$_name"
 }
 _register_opt --remove _remove_config 0
@@ -1897,19 +1913,21 @@ expr "$*" : ".*--remove" > /dev/null \
 #+ credential in a specific
 #+ environment.
 #
-#  -param $1 Environment suffix
-#  -param $2 Credential identifier
-#  -param $3 Part name
-#  -param $4 Part value
-#  -param $5 Secure flag:
+#  -param $1 Option
+#  -param $2 Environment suffix
+#  -param $3 Credential identifier
+#  -param $4 Part name
+#  -param $5 Part value
+#  -param $6 Secure flag:
 #+           1=secure value
 #+           0=visible value
 _add_part() {
-    local _env=${1:-}
-    local _cred=${2:-}
-    local _part=${3:-}
-    local _val=${4:-}
-    local _flag=${5:-1}
+    local _opt=${1:-}
+    local _env=${2:-}
+    local _cred=${3:-}
+    local _part=${4:-}
+    local _val=${5:-}
+    local _flag=${6:-1}
     env "$_env"
     credential "$_cred"
     putPart "$_part" "$_val" "$_flag"
@@ -1921,8 +1939,10 @@ expr "$*" : ".*--part" > /dev/null \
 
 #  List the keys of 'ws/config[.<env>].json'.
 #
+#  -param $1 Option
 #  -return 'ws/config[.<env>].json' keys
 _get_config_keys() {
+    local _opt=${1:-}
     local _keys=(
         $( jq "keys | .[]" "$_shttp_env" )
     )
@@ -1940,7 +1960,10 @@ expr "$*" : ".*--keys" > /dev/null \
 
 #  Clean all files from 'output'
 #+ directory.
+#
+#  -param $1 Option
 _clean_output_files() {
+    local _opt=${1:-}
     if [ -d output ]; then
         declare -a _selected=(
             $( find "output" -name "*" -type f )
@@ -1967,9 +1990,11 @@ expr "$*" : ".*--clean" > /dev/null \
 #+ for get current configuration
 #+ append it to 'ws/config-<env>.json'.
 #
-#  -param $1 Environment suffix
+#  -param $1 Option
+#  -param $2 Environment suffix
 _set_env() {
-    local _env=${1:-}
+    local _opt=${1:-}
+    local _env=${2:-}
     env "$_env"
 }
 _register_opt --env _set_env 1
@@ -1980,11 +2005,13 @@ expr "$*" : ".*--env" > /dev/null \
 #+ which will be taken as priority
 #+ config for 'get' function.
 #
-#  -param $1 Name of the entry
-#  -param $2 Value of the entry
+#  -param $1 Option
+#  -param $2 Name of the entry
+#  -param $3 Value of the entry
 _set_config() {
-    local _name=${1:-}
-    local _val=${2:-}
+    local _opt=${1:-}
+    local _name=${2:-}
+    local _val=${3:-}
     update "ws/.override.json.tmp" ". + { \"$_name\": $_val }"
     info "Set temporal [$_name] with value [$_val]"
 }
@@ -1999,9 +2026,11 @@ expr "$*" : ".*--set" > /dev/null \
 #  Protocol is changed as well and takes
 #+ 'http' as value.
 #
-#  -param $1 Port value
+#  -param $1 Option
+#  -param $2 Port value
 _set_localhost() {
-    local _port=${1:-}
+    local _opt=${1:-}
+    local _port=${2:-}
     if [ -z "$_port" ]; then
         _port="8080"
     fi
@@ -2014,40 +2043,44 @@ expr "$*" : ".*--local" > /dev/null \
 
 #  Set credential to '_shttp_auth_credential'.
 #
-#  -param $1 Credential identifier
+#  -param $1 Option
+#  -param $2 Credential identifier
 _set_credentials() {
-    local _credential=${1:-}
+    local _opt=${1:-}
+    local _credential=${2:-}
+    _opt=${_opt/--auth-/}
+    _opt=${_opt^^}
+    authMode "$_opt"
     credential "$_credential"
 }
 _register_opt --auth-basic _set_credentials 1
 expr "$*" : ".*--auth-basic" > /dev/null \
-    && _look_for_params --auth-basic "$@" \
-    && authMode "BASIC"
+    && _look_for_params --auth-basic "$@"
 
 _register_opt --auth-header _set_credentials 1
 expr "$*" : ".*--auth-header" > /dev/null \
-    && _look_for_params --auth-header "$@" \
-    && authMode "HEADER"
+    && _look_for_params --auth-header "$@"
 
 _register_opt --auth-qtoken _set_credentials 1
 expr "$*" : ".*--auth-qtoken" > /dev/null \
-    && _look_for_params --auth-qtoken "$@" \
-    && authMode "QTOKEN"
+    && _look_for_params --auth-qtoken "$@"
 
 _register_opt --auth-qkeysec _set_credentials 1
 expr "$*" : ".*--auth-qkeysec" > /dev/null \
-    && _look_for_params --auth-qkeysec "$@" \
-    && authMode "QKEYSEC"
+    && _look_for_params --auth-qkeysec "$@"
 
 _register_opt --auth-skip _set_credentials 1
 expr "$*" : ".*--auth-skip" > /dev/null \
-    && _look_for_params --auth-skip "$@" \
-    && authMode "SKIP"
+    && _look_for_params --auth-skip "$@"
 
 #  Set request execution times
 #+ to '_shttp_request_times'.
+#
+#  -param $1 Option
+#  -param $2 Repeat times
 _set_times() {
-    local _times=${1:-}
+    local _opt=${1:-}
+    local _times=${2:-}
     times "$_times"
 }
 _register_opt --times _set_times 1
@@ -2057,7 +2090,10 @@ expr "$*" : ".*--times" > /dev/null \
 #  Get saved editor command from
 #+ 'ws/config[.<env>].json and the value
 #+ is assigned to '_shttp_editor_command'.
+#
+#  -param $1 Option
 _open_editor() {
+    local _opt=${1:-}
     editor "$( get editorCommand )"
 }
 _register_opt --open _open_editor 1

@@ -3,6 +3,10 @@
 #  -author Giovanni Farfán B.
 
 
+#  -beforeTests
+output "output/assert-output.$( date '+%s.%N' )"
+
+
 #  -test Is true assertion
 _input="true"
 isTrue "Is false" "-n \"$_input\""

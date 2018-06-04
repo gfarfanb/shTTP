@@ -14,7 +14,7 @@ assertEquals "Reverse is not working" "esrever" "$_rev_input"
 _generated_strings=()
 
 for (( _i=1; _i<=100; _i++ )); do
-    _random_string=$( _random_str 10 )
+    _random_string=$( _str 10 )
     _generated_length=${#_generated_strings[@]}
     _found=0
     if (( _generated_length > 0 )); then

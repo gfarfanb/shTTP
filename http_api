@@ -5,6 +5,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 #  Show the help content.
+#  No test required.
 _shttp_help_content() {
     local _content=(
         ""
@@ -66,22 +67,26 @@ readonly _shttp_basename=$( basename "$0" )
 readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' ).log"
 
 #  Log a message with the INFO level.
+#  No test required.
 #
 #  -param $* Log message
 info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the WARNING level.
+#  No test required.
 #
 #  -param $* Log message
 warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the ERROR level.
+#  No test required.
 #
 #  -param $* Log message
 error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the FATAL level, 
 #+ exit execution with 1.
+#  No test required.
 #
 #  -param $* Log message
 fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
@@ -155,10 +160,10 @@ if ! [ -f "ws/credentials.json" ]; then
 fi
 
 #  Override JSON file
-if [ -f "ws/override.json.tmp" ]; then
-    rm -f "ws/override.json.tmp"
+if [ -f "ws/.override.json.tmp" ]; then
+    rm -f "ws/.override.json.tmp"
 fi
-echo '{ }' > "ws/override.json.tmp"
+echo '{ }' > "ws/.override.json.tmp"
 
 
 # ---------- Util functions
@@ -182,7 +187,7 @@ _rev() {
 #  -param $1 Required string
 #+           length
 #  -return Random string
-_random_str() {
+_str() {
     local _length=${1:-10}
     local _val=""
     _val=$( < /dev/urandom tr -dc 'a-zA-Z0-9' \
@@ -231,7 +236,7 @@ update() {
     local _json=${1:-}
     local _jq=${2:-}
     local _temp=""
-    _temp="ws/pivot.$( date '+%s.%N' ).json.tmp"
+    _temp="ws/.pivot.$( date '+%s.%N' ).json.tmp"
     < "$_json" jq "$_jq" > "$_temp"
     mv "$_temp" "$_json"
     info "Updated [$_json] file"
@@ -283,7 +288,7 @@ get() {
     local _name=${1:-}
     local _default=${2:-'null'}
     local _val=""
-    _val=$( < "ws/override.json.tmp" jq ".$_name | tostring" )
+    _val=$( < "ws/.override.json.tmp" jq ".$_name | tostring" )
     _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
     if [ "$_val" = "null" ]; then
         _val=""
@@ -538,6 +543,18 @@ _shttp_editor_command=""
 #+ '<output>.output', '<output>.trace'
 #+ and '<output>.asserts'.
 _shttp_output=""
+
+#  Response output base filename
+#+ for flows.
+#  During request this filename
+#+ will be used for make files:
+#+ '<output>.trace' and 
+#+ '<output>.asserts'.
+_shttp_output_flow=""
+
+#  Flow tag for identify output
+#+ flow files.
+_shttp_flow_tag=""
 
 #  Configuration environment file.
 #+ If environment is assigned
@@ -825,7 +842,7 @@ editor() {
 
 #  Setter for '_shttp_output'.
 #
-#  -param $1 Response output
+#  -param $1 Output basename
 output() {
     local _output=${1:-}
     _shttp_output="$_output"
@@ -908,8 +925,10 @@ _execute_if_exist() {
 }
 
 #  Execute flow lifecycle:
-#    1. Execute the flow.
-#    2. Show assertion results.
+#    1. Set flow tag.
+#    2. Set output flow basename.
+#    3. Execute the flow.
+#    4. Show assertion results.
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number.
@@ -923,16 +942,22 @@ _execute_flow() {
     if (( _times < 1 )); then
         _times=1
     fi
+    _shttp_flow_tag="$( date '+%s' )"
+    mkdir "output/flow$_shttp_flow_tag"
+    _shttp_output_flow="output/flow$_shttp_flow_tag/$( basename "$0" ).main"
     for (( _flow_idx=1; _flow_idx<=_times; _flow_idx++ )); do
         _shttp_flow_index="$_flow_idx"
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
-        info "$_flow_idx: [FLOW] Init [$_command]"
+        info "$_flow_idx: [$_shttp_flow_tag] Init [$_command]"
         $_command "$_shttp_flow_index"
         _show_assertion_results "FLOW"
-        info "$_flow_idx: [FLOW] Done [$_command]"
+        info "$_flow_idx: [$_shttp_flow_tag] Done [$_command]"
     done
+    info "Created $_shttp_output_flow.trace"
     _shttp_flow_index=0
+    _shttp_flow_tag=""
+    _shttp_output_flow=""
 }
 
 #  Execute request lifecycle:
@@ -966,7 +991,13 @@ _execute() {
         _shttp_request_index="$_req_idx"
         _shttp_assertions=0
         _shttp_failures=0
-        info "$_req_idx: [REQUEST] Init [$_command]"
+        if [ "$_shttp_execution_type" = "FLOW" ]; then
+            info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init [$_command]"
+            _flow_log "$_req_idx: Init [$_command]"
+            _assertion_log "Request [$_command]"
+        else
+            info "$_req_idx: Init [$_command]"
+        fi
         _init_vars
         _execute_if_exist before_api
         $_command "$_shttp_request_index"
@@ -975,7 +1006,12 @@ _execute() {
         _execute_if_exist after_api
         _editor_command
         _show_assertion_results "REQUEST"
-        info "$_req_idx: [REQUEST] Done [$_command]"
+        if [ "$_shttp_execution_type" = "FLOW" ]; then
+            info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done [$_command]"
+            _flow_log "$_req_idx: Done [$_command]"
+        else
+            info "$_req_idx: Done [$_command]"
+        fi
     done
     _shttp_request_index=0
 }
@@ -1126,7 +1162,11 @@ _default_vars() {
         authMode "SKIP"
     fi
     if [ -z "$_shttp_output" ]; then
-        output "output/$( basename "$0" ).$( date '+%y%m%d.%H%M%S' )"
+        if [ "$_shttp_execution_type" = "FLOW" ]; then
+            output "output/flow$_shttp_flow_tag/$( basename "$0" ).$( date '+%y%m%d.%H%M%S' )"
+        else
+            output "output/$( basename "$0" ).$( date '+%y%m%d.%H%M%S' )"
+        fi
     fi
 }
 
@@ -1174,6 +1214,11 @@ _request() {
 
     info "Created $_shttp_output.trace"
     info "Created $_shttp_output.output"
+    
+    if [ "$_shttp_execution_type" = "FLOW" ]; then
+        _flow_log "Created $_shttp_output.trace"
+        _flow_log "Created $_shttp_output.output"
+    fi
 }
 
 #  This lifecycle function is called
@@ -1364,7 +1409,7 @@ _append_body_to_file() {
     local _body_file=""
     local _length=${#_shttp_body[@]}
     local _appended=0
-    _body_file="ws/body.$( date '+%s.%N' ).json.tmp"
+    _body_file="ws/.body.$( date '+%s.%N' ).json.tmp"
     if (( _length > 0 )); then
         for _line in "${_shttp_body[@]}"; do
             if [ "$_line" = "\n" ]; then
@@ -1447,7 +1492,6 @@ _clean_trace() {
     local _body_file=${2:-}
 
     sed -i -e '/^[*{} ]/d' "$_shttp_output.trace" # Remove unnecessary log lines
-    sed -i -e "/^> $/a> {{body}}\n" "$_shttp_output.trace" # Append body tag
     sed -i -e 's/^..//' "$_shttp_output.trace" # Remove first two characters in each line
 
     if [ -n "$_body_file" ]; then
@@ -1463,36 +1507,55 @@ _clean_trace() {
     echo "$_curl" | tee -a "$_shttp_output.trace" > /dev/null # Append CURL command
 }
 
+#  Log a message about flow
+#+ processing into
+#+ '_shttp_output_flow.trace'.
+#  No test required.
+#
+#  -param $* Log message
+_flow_log() {
+    echo "$( date '+%Y-%m-%d %T.%N' ) [FLOW]   $*" | tee -a "$_shttp_output_flow.trace" > /dev/null
+}
+
 #  Log a message about assertion fail
 #+ into '_shttp_output.asserts'.
+#  No test required.
 #
 #  -param $* Log message
 _assertion_log() {
-    echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERTION]   $*" | tee -a "$_shttp_output.asserts" >&2
+    if [ "$_shttp_execution_type" = "FLOW" ]; then
+        echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERT]   $*" | tee -a "$_shttp_output_flow.asserts" >&2
+    else
+        echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERT]   $*" | tee -a "$_shttp_output.asserts" >&2
+    fi
 }
 
 #  Show assertion results if
 #+ assetion count is greater
 #+ than '0'.
+#  No test required.
 #
 #  -param $1 Execution type
 _show_assertion_results() {
     local _type=${1:-}
     local _assertions=0
     local _failures=0
+    local _output=""
     case "$_shttp_execution_type" in
         REQUEST)
             _assertions=$_shttp_assertions
             _failures=$_shttp_failures
+            _output="$_shttp_output"
         ;;
         FLOW)
             _assertions=$_shttp_assertions_flow
             _failures=$_shttp_failures_flow
+            _output="$_shttp_output_flow"
         ;;
     esac
     if [ "$_shttp_execution_type" = "$_type" ]; then
         if (( _assertions > 0 )); then
-            info "Created $_shttp_output.asserts"
+            info "Created $_output.asserts"
             if [ $_failures = 0 ]; then
                 _assertion_log "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
             else
@@ -1531,6 +1594,14 @@ _finally_http_api() {
     if [ -d ws ]; then
         rm -f ws/*.json.tmp
     fi
+}
+
+#  Execute finally function and
+#+ exit the program.
+#  No test required.
+_exit() {
+    _finally_http_api
+    exit 0
 }
 
 
@@ -1647,7 +1718,7 @@ _list_commands() {
 _register_opt --list _list_commands 0
 expr "$*" : ".*--list" > /dev/null \
     && _look_for_params --list "$@" \
-    && exit 0
+    && _exit
 
 #  Copy the configuration and credentials
 #+ files. The 'from' files must exist. If
@@ -1697,7 +1768,7 @@ _copy_env() {
 _register_opt --copy _copy_env 0
 expr "$*" : ".*--copy" > /dev/null \
     && _look_for_params --copy "$@" \
-    && exit 0
+    && _exit
 
 #  Remove the configuration and credentials
 #+ files for specified environment.
@@ -1724,7 +1795,7 @@ _del_env() {
 _register_opt --del _del_env 0
 expr "$*" : ".*--del" > /dev/null \
     && _look_for_params --del "$@" \
-    && exit 0
+    && _exit
 
 #  Save key-value to 'ws/config[.<env>].json'
 #+ using 'put' function.
@@ -1739,7 +1810,7 @@ _add_config() {
 _register_opt --add _add_config 0
 expr "$*" : ".*--add" > /dev/null \
     && _look_for_params --add "$@" \
-    && exit 0
+    && _exit
 
 #  Get key-value from 'ws/config[.<env>].json'
 #+ using 'get' function.
@@ -1757,7 +1828,7 @@ _get_config() {
 _register_opt --get _get_config 0
 expr "$*" : ".*--get" > /dev/null \
     && _look_for_params --get "$@" \
-    && exit 0
+    && _exit
 
 #  Remove key-value to 'ws/config[.<env>].json'
 #+ using 'remove' function.
@@ -1770,7 +1841,7 @@ _remove_config() {
 _register_opt --remove _remove_config 0
 expr "$*" : ".*--remove" > /dev/null \
     && _look_for_params --remove "$@" \
-    && exit 0
+    && _exit
 
 #  List the keys of 'ws/config[.<env>].json'.
 #
@@ -1789,7 +1860,7 @@ _get_config_keys() {
 _register_opt --keys _get_config_keys 0
 expr "$*" : ".*--keys" > /dev/null \
     && _look_for_params --keys "$@" \
-    && exit 0
+    && _exit
 
 #  Clean all files from 'output'
 #+ directory.
@@ -1813,7 +1884,7 @@ _clean_output_files() {
 _register_opt --clean _clean_output_files 0
 expr "$*" : ".*--clean" > /dev/null \
     && _look_for_params --clean "$@" \
-    && exit 0
+    && _exit
 
 #  Set the configuration environment
 #+ suffix. This value will be used
@@ -1838,7 +1909,7 @@ expr "$*" : ".*--env" > /dev/null \
 _set_config() {
     local _name=${1:-}
     local _val=${2:-}
-    update "ws/override.json.tmp" ". + { \"$_name\": $_val }"
+    update "ws/.override.json.tmp" ". + { \"$_name\": $_val }"
     info "Set temporal [$_name] with value [$_val]"
 }
 _register_opt --set _set_config 1

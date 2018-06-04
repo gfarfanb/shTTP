@@ -555,8 +555,6 @@ _clean_trace "$_curl" "$_body_file"
 #  shellcheck disable=SC2178
 _expected='GET /endpoint HTTP/1.1
 
-{{body}}
-
 HTTP/1.1 200 Ok
 
 >>>>> body
@@ -594,4 +592,4 @@ _finally_http_api
 
 assertFalse "Workspace file is currently exists" "-f ws/cleanable_config.json.tmp"
 
-echo '{ }' > "ws/override.json.tmp"
+echo '{ }' > "ws/.override.json.tmp"

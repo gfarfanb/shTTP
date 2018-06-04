@@ -11,7 +11,7 @@ get_auths() {
 }
 
 before_put_auth() {
-    put fingerprint "\"$( _random_str 25 )\""
+    put fingerprint "\"$( _str 25 )\""
 }
 
 #  ./github_oauth put_auth --auth-basic sample --set otp <2fa-token>

@@ -20,4 +20,4 @@ assertTrue "Credentials JSON not found" "-f ws/credentials.json"
 
 
 #  -test Override file exists
-assertTrue "Override JSON not found" "-f ws/override.json.tmp"
+assertTrue "Override JSON not found" "-f ws/.override.json.tmp"

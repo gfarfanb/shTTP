@@ -420,6 +420,42 @@ getOutput() {
     echo "$_val"
 }
 
+#  Get the Header value
+#+ from response
+#+ 'shttp_output.trace'.
+#
+#  -param $1 Response header name
+#  -param $2 Default value
+getHeader() {
+    local _header=${1:-}
+    local _default=${2:-'null'}
+    local _val=()
+    _header="$_header:"
+    _val=$( grep -e "^$_header" "$_shttp_output.trace" | tail -1 )
+    if [ -n "$_val" ]; then
+        _val=${_val/$_header/}
+        _val=$( echo "$_val" | xargs echo -n )
+    else
+        _val="$_default"
+    fi
+    echo "$_val"
+}
+
+#  Get HTTP status code
+#+ from 'shttp_output.trace'.
+#
+#  -param $1 Default value
+getStatus() {
+    local _default=${1:-'null'}
+    local _code=""
+    _code=$( grep -e "^HTTP\/1.1" "$_shttp_output.trace" )
+    _code=${_code/HTTP\/1.1/}
+    _code=$( echo "$_code" \
+        | xargs echo -n \
+        | cut -d\  -f 1 )
+    echo "$_code"
+}
+
 
 # ---------- Assertion functions
 

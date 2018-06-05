@@ -10,7 +10,8 @@ _shttp_help_content() {
     local _content=(
         ""
         " Usage: ./<file>.sh <command> [--list] [--copy <from> <to>] [--del <env>] [--get <key-name>]"
-        "                              [--add <key-name> <value>] [--remove <key-name>] [--keys] [--clean]"
+        "                              [--add <key-name> <value>] [--remove <key-name>] [--part <cred-id> <part> <value>]"
+        "                              [--keys] [--clean]"
         ""
         "                              [--env <env>]  [--set <key-name> <value>] [--local <port>]"
         "                              [--auth-basic] [--auth-header] [--auth-qtoken] [--auth-qkeysec]"
@@ -19,39 +20,38 @@ _shttp_help_content() {
         "                              [--help]"
         ""
         " Manage options:"
-        "   --list:                      Display the <command> list (all functions defined into main script)"
-        "   --copy <env-from> <env-to>:  Copy the environment configuration and credentials files. Must exist the 'from'"
-        "                                  configuration files. If already exist the 'to' files those will be replaced."
-        "                                  If is required to copy from 'default' environment, the first parameters must"
-        "                                  contain 'default'"
-        "   --del <env>:                 Remove the selected environment: configuration and credentials files. If is"
-        "                                  required to remove 'default' environment, the parameter must contain 'default'"
-        "   --get <key-name>:            Display the value for key from 'ws/config[.<env>].json'"
-        "   --add <key-name> <value>:    Add new key-value to 'ws/config[.<env>].json'"
-        "   --remove <key-name>:         Remove the key-value from 'ws/config[.<env>].json'"
-        "   --part <env> <cred-id>:      Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.credparts'."
-        "       <part> <value>             Secure flag can take two values: 1=secure value, 0=visible value"
-        "       <secure-flag>"
-        "   --keys:                      Display all keys from 'ws/config[.<env>].json' file"
-        "   --clean:                     Clean up all output files 'output/*'"
+        "   --list:                        Display the <command> list (all functions defined into main script)"
+        "   --copy <env-from> <env-to>:    Copy the environment configuration and credentials files. Must exist the 'from'"
+        "                                    configuration files. If already exist the 'to' files those will be replaced."
+        "                                    If is required to copy from 'default' environment, the first parameters must"
+        "                                    contain 'default'"
+        "   --del <env>:                   Remove the selected environment: configuration and credentials files. If is"
+        "                                    required to remove 'default' environment, the parameter must contain 'default'"
+        "   --get <key-name>:              Display the value for key from 'ws/config[.<env>].json'"
+        "   --add <key-name> <value>:      Add new key-value to 'ws/config[.<env>].json'"
+        "   --remove <key-name>:           Remove the key-value from 'ws/config[.<env>].json'"
+        "   --part <cred-id> <part>        Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.credparts'."
+        "          <value>:                  Secure flag can take two values: 1=secure value, 0=visible value"
+        "   --keys:                        Display all keys from 'ws/config[.<env>].json' file"
+        "   --clean:                       Clean up all output files 'output/*'"
         ""
         " Request options:"
-        "   --env <env>:                 Set the environment for script by changing configuration and credentials files:"
-        "                                  'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
-        "   --set <key-name> <value>:    Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
-        "   --local <port>:              Set variables to local execution:"
-        "                                  _shttp_protocol: http"
-        "                                  _shttp_domain: localhost:<port> (default 8080)"
-        "   --auth-basic <credential>:   Set 'BASIC' mode to '_shttp_auth_mode'."
-        "   --auth-header <credential>:  Set 'HEADER' mode to '_shttp_auth_mode'."
-        "   --auth-qtoken <credential>:  Set 'QTOKEN' mode to '_shttp_auth_mode'."
-        "   --auth-qkeysec <credential>: Set 'QKEYSEC' mode to '_shttp_auth_mode'."
-        "   --auth-skip:                 Set 'SKIP' mode to '_shttp_auth_mode'."
-        "   --times <value>:             Set the number of executions required for the request into '_shttp_request_times'"
-        "   --open:                      Set '_shttp_editor_command' with value defined on 'editorCommand'"
-        "                                  from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
+        "   --env <env>:                   Set the environment for script by changing configuration and credentials files:"
+        "                                    'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
+        "   --set <key-name> <value>:      Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
+        "   --local <port>:                Set variables to local execution:"
+        "                                    _shttp_protocol: http"
+        "                                    _shttp_domain: localhost:<port> (default 8080)"
+        "   --auth-basic <credential>:     Set 'BASIC' mode to '_shttp_auth_mode'."
+        "   --auth-header <credential>:    Set 'HEADER' mode to '_shttp_auth_mode'."
+        "   --auth-qtoken <credential>:    Set 'QTOKEN' mode to '_shttp_auth_mode'."
+        "   --auth-qkeysec <credential>:   Set 'QKEYSEC' mode to '_shttp_auth_mode'."
+        "   --auth-skip:                   Set 'SKIP' mode to '_shttp_auth_mode'."
+        "   --times <value>:               Set the number of executions required for the request into '_shttp_request_times'"
+        "   --open:                        Set '_shttp_editor_command' with value defined on 'editorCommand'"
+        "                                    from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
         " Manual options:"
-        "   --help:                      Display this help message"
+        "   --help:                        Display this help message"
     )
     echo "${_content[*]}"
 }
@@ -259,9 +259,13 @@ update() {
 #
 #  -param $1 Name of the entry or 'jq' for value
 #  -param $2 Value of the entry or 'jq' for value
+#  -param $3 Secure flag:
+#+           1=secure value
+#+           0=visible value
 put() {
     local _name=${1:-}
     local _val=${2:-}
+    local _sec_flag=${3:-0}
     local _jq=""
     if [ -z "$_val" ]; then
         _jq="$_name"
@@ -274,6 +278,19 @@ put() {
     fi
     if [ -n "$_jq" ]; then
         _val=$( < "$_shttp_output.output" jq "try $_jq catch null" )
+    fi
+    if [ "$_sec_flag" = "1" ]; then
+        local _entry="$_shttp_suffix->$_name:="
+        local _desc=""
+        _desc=$( < "$_shttp_env" jq ".$_name")
+        _entry=$( echo "$_entry" | base64 )
+        _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
+        _val=$( echo "$_val" | base64 )
+        if [ -a "ws/.cnfgvals" ]; then
+            sed -i "/^$_entry/d" "ws/.cnfgvals"
+        fi
+        echo "$_entry$_val" | tee -a "ws/.cnfgvals" > /dev/null
+        _val="$_desc"
     fi
     update "$_shttp_env" ". + { \"$_name\": $_val }"
     info "Saved [$_name] with value [$_val] to workspace config"
@@ -294,17 +311,28 @@ put() {
 get() {
     local _name=${1:-}
     local _default=${2:-'null'}
+    local _entry=""
     local _val=""
-    _val=$( < "ws/.override.json.tmp" jq ".$_name | tostring" )
-    _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
-    if [ "$_val" = "null" ]; then
-        _val=""
+    if [ -a "ws/.cnfgvals" ]; then
+        _entry="$_shttp_suffix->$_name:="
+        _entry=$( echo "$_entry" | base64 )
+        _val=$( grep -e "^$_entry" "ws/.cnfgvals" )
     fi
-    if [ -z "$_val" ]; then
-        _val=$( jq ".$_name | tostring" "$_shttp_env" )
+    if [ -n "$_val" ]; then
+        _val="${_val/$_entry/}"
+        _val=$( echo "$_val" | base64 --decode )
+    else
+        _val=$( < "ws/.override.json.tmp" jq ".$_name | tostring" )
         _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
         if [ "$_val" = "null" ]; then
-            _val="$_default"
+            _val=""
+        fi
+        if [ -z "$_val" ]; then
+            _val=$( jq ".$_name | tostring" "$_shttp_env" )
+            _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
+            if [ "$_val" = "null" ]; then
+                _val="$_default"
+            fi
         fi
     fi
     echo "$_val"
@@ -354,13 +382,13 @@ putPart() {
         fatal "Credential [$_shttp_auth_credential] not found"
     fi
     if [ "$_sec_flag" = "1" ]; then
-        local _entry="$_shttp_auth_credential->$_part:="
+        local _entry="$_shttp_suffix->$_shttp_auth_credential->$_part:="
         local _desc=""
         _desc=$( < "$_shttp_creds" \
             jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
         _entry=$( echo "$_entry" | base64 )
         _val=$( echo "$_val" | base64 )
-        if [ -f "ws/.credparts" ]; then
+        if [ -a "ws/.credparts" ]; then
             sed -i "/^$_entry/d" "ws/.credparts"
         fi
         echo "$_entry$_val" | tee -a "ws/.credparts" > /dev/null
@@ -379,10 +407,13 @@ putPart() {
 getPart() {
     local _part=${1:-}
     local _default=${2:-'null'}
-    local _entry="$_shttp_auth_credential->$_part:="
+    local _entry=""
     local _val=""
-    _entry=$( echo "$_entry" | base64 )
-    _val=$( grep -e "^$_entry" "ws/.credparts" )
+    if [ -a "ws/.credparts" ]; then
+        _entry="$_shttp_suffix->$_shttp_auth_credential->$_part:="
+        _entry=$( echo "$_entry" | base64 )
+        _val=$( grep -e "^$_entry" "ws/.credparts" )
+    fi
     if [ -n "$_val" ]; then
         _val="${_val/$_entry/}"
         _val=$( echo "$_val" | base64 --decode )
@@ -641,6 +672,9 @@ _shttp_output_flow=""
 #  Flow tag for identify output
 #+ flow files.
 _shttp_flow_tag=""
+
+#  Current environment suffix.
+_shttp_suffix="default"
 
 #  Configuration environment file.
 #+ If environment is assigned
@@ -940,6 +974,7 @@ output() {
 #  -param $1 Environment suffix
 env() {
     local _env=${1:-}
+    _shttp_suffix="$_env"
     if [ "$_env" = "default" ]; then
         _env=""
     fi
@@ -1779,6 +1814,121 @@ _register_opt() {
     fi
 }
 
+#  Set the configuration environment
+#+ suffix. This value will be used
+#+ for get current configuration
+#+ append it to 'ws/config-<env>.json'.
+#
+#  -param $1 Option
+#  -param $2 Environment suffix
+_set_env() {
+    local _opt=${1:-}
+    local _env=${2:-}
+    env "$_env"
+}
+_register_opt --env _set_env 1
+expr "$*" : ".*--env" > /dev/null \
+    && _look_for_params --env "$@"
+
+#  Add a new variable, into script,
+#+ which will be taken as priority
+#+ config for 'get' function.
+#
+#  -param $1 Option
+#  -param $2 Name of the entry
+#  -param $3 Value of the entry
+_set_config() {
+    local _opt=${1:-}
+    local _name=${2:-}
+    local _val=${3:-}
+    update "ws/.override.json.tmp" ". + { \"$_name\": $_val }"
+    info "Set temporal [$_name] with value [$_val]"
+}
+_register_opt --set _set_config 1
+expr "$*" : ".*--set" > /dev/null \
+    && _look_for_params --set "$@"
+    
+#  Set '_shttp_domain' to 'localhost'.
+#+ Default port is 8080 but it can be
+#+ specified as first parameter and
+#+ will override default port.
+#  Protocol is changed as well and takes
+#+ 'http' as value.
+#
+#  -param $1 Option
+#  -param $2 Port value
+_set_localhost() {
+    local _opt=${1:-}
+    local _port=${2:-}
+    if [ -z "$_port" ]; then
+        _port="8080"
+    fi
+    protocol "http"
+    domain "localhost:$_port"
+}
+_register_opt --local _set_localhost 1
+expr "$*" : ".*--local" > /dev/null \
+    && _look_for_params --local "$@"
+
+#  Set credential to '_shttp_auth_credential'.
+#
+#  -param $1 Option
+#  -param $2 Credential identifier
+_set_credentials() {
+    local _opt=${1:-}
+    local _credential=${2:-}
+    _opt=${_opt/--auth-/}
+    _opt=${_opt^^}
+    authMode "$_opt"
+    credential "$_credential"
+}
+_register_opt --auth-basic _set_credentials 1
+expr "$*" : ".*--auth-basic" > /dev/null \
+    && _look_for_params --auth-basic "$@"
+
+_register_opt --auth-header _set_credentials 1
+expr "$*" : ".*--auth-header" > /dev/null \
+    && _look_for_params --auth-header "$@"
+
+_register_opt --auth-qtoken _set_credentials 1
+expr "$*" : ".*--auth-qtoken" > /dev/null \
+    && _look_for_params --auth-qtoken "$@"
+
+_register_opt --auth-qkeysec _set_credentials 1
+expr "$*" : ".*--auth-qkeysec" > /dev/null \
+    && _look_for_params --auth-qkeysec "$@"
+
+_register_opt --auth-skip _set_credentials 1
+expr "$*" : ".*--auth-skip" > /dev/null \
+    && _look_for_params --auth-skip "$@"
+
+#  Set request execution times
+#+ to '_shttp_request_times'.
+#
+#  -param $1 Option
+#  -param $2 Repeat times
+_set_times() {
+    local _opt=${1:-}
+    local _times=${2:-}
+    times "$_times"
+}
+_register_opt --times _set_times 1
+expr "$*" : ".*--times" > /dev/null \
+    && _look_for_params --times "$@"
+
+#  Get saved editor command from
+#+ 'ws/config[.<env>].json and the value
+#+ is assigned to '_shttp_editor_command'.
+#
+#  -param $1 Option
+_open_editor() {
+    local _opt=${1:-}
+    editor "$( get editorCommand )"
+}
+_register_opt --open _open_editor 1
+expr "$*" : ".*--open" > /dev/null \
+    && _look_for_params --open "$@"
+
 #  List the names of main script
 #+ functions. Names contained
 #+ in the 'keywords' are discarded.
@@ -1950,28 +2100,21 @@ expr "$*" : ".*--remove" > /dev/null \
 #+ environment.
 #
 #  -param $1 Option
-#  -param $2 Environment suffix
-#  -param $3 Credential identifier
-#  -param $4 Part name
-#  -param $5 Part value
-#  -param $6 Secure flag:
-#+           1=secure value
-#+           0=visible value
+#  -param $2 Credential identifier
+#  -param $3 Part name
+#  -param $4 Part value
 _add_part() {
     local _opt=${1:-}
-    local _env=${2:-}
-    local _cred=${3:-}
-    local _part=${4:-}
-    local _val=${5:-}
-    local _flag=${6:-1}
-    env "$_env"
+    local _cred=${2:-}
+    local _part=${3:-}
+    local _val=${4:-}
     credential "$_cred"
-    putPart "$_part" "$_val" "$_flag"
+    putPart "$_part" "$_val"
 }
 _register_opt --part _add_part 0
 expr "$*" : ".*--part" > /dev/null \
     && _look_for_params --part "$@" \
-    && _exit
+    && _exit 1
 
 #  List the keys of 'ws/config[.<env>].json'.
 #
@@ -2020,121 +2163,6 @@ _register_opt --clean _clean_output_files 0
 expr "$*" : ".*--clean" > /dev/null \
     && _look_for_params --clean "$@" \
     && _exit
-
-#  Set the configuration environment
-#+ suffix. This value will be used
-#+ for get current configuration
-#+ append it to 'ws/config-<env>.json'.
-#
-#  -param $1 Option
-#  -param $2 Environment suffix
-_set_env() {
-    local _opt=${1:-}
-    local _env=${2:-}
-    env "$_env"
-}
-_register_opt --env _set_env 1
-expr "$*" : ".*--env" > /dev/null \
-    && _look_for_params --env "$@"
-
-#  Add a new variable, into script,
-#+ which will be taken as priority
-#+ config for 'get' function.
-#
-#  -param $1 Option
-#  -param $2 Name of the entry
-#  -param $3 Value of the entry
-_set_config() {
-    local _opt=${1:-}
-    local _name=${2:-}
-    local _val=${3:-}
-    update "ws/.override.json.tmp" ". + { \"$_name\": $_val }"
-    info "Set temporal [$_name] with value [$_val]"
-}
-_register_opt --set _set_config 1
-expr "$*" : ".*--set" > /dev/null \
-    && _look_for_params --set "$@"
-    
-#  Set '_shttp_domain' to 'localhost'.
-#+ Default port is 8080 but it can be
-#+ specified as first parameter and
-#+ will override default port.
-#  Protocol is changed as well and takes
-#+ 'http' as value.
-#
-#  -param $1 Option
-#  -param $2 Port value
-_set_localhost() {
-    local _opt=${1:-}
-    local _port=${2:-}
-    if [ -z "$_port" ]; then
-        _port="8080"
-    fi
-    protocol "http"
-    domain "localhost:$_port"
-}
-_register_opt --local _set_localhost 1
-expr "$*" : ".*--local" > /dev/null \
-    && _look_for_params --local "$@"
-
-#  Set credential to '_shttp_auth_credential'.
-#
-#  -param $1 Option
-#  -param $2 Credential identifier
-_set_credentials() {
-    local _opt=${1:-}
-    local _credential=${2:-}
-    _opt=${_opt/--auth-/}
-    _opt=${_opt^^}
-    authMode "$_opt"
-    credential "$_credential"
-}
-_register_opt --auth-basic _set_credentials 1
-expr "$*" : ".*--auth-basic" > /dev/null \
-    && _look_for_params --auth-basic "$@"
-
-_register_opt --auth-header _set_credentials 1
-expr "$*" : ".*--auth-header" > /dev/null \
-    && _look_for_params --auth-header "$@"
-
-_register_opt --auth-qtoken _set_credentials 1
-expr "$*" : ".*--auth-qtoken" > /dev/null \
-    && _look_for_params --auth-qtoken "$@"
-
-_register_opt --auth-qkeysec _set_credentials 1
-expr "$*" : ".*--auth-qkeysec" > /dev/null \
-    && _look_for_params --auth-qkeysec "$@"
-
-_register_opt --auth-skip _set_credentials 1
-expr "$*" : ".*--auth-skip" > /dev/null \
-    && _look_for_params --auth-skip "$@"
-
-#  Set request execution times
-#+ to '_shttp_request_times'.
-#
-#  -param $1 Option
-#  -param $2 Repeat times
-_set_times() {
-    local _opt=${1:-}
-    local _times=${2:-}
-    times "$_times"
-}
-_register_opt --times _set_times 1
-expr "$*" : ".*--times" > /dev/null \
-    && _look_for_params --times "$@"
-
-#  Get saved editor command from
-#+ 'ws/config[.<env>].json and the value
-#+ is assigned to '_shttp_editor_command'.
-#
-#  -param $1 Option
-_open_editor() {
-    local _opt=${1:-}
-    editor "$( get editorCommand )"
-}
-_register_opt --open _open_editor 1
-expr "$*" : ".*--open" > /dev/null \
-    && _look_for_params --open "$@"
 
 
 # ---------- Add-ons

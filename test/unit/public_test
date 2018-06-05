@@ -145,11 +145,14 @@ assertTrue "Credential parts not found" "-f ws/.credparts"
 assertEquals "Hidden credential part not found" "null" "$_hidden_val"
 assertEquals "Visible credential part not found" "\"shown\"" "$_visible_val"
 
-_hidden_key="$_shttp_auth_credential->secret:="
+#  shellcheck disable=SC2154
+_hidden_key="$_shttp_suffix->$_shttp_auth_credential->secret:="
 _hidden_key=$( echo "$_hidden_key" | base64 )
 _hidden_val=$( grep -e "^$_hidden_key" "ws/.credparts" )
 
-assertEquals "Hidden value not found" "cHV0LXBhcnQtdGVzdC0+c2VjcmV0Oj0KaGlkZGVuCg==" "$_hidden_val"
+assertEquals "Hidden value not found" \
+    "ZGVmYXVsdC0+cHV0LXBhcnQtdGVzdC0+c2VjcmV0Oj0KaGlkZGVuCg==" \
+    "$_hidden_val"
 
 _shttp_auth_credential=""
 
@@ -168,9 +171,12 @@ update "ws/credentials.json" '. + [{
         "keyParam": "clientId",
         "secretParam": "clientSecret",
     }]'
-echo "Z2V0LXBhcnQtdGVzdC0+cGFzc3dvcmQ6PQo=dDM1dAo=" | tee -a "ws/.credparts" > /dev/null
-echo "Z2V0LXBhcnQtdGVzdC0+dG9rZW46PQo=MTIzNDU2Nzg5MAo=" | tee -a "ws/.credparts" > /dev/null
-echo "Z2V0LXBhcnQtdGVzdC0+c2VjcmV0Oj0KMTIzNDU2Nzg5MAo=" | tee -a "ws/.credparts" > /dev/null
+echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+cGFzc3dvcmQ6PQo=dDM1dAo=" \
+    | tee -a "ws/.credparts" > /dev/null
+echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+dG9rZW46PQo=MTIzNDU2Nzg5MAo=" \
+    | tee -a "ws/.credparts" > /dev/null
+echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+c2VjcmV0Oj0KMTIzNDU2Nzg5MAo=" \
+    | tee -a "ws/.credparts" > /dev/null
 
 _credential_username=""
 _credential_password=""

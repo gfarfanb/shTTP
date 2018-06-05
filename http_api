@@ -13,9 +13,9 @@ _shttp_help_content() {
         "                              [--add <key-name> <value>] [--remove <key-name>] [--part <cred-id> <part> <value>]"
         "                              [--keys] [--clean]"
         ""
-        "                              [--env <env>]  [--set <key-name> <value>] [--local <port>]"
-        "                              [--auth-basic] [--auth-header] [--auth-qtoken] [--auth-qkeysec]"
-        "                              [--auth-skip] [--times <value>] [--open]"
+        "                              [--env <env>] [--cred <cred>] [--set <key-name> <value>] [--local <port>]"
+        "                              [--auth-basic <cred>] [--auth-header <cred>] [--auth-qtoken <cred>]"
+        "                              [--auth-qkeysec <cred>] [--auth-skip <cred>] [--times <value>] [--open]"
         ""
         "                              [--help]"
         ""
@@ -30,23 +30,23 @@ _shttp_help_content() {
         "   --get <key-name>:              Display the value for key from 'ws/config[.<env>].json'"
         "   --add <key-name> <value>:      Add new key-value to 'ws/config[.<env>].json'"
         "   --remove <key-name>:           Remove the key-value from 'ws/config[.<env>].json'"
-        "   --part <cred-id> <part>        Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.credparts'."
-        "          <value>:                  Secure flag can take two values: 1=secure value, 0=visible value"
+        "   --part <part> <value>:         Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.credparts'."
         "   --keys:                        Display all keys from 'ws/config[.<env>].json' file"
         "   --clean:                       Clean up all output files 'output/*'"
         ""
         " Request options:"
         "   --env <env>:                   Set the environment for script by changing configuration and credentials files:"
         "                                    'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
+        "   --cred <credential>:           Set the credential for script by updating '_shttp_auth_credential."
         "   --set <key-name> <value>:      Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
         "   --local <port>:                Set variables to local execution:"
         "                                    _shttp_protocol: http"
         "                                    _shttp_domain: localhost:<port> (default 8080)"
-        "   --auth-basic <credential>:     Set 'BASIC' mode to '_shttp_auth_mode'."
-        "   --auth-header <credential>:    Set 'HEADER' mode to '_shttp_auth_mode'."
-        "   --auth-qtoken <credential>:    Set 'QTOKEN' mode to '_shttp_auth_mode'."
-        "   --auth-qkeysec <credential>:   Set 'QKEYSEC' mode to '_shttp_auth_mode'."
-        "   --auth-skip:                   Set 'SKIP' mode to '_shttp_auth_mode'."
+        "   --auth-basic <credential>:     Set 'BASIC' mode to '_shttp_auth_mode' and assign the credential"
+        "   --auth-header <credential>:    Set 'HEADER' mode to '_shttp_auth_mode' and assign the credential"
+        "   --auth-qtoken <credential>:    Set 'QTOKEN' mode to '_shttp_auth_mode' and assign the credential"
+        "   --auth-qkeysec <credential>:   Set 'QKEYSEC' mode to '_shttp_auth_mode' and assign the credential"
+        "   --auth-skip <credential>:      Set 'SKIP' mode to '_shttp_auth_mode' and assign the credential"
         "   --times <value>:               Set the number of executions required for the request into '_shttp_request_times'"
         "   --open:                        Set '_shttp_editor_command' with value defined on 'editorCommand'"
         "                                    from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
@@ -1834,6 +1834,19 @@ _register_opt --env _set_env 1
 expr "$*" : ".*--env" > /dev/null \
     && _look_for_params --env "$@"
 
+#  Set the credential for script.
+#
+#  -param $1 Option
+#  -param $2 Credential identifier
+_set_credential() {
+    local _opt=${1:-}
+    local _credential=${2:-}
+    credential "$_credential"
+}
+_register_opt --cred _set_credential 1
+expr "$*" : ".*--cred" > /dev/null \
+    && _look_for_params --cred "$@"
+
 #  Add a new variable, into script,
 #+ which will be taken as priority
 #+ config for 'get' function.
@@ -1878,31 +1891,31 @@ expr "$*" : ".*--local" > /dev/null \
 #
 #  -param $1 Option
 #  -param $2 Credential identifier
-_set_credentials() {
+_set_auth_mode() {
     local _opt=${1:-}
     local _credential=${2:-}
-    _opt=${_opt/--auth-/}
-    _opt=${_opt^^}
-    authMode "$_opt"
+    local _env=${_opt/--auth-/}
+    _env=${_env^^}
+    authMode "$_env"
     credential "$_credential"
 }
-_register_opt --auth-basic _set_credentials 1
+_register_opt --auth-basic _set_auth_mode 1
 expr "$*" : ".*--auth-basic" > /dev/null \
     && _look_for_params --auth-basic "$@"
 
-_register_opt --auth-header _set_credentials 1
+_register_opt --auth-header _set_auth_mode 1
 expr "$*" : ".*--auth-header" > /dev/null \
     && _look_for_params --auth-header "$@"
 
-_register_opt --auth-qtoken _set_credentials 1
+_register_opt --auth-qtoken _set_auth_mode 1
 expr "$*" : ".*--auth-qtoken" > /dev/null \
     && _look_for_params --auth-qtoken "$@"
 
-_register_opt --auth-qkeysec _set_credentials 1
+_register_opt --auth-qkeysec _set_auth_mode 1
 expr "$*" : ".*--auth-qkeysec" > /dev/null \
     && _look_for_params --auth-qkeysec "$@"
 
-_register_opt --auth-skip _set_credentials 1
+_register_opt --auth-skip _set_auth_mode 1
 expr "$*" : ".*--auth-skip" > /dev/null \
     && _look_for_params --auth-skip "$@"
 
@@ -2099,20 +2112,15 @@ expr "$*" : ".*--remove" > /dev/null \
     && _look_for_params --remove "$@" \
     && _exit
 
-#  Add credential part for
-#+ credential in a specific
-#+ environment.
+#  Add credential part.
 #
 #  -param $1 Option
-#  -param $2 Credential identifier
-#  -param $3 Part name
-#  -param $4 Part value
+#  -param $2 Part name
+#  -param $3 Part value
 _add_part() {
     local _opt=${1:-}
-    local _cred=${2:-}
-    local _part=${3:-}
-    local _val=${4:-}
-    credential "$_cred"
+    local _part=${2:-}
+    local _val=${3:-}
     putPart "$_part" "$_val"
 }
 _register_opt --part _add_part 0

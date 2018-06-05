@@ -91,10 +91,11 @@ assertEquals "'removedVal' found" "null" "$_null_val"
 
 
 #  -test Add part option
+_shttp_auth_credential="add-part-opt"
 update "ws/credentials.json" '. + [{
         "id": "add-part-opt"
     }]'
-_add_part --part "add-part-opt" secret 1234567890
+_add_part --part secret 1234567890
 _part_val=$( getPart secret )
 assertEquals "'secret' not found" "1234567890" "$_part_val"
 
@@ -139,6 +140,13 @@ rm -f ws/config.test.json
 rm -f ws/credentials.test.json
 
 
+#  -test Set credential
+_set_credential --cred "test.set"
+#  shellcheck disable=SC2154
+assertEquals "Set credential does not work" "test.set" "$_shttp_auth_credential"
+_shttp_auth_credential=""
+
+
 #  -test Set option
 _set_config --set "priorityVal" "\"value\""
 put priorityVal "\"new.value\""
@@ -153,7 +161,7 @@ assertEquals "Localhost not assigned" "localhost:5555" "$_shttp_domain"
 
 
 #  -test Set authentication credential option
-_set_credentials --auth-basic "test.user"
+_set_auth_mode --auth-basic "test.user"
 #  shellcheck disable=SC2154
 assertEquals "Credential not assigned" "test.user" "$_shttp_auth_credential"
 #  shellcheck disable=SC2154

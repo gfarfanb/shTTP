@@ -69,32 +69,46 @@ readonly _shttp_basename=$( basename "$0" )
 #  Log filename.
 readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' ).log"
 
+#  Mask logging for secret
+#+ values.
+#  No test required.
+#
+#  -param $* Log message
+_hd() { local _m="$*" ; if [ -a "ws/.credparts" ]; then while read _h; do
+    _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
+    _m=${_m/$_h/'*****'} ; done < "ws/.credparts" ; fi
+    if [ -a "ws/.cnfgvals" ]; then while read _h; do
+    _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
+    _m=${_m/$_h/'*****'} ; done < "ws/.cnfgvals" ; fi ; echo "$_m" ; }
+
 #  Log a message with the INFO level.
 #  No test required.
 #
 #  -param $* Log message
-info() { local _m="$*" ; _m=$( _mask "$_m" ) ; echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $_m" | tee -a "$_shttp_log_file" >&2 ; }
+#  shellcheck disable=SC2086
+info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $( _hd \"$*\" )" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the WARNING level.
 #  No test required.
 #
 #  -param $* Log message
-warning() { local _m="$*" ; _m=$( _mask "$_m" ) ; echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $_m" | tee -a "$_shttp_log_file" >&2 ; }
+#  shellcheck disable=SC2086
+warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $( _hd \"$*\" )" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the ERROR level.
 #  No test required.
 #
 #  -param $* Log message
-error() { local _m="$*" ; _m=$( _mask "$_m" ) ; echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $_m" | tee -a "$_shttp_log_file" >&2 ; }
+#  shellcheck disable=SC2086
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $( _hd \"$*\" )" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the FATAL level, 
 #+ exit execution with 1.
 #  No test required.
 #
 #  -param $* Log message
-fatal() { local _m="$*" ; _m=$( _mask "$_m" ) ; echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $_m" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
-
-_mask() { local _v="$*" ; if [ -a "ws/.hididx" ]; then while read _h; do _h=$( echo "$_h" | base64 --decode ) ; _v=${_v/$_h/\*\*\*\*\*} ; done < "ws/.hididx" ; fi ; echo "$_v" ; }
+#  shellcheck disable=SC2086
+fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $( _hd \"$*\" )" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
 
 
 # ---------- Initialization
@@ -291,8 +305,7 @@ put() {
         if [ -a "ws/.cnfgvals" ]; then
             sed -i "/^$_entry/d" "ws/.cnfgvals"
         fi
-        echo "$_entry$_val" | tee -a "ws/.cnfgvals" > /dev/null
-        echo "$_val" | tee -a "ws/.hididx" > /dev/null
+        echo "$_entry!$_val" | tee -a "ws/.cnfgvals" > /dev/null
         _val="$_desc"
     fi
     update "$_shttp_env" ". + { \"$_name\": $_val }"
@@ -322,7 +335,7 @@ get() {
         _val=$( grep -e "^$_entry" "ws/.cnfgvals" )
     fi
     if [ -n "$_val" ]; then
-        _val="${_val/$_entry/}"
+        _val="${_val/"$_entry!"/}"
         _val=$( echo "$_val" | base64 --decode )
     else
         _val=$( < "ws/.override.json.tmp" jq ".$_name | tostring" )
@@ -394,8 +407,7 @@ putPart() {
         if [ -a "ws/.credparts" ]; then
             sed -i "/^$_entry/d" "ws/.credparts"
         fi
-        echo "$_entry$_val" | tee -a "ws/.credparts" > /dev/null
-        echo "$_val" | tee -a "ws/.hididx" > /dev/null
+        echo "$_entry!$_val" | tee -a "ws/.credparts" > /dev/null
         _val="$_desc"
     fi
     update "$_shttp_creds" ".[$_cred_idx].$_part=$_val"
@@ -419,7 +431,7 @@ getPart() {
         _val=$( grep -e "^$_entry" "ws/.credparts" )
     fi
     if [ -n "$_val" ]; then
-        _val="${_val/$_entry/}"
+        _val="${_val/"$_entry!"/}"
         _val=$( echo "$_val" | base64 --decode )
     else
         _val=$( < "$_shttp_creds" \

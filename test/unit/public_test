@@ -68,7 +68,7 @@ _hidden_key=$( echo "$_hidden_key" | base64 )
 _hidden_val=$( grep -e "^$_hidden_key" "ws/.cnfgvals" )
 
 assertEquals "'hidden' value not found" \
-    "ZGVmYXVsdC0+aGlkZGVuOj0Kbm9uLXZpc2libGUK" \
+    "ZGVmYXVsdC0+aGlkZGVuOj0K!bm9uLXZpc2libGUK" \
     "$_hidden_val"
 
 
@@ -105,7 +105,7 @@ update "ws/.override.json.tmp" ". + { \"tempConfig\": \"7wjedw9djwejd\" }"
 _temp_config=$( get tempConfig )
 assertEquals "'tempConfig' not found" "7wjedw9djwejd" "$_temp_config"
 
-echo "ZGVmYXVsdC0+bm9uVmlzaWJsZTo9Cg==aGlkZGVuCg==" \
+echo "ZGVmYXVsdC0+bm9uVmlzaWJsZTo9Cg==!aGlkZGVuCg==" \
     | tee -a "ws/.cnfgvals" > /dev/null
 
 _non_visible=$( get nonVisible )
@@ -170,7 +170,7 @@ _hidden_key=$( echo "$_hidden_key" | base64 )
 _hidden_val=$( grep -e "^$_hidden_key" "ws/.credparts" )
 
 assertEquals "Hidden value not found" \
-    "ZGVmYXVsdC0+cHV0LXBhcnQtdGVzdC0+c2VjcmV0Oj0KaGlkZGVuCg==" \
+    "ZGVmYXVsdC0+cHV0LXBhcnQtdGVzdC0+c2VjcmV0Oj0K!aGlkZGVuCg==" \
     "$_hidden_val"
 
 _shttp_auth_credential=""
@@ -190,11 +190,11 @@ update "ws/credentials.json" '. + [{
         "keyParam": "clientId",
         "secretParam": "clientSecret",
     }]'
-echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+cGFzc3dvcmQ6PQo=dDM1dAo=" \
+echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+cGFzc3dvcmQ6PQo=!dDM1dAo=" \
     | tee -a "ws/.credparts" > /dev/null
-echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+dG9rZW46PQo=MTIzNDU2Nzg5MAo=" \
+echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+dG9rZW46PQo=!MTIzNDU2Nzg5MAo=" \
     | tee -a "ws/.credparts" > /dev/null
-echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+c2VjcmV0Oj0KMTIzNDU2Nzg5MAo=" \
+echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+c2VjcmV0Oj0K!MTIzNDU2Nzg5MAo=" \
     | tee -a "ws/.credparts" > /dev/null
 
 _credential_username=""

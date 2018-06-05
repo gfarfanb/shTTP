@@ -11,7 +11,8 @@ get_auths() {
 }
 
 before_put_auth() {
-    put fingerprint "\"$( _str 25 )\""
+    #  Hidden value
+    put fingerprint "\"$( _str 25 )\"" 1
 }
 
 #  ./github_oauth put_auth --auth-basic sample --set otp <2fa-token>
@@ -34,7 +35,8 @@ after_put_auth() {
     if [ -n "$_last_token" ]; then
         putPart 'token' "$_last_token"
     fi
-    put 'authId' '.id'
+    #  Hidden value
+    put 'authId' '.id' 1
 }
 
 #  ./github_oauth check_auth

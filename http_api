@@ -73,26 +73,28 @@ readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' )
 #  No test required.
 #
 #  -param $* Log message
-info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_shttp_log_file" >&2 ; }
+info() { local _m="$*" ; _m=$( _mask "$_m" ) ; echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $_m" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the WARNING level.
 #  No test required.
 #
 #  -param $* Log message
-warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_shttp_log_file" >&2 ; }
+warning() { local _m="$*" ; _m=$( _mask "$_m" ) ; echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $_m" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the ERROR level.
 #  No test required.
 #
 #  -param $* Log message
-error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_shttp_log_file" >&2 ; }
+error() { local _m="$*" ; _m=$( _mask "$_m" ) ; echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $_m" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the FATAL level, 
 #+ exit execution with 1.
 #  No test required.
 #
 #  -param $* Log message
-fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
+fatal() { local _m="$*" ; _m=$( _mask "$_m" ) ; echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $_m" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
+
+_mask() { local _v="$*" ; if [ -a "ws/.hididx" ]; then while read _h; do _h=$( echo "$_h" | base64 --decode ) ; _v=${_v/$_h/\*\*\*\*\*} ; done < "ws/.hididx" ; fi ; echo "$_v" ; }
 
 
 # ---------- Initialization
@@ -290,6 +292,7 @@ put() {
             sed -i "/^$_entry/d" "ws/.cnfgvals"
         fi
         echo "$_entry$_val" | tee -a "ws/.cnfgvals" > /dev/null
+        echo "$_val" | tee -a "ws/.hididx" > /dev/null
         _val="$_desc"
     fi
     update "$_shttp_env" ". + { \"$_name\": $_val }"
@@ -392,6 +395,7 @@ putPart() {
             sed -i "/^$_entry/d" "ws/.credparts"
         fi
         echo "$_entry$_val" | tee -a "ws/.credparts" > /dev/null
+        echo "$_val" | tee -a "ws/.hididx" > /dev/null
         _val="$_desc"
     fi
     update "$_shttp_creds" ".[$_cred_idx].$_part=$_val"

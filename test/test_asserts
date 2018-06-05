@@ -16,7 +16,7 @@ fail() {
     _inc_asserts
 }
 
-#  Asserts that a given shell
+#  Assert that a given shell
 #+ condition is true.
 #
 #  -param $1 Fail message
@@ -33,7 +33,7 @@ assertTrue() {
     _inc_asserts
 }
 
-#  Asserts that a given shell
+#  Assert that a given shell
 #+ condition is false.
 #
 #  -param $1 Fail message
@@ -50,7 +50,7 @@ assertFalse() {
     _inc_asserts
 }
 
-#  Asserts that expected and actual
+#  Assert that expected and actual
 #+ are equal to one another.
 #
 #  -param $1 Fail message
@@ -66,7 +66,7 @@ assertEquals() {
     _inc_asserts
 }
 
-#  Asserts that unexpected and actual
+#  Assert that unexpected and actual
 #+ are not equal to one another.
 #
 #  -param $1 Fail message
@@ -78,6 +78,34 @@ assertNotEquals() {
     local _actual=${3:-}
     if [ "$_expected" = "$_actual" ]; then
         _fail "[ $_expected != $_actual ]: $_message"
+    fi
+    _inc_asserts
+}
+
+#  Assert that actual is
+#+ equals to null.
+#
+#  -param $1 Fail message
+#  -param $2 Actual value
+assertIsNull() {
+    local _message=${1:-}
+    local _actual=${2:-}
+    if [ "$_actual" != "null" ]; then
+        _fail "[ $_actual != null ]: $_message"
+    fi
+    _inc_asserts
+}
+
+#  Assert that actual is
+#+ not equals to null.
+#
+#  -param $1 Fail message
+#  -param $2 Actual value
+assertNonNull() {
+    local _message=${1:-}
+    local _actual=${2:-}
+    if [ "$_actual" = "null" ]; then
+        _fail "[ $_actual = null ]: $_message"
     fi
     _inc_asserts
 }

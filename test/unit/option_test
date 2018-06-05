@@ -87,7 +87,7 @@ assertEquals "'expectedVal' not found" "value" "$_expected_val"
 put removedVal "\"value\""
 _remove_config --remove "removedVal"
 _null_val=$( get removedVal )
-assertEquals "'removedVal' found" "null" "$_null_val"
+assertIsNull "'removedVal' found" "$_null_val"
 
 
 #  -test Add part option

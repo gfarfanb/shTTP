@@ -275,13 +275,12 @@ update() {
 #
 #  -param $1 Name of the entry or 'jq' for value
 #  -param $2 Value of the entry or 'jq' for value
-#  -param $3 Secure flag:
-#+           1=secure value
-#+           0=visible value
+#  -param $3 Secure type:
+#+           [PRIVATE | PUBLIC]
 put() {
     local _name=${1:-}
     local _val=${2:-}
-    local _sec_flag=${3:-0}
+    local _sec=${3:-"PUBLIC"}
     local _jq=""
     if [ -z "$_val" ]; then
         _jq="$_name"
@@ -295,7 +294,7 @@ put() {
     if [ -n "$_jq" ]; then
         _val=$( < "$_shttp_output.output" jq "try $_jq catch null" )
     fi
-    if [ "$_sec_flag" = "1" ]; then
+    if [ "$_sec" = "PRIVATE" ]; then
         local _entry="$_shttp_suffix->$_name:="
         local _desc=""
         _desc=$( < "$_shttp_env" jq ".$_name")
@@ -384,20 +383,19 @@ remove() {
 # 
 #  -param $1 Part name
 #  -param $2 Part value
-#  -param $3 Secure flag:
-#+           1=secure value
-#+           0=visible value
+#  -param $3 Secure type:
+#+           [PRIVATE | PUBLIC]
 putPart() {
     local _part=${1:-}
     local _val=${2:-}
-    local _sec_flag=${3:-1}
+    local _sec=${3:-"PRIVATE"}
     local _cred_idx=-1
     _cred_idx=$( < "$_shttp_creds" \
         jq "map(.id==\"$_shttp_auth_credential\") | index(true)" )
     if [ "$_cred_idx" = "null" ]; then
         fatal "Credential [$_shttp_auth_credential] not found"
     fi
-    if [ "$_sec_flag" = "1" ]; then
+    if [ "$_sec" = "PRIVATE" ]; then
         local _entry="$_shttp_suffix->$_shttp_auth_credential->$_part:="
         local _desc=""
         _desc=$( < "$_shttp_creds" \
@@ -496,17 +494,16 @@ getStatus() {
     local _default=${1:-'null'}
     local _code=""
     _code=$( grep -e "^HTTP\/1.1" "$_shttp_output.trace" )
-    _code=${_code/HTTP\/1.1/}
     _code=$( echo "$_code" \
         | xargs echo -n \
-        | cut -d\  -f 1 )
+        | cut -d\  -f 2 )
     echo "$_code"
 }
 
 
 # ---------- Assertion functions
 
-#  Asserts that a given 'Bash Conditional
+#  Assert that a given 'Bash Conditional
 #+ Expressions' is true.
 #
 #  -param $1 Fail message
@@ -526,7 +523,7 @@ isTrue() {
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
 }
 
-#  Asserts that a given 'Bash Conditional
+#  Assert that a given 'Bash Conditional
 #+ Expressions' is false.
 #
 #  -param $1 Fail message
@@ -546,7 +543,7 @@ isFalse() {
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
 }
 
-#  Asserts that expected and actual
+#  Assert that expected and actual
 #+ are equal to one another.
 #
 #  -param $1 Fail message
@@ -565,7 +562,7 @@ areEquals() {
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
 }
 
-#  Asserts that unexpected and actual
+#  Assert that unexpected and actual
 #+ are not equal to one another.
 #
 #  -param $1 Fail message
@@ -579,6 +576,40 @@ areNotEquals() {
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
         _assertion_log "[ $_expected != $_actual ]: $_message"
+    fi
+    _shttp_assertions=$(( _shttp_assertions+1 ))
+    _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
+}
+
+#  Assert that actual is
+#+ equals to null.
+#
+#  -param $1 Fail message
+#  -param $2 Actual value
+isNull() {
+    local _message=${1:-}
+    local _actual=${2:-}
+    if [ "$_actual" != "null" ]; then
+        _shttp_failures=$(( _shttp_failures+1 ))
+        _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
+        _assertion_log "[ $_actual != null ]: $_message"
+    fi
+    _shttp_assertions=$(( _shttp_assertions+1 ))
+    _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
+}
+
+#  Assert that actual is
+#+ not equals to null.
+#
+#  -param $1 Fail message
+#  -param $2 Actual value
+isNotNull() {
+    local _message=${1:-}
+    local _actual=${2:-}
+    if [ "$_actual" = "null" ]; then
+        _shttp_failures=$(( _shttp_failures+1 ))
+        _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
+        _assertion_log "[ $_actual = null ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -1093,9 +1124,11 @@ _execute_flow() {
         _shttp_flow_index="$_flow_idx"
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
-        info "$_flow_idx: [$_shttp_flow_tag] Init [$_command]"
+        info "$_flow_idx: [$_shttp_flow_tag] Init flow [$_command]"
+        _flow_log "$_flow_idx: [$_shttp_flow_tag] Init flow [$_command]"
         $_command "$_shttp_flow_index"
-        info "$_flow_idx: [$_shttp_flow_tag] Done [$_command]"
+        info "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
+        _flow_log "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
     done
     info "Created $_shttp_output_flow.trace"
     _show_assertion_results "FLOW"
@@ -1136,11 +1169,11 @@ _execute() {
         _shttp_assertions=0
         _shttp_failures=0
         if [ "$_shttp_execution_type" = "FLOW" ]; then
-            info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init [$_command]"
-            _flow_log "$_req_idx: Init [$_command]"
+            info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init request [$_command]"
+            _flow_log "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init request [$_command]"
             _assertion_log "Request [$_command]"
         else
-            info "$_req_idx: Init [$_command]"
+            info "$_req_idx: Init request [$_command]"
         fi
         _init_vars
         _execute_if_exist before_api
@@ -1151,10 +1184,10 @@ _execute() {
         _editor_command
         _show_assertion_results "REQUEST"
         if [ "$_shttp_execution_type" = "FLOW" ]; then
-            info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done [$_command]"
-            _flow_log "$_req_idx: Done [$_command]"
+            info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done request [$_command]"
+            _flow_log "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done request [$_command]"
         else
-            info "$_req_idx: Done [$_command]"
+            info "$_req_idx: Done request [$_command]"
         fi
     done
     _shttp_request_index=0
@@ -1327,10 +1360,10 @@ _default_vars() {
 #    7. Execute 'before_<command>' function
 #+      if it is declared.
 #    8. Execute 'cURL' command.
-#    9. Execute 'after_<command>' function
-#+      if it is declared.
-#    10. Clean and append details into
-#+       '_shttp_output.trace' file.
+#    9. Clean and append details into
+#+      '_shttp_output.trace' file.
+#    10. Execute 'after_<command>' function
+#+       if it is declared.
 #
 #  -param $1 Request command
 _request() {
@@ -1347,11 +1380,12 @@ _request() {
     _curl=$( _build_curl "$_body_file" )
 
     _execute_if_exist "before_${_command}"
+    
     eval "$_curl"
-    _execute_if_exist "after_${_command}"
-
     _clean_trace "$_curl" "$_body_file"
 
+    _execute_if_exist "after_${_command}"
+    
     printf '\n' ; cat "$_shttp_output.trace"
     printf '\n>>>>> response\n' ; cat "$_shttp_output.output"
     printf '\n\n'
@@ -1783,14 +1817,14 @@ _look_for_params() {
                 else
                     $_callback
                 fi
-                _found=2 # Option executed flag
+                _found=2 # Executed flag
                 _params=( "$_opt" )
             else
                 _params+=( "$_param" )
             fi
         fi
         if [ "$_param" = "$_opt" ]; then
-            _found=1 # Option found flag
+            _found=1 # Found flag
         fi
     done
     if [ $_found = 1 ]; then
@@ -1821,15 +1855,14 @@ _look_for_params() {
 #
 #  -param $1 Option
 #  -param $2 Callback function
-#  -param $3 Is request option:
-#+           '1' for 'true'
-#+           '0' for 'false'
+#  -param $3 Request option type:
+#+           [REQUEST | MANAGE]
 _register_opt() {
     local _option=${1:-}
     local _callback=${2:-}
-    local _is_req_opt=${3:-0}
+    local _is_req_opt=${3:-"MANAGE"}
     _shttp_registered_opts[$_option]="$_callback"
-    if [ "$_is_req_opt" = "1" ]; then
+    if [ "$_is_req_opt" = "REQUEST" ]; then
         _shttp_request_opts+=( "$_option" )
     fi
 }
@@ -1846,7 +1879,7 @@ _set_env() {
     local _env=${2:-}
     env "$_env"
 }
-_register_opt --env _set_env 1
+_register_opt --env _set_env REQUEST
 expr "$*" : ".*--env" > /dev/null \
     && _look_for_params --env "$@"
 
@@ -1859,7 +1892,7 @@ _set_credential() {
     local _credential=${2:-}
     credential "$_credential"
 }
-_register_opt --cred _set_credential 1
+_register_opt --cred _set_credential REQUEST
 expr "$*" : ".*--cred" > /dev/null \
     && _look_for_params --cred "$@"
 
@@ -1877,7 +1910,7 @@ _set_config() {
     update "ws/.override.json.tmp" ". + { \"$_name\": $_val }"
     info "Set temporal [$_name] with value [$_val]"
 }
-_register_opt --set _set_config 1
+_register_opt --set _set_config REQUEST
 expr "$*" : ".*--set" > /dev/null \
     && _look_for_params --set "$@"
     
@@ -1899,7 +1932,7 @@ _set_localhost() {
     protocol "http"
     domain "localhost:$_port"
 }
-_register_opt --local _set_localhost 1
+_register_opt --local _set_localhost REQUEST
 expr "$*" : ".*--local" > /dev/null \
     && _look_for_params --local "$@"
 
@@ -1915,23 +1948,23 @@ _set_auth_mode() {
     authMode "$_env"
     credential "$_credential"
 }
-_register_opt --auth-basic _set_auth_mode 1
+_register_opt --auth-basic _set_auth_mode REQUEST
 expr "$*" : ".*--auth-basic" > /dev/null \
     && _look_for_params --auth-basic "$@"
 
-_register_opt --auth-header _set_auth_mode 1
+_register_opt --auth-header _set_auth_mode REQUEST
 expr "$*" : ".*--auth-header" > /dev/null \
     && _look_for_params --auth-header "$@"
 
-_register_opt --auth-qtoken _set_auth_mode 1
+_register_opt --auth-qtoken _set_auth_mode REQUEST
 expr "$*" : ".*--auth-qtoken" > /dev/null \
     && _look_for_params --auth-qtoken "$@"
 
-_register_opt --auth-qkeysec _set_auth_mode 1
+_register_opt --auth-qkeysec _set_auth_mode REQUEST
 expr "$*" : ".*--auth-qkeysec" > /dev/null \
     && _look_for_params --auth-qkeysec "$@"
 
-_register_opt --auth-skip _set_auth_mode 1
+_register_opt --auth-skip _set_auth_mode REQUEST
 expr "$*" : ".*--auth-skip" > /dev/null \
     && _look_for_params --auth-skip "$@"
 
@@ -1945,7 +1978,7 @@ _set_times() {
     local _times=${2:-}
     times "$_times"
 }
-_register_opt --times _set_times 1
+_register_opt --times _set_times REQUEST
 expr "$*" : ".*--times" > /dev/null \
     && _look_for_params --times "$@"
 
@@ -1958,7 +1991,7 @@ _open_editor() {
     local _opt=${1:-}
     editor "$( get editorCommand )"
 }
-_register_opt --open _open_editor 1
+_register_opt --open _open_editor REQUEST
 expr "$*" : ".*--open" > /dev/null \
     && _look_for_params --open "$@"
 
@@ -1990,7 +2023,7 @@ _list_commands() {
         done
     fi
 }
-_register_opt --list _list_commands 0
+_register_opt --list _list_commands MANAGE
 expr "$*" : ".*--list" > /dev/null \
     && _look_for_params --list "$@" \
     && _exit
@@ -2042,7 +2075,7 @@ _copy_env() {
     info "Added [ws/config$_to.json] file"
     info "Added [ws/credentials$_to.json] file"
 }
-_register_opt --copy _copy_env 0
+_register_opt --copy _copy_env MANAGE
 expr "$*" : ".*--copy" > /dev/null \
     && _look_for_params --copy "$@" \
     && _exit
@@ -2071,7 +2104,7 @@ _del_env() {
     info "Deleted [ws/config$_env.json] file"
     info "Deleted [ws/credentials$_env.json] file"
 }
-_register_opt --del _del_env 0
+_register_opt --del _del_env MANAGE
 expr "$*" : ".*--del" > /dev/null \
     && _look_for_params --del "$@" \
     && _exit
@@ -2088,7 +2121,7 @@ _add_config() {
     local _val=${3:-}
     put "$_name" "$_val"
 }
-_register_opt --add _add_config 0
+_register_opt --add _add_config MANAGE
 expr "$*" : ".*--add" > /dev/null \
     && _look_for_params --add "$@" \
     && _exit
@@ -2108,7 +2141,7 @@ _get_config() {
     fi
     echo "$_val"
 }
-_register_opt --get _get_config 0
+_register_opt --get _get_config MANAGE
 expr "$*" : ".*--get" > /dev/null \
     && _look_for_params --get "$@" \
     && _exit
@@ -2123,7 +2156,7 @@ _remove_config() {
     local _name=${2:-}
     remove "$_name"
 }
-_register_opt --remove _remove_config 0
+_register_opt --remove _remove_config MANAGE
 expr "$*" : ".*--remove" > /dev/null \
     && _look_for_params --remove "$@" \
     && _exit
@@ -2139,7 +2172,7 @@ _add_part() {
     local _val=${3:-}
     putPart "$_part" "$_val"
 }
-_register_opt --part _add_part 0
+_register_opt --part _add_part MANAGE
 expr "$*" : ".*--part" > /dev/null \
     && _look_for_params --part "$@" \
     && _exit 1
@@ -2160,7 +2193,7 @@ _get_config_keys() {
         done
     fi
 }
-_register_opt --keys _get_config_keys 0
+_register_opt --keys _get_config_keys MANAGE
 expr "$*" : ".*--keys" > /dev/null \
     && _look_for_params --keys "$@" \
     && _exit
@@ -2187,7 +2220,7 @@ _clean_output_files() {
         fi
     fi
 }
-_register_opt --clean _clean_output_files 0
+_register_opt --clean _clean_output_files MANAGE
 expr "$*" : ".*--clean" > /dev/null \
     && _look_for_params --clean "$@" \
     && _exit

@@ -18,30 +18,37 @@ get_comment() {
 }
 
 before_post_comment() {
-    :
+    credential sample
+    authMode HEADER
 }
 
 post_comment() {
-    credential sample
-    authMode HEADER
     body '{ "body": "shTTP-samples comment" }'
 }
 
 after_post_comment() {
-    isTrue "Id not found" "\"$( getOutput id )\" != \"null\""
+    areEquals "Unexpected status" "201" "$( getStatus )"
+    isNotNull "Comment ID not found" "$( getOutput id )"
     put commentId '.id'
 }
 
+# ./gist_comment patch_comment --auth-header sample
 patch_comment() {
     endpoint "/$( get commentId )"
     body '{ "body": "shTTP-samples comment update" }'
 }
 
+after_patch_comment() {
+    areEquals "Unexpected status" "200" "$( getStatus )"
+}
+
+# ./gist_comment delete_comment --auth-header sample
 delete_comment() {
     endpoint "/$( get commentId )"
 }
 
 after_delete_comment() {
+    areEquals "Unexpected status" "204" "$( getStatus )"
     remove commentId
 }
 

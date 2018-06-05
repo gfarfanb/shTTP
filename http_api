@@ -74,10 +74,10 @@ readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' )
 #  No test required.
 #
 #  -param $* Log message
-_hd() { local _m="$*" ; if [ -a "ws/.credparts" ]; then while read _h; do
+_hd() { local _m="$*" ; if [ -a "ws/.credparts" ]; then while read -r _h; do
     _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
     _m=${_m/$_h/'*****'} ; done < "ws/.credparts" ; fi
-    if [ -a "ws/.cnfgvals" ]; then while read _h; do
+    if [ -a "ws/.cnfgvals" ]; then while read -r _h; do
     _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
     _m=${_m/$_h/'*****'} ; done < "ws/.cnfgvals" ; fi ; echo "$_m" ; }
 

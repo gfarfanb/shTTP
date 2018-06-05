@@ -98,10 +98,6 @@ _add_part --part "add-part-opt" secret 1234567890
 _part_val=$( getPart secret )
 assertEquals "'secret' not found" "1234567890" "$_part_val"
 
-_add_part --part "add-part-opt" public "\"name\"" 0
-_part_val=$( getPart public )
-assertEquals "'secret' not found" "name" "$_part_val"
-
 _shttp_auth_credential=""
 
 

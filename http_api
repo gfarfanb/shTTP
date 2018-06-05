@@ -974,7 +974,11 @@ output() {
 #  -param $1 Environment suffix
 env() {
     local _env=${1:-}
-    _shttp_suffix="$_env"
+    if [ -z "$_env" ]; then
+        _shttp_suffix="default"
+    else
+        _shttp_suffix="$_env"
+    fi
     if [ "$_env" = "default" ]; then
         _env=""
     fi

@@ -58,6 +58,19 @@ put 'object' '{}'
 _object=$( < "ws/config.json" jq ".object" )
 assertEquals "'object' not found" "{}" "$_object"
 
+put 'hidden' 'non-visible' 1
+_hidden=$( < "ws/config.json" jq ".hidden" )
+assertEquals "'hidden' found" "null" "$_hidden"
+
+#  shellcheck disable=SC2154
+_hidden_key="$_shttp_suffix->hidden:="
+_hidden_key=$( echo "$_hidden_key" | base64 )
+_hidden_val=$( grep -e "^$_hidden_key" "ws/.cnfgvals" )
+
+assertEquals "'hidden' value not found" \
+    "ZGVmYXVsdC0+aGlkZGVuOj0Kbm9uLXZpc2libGUK" \
+    "$_hidden_val"
+
 
 #  -test Get key-value config
 _id=$( get id )
@@ -91,6 +104,12 @@ assertEquals "'unknown' found" "null" "$_unknown"
 update "ws/.override.json.tmp" ". + { \"tempConfig\": \"7wjedw9djwejd\" }"
 _temp_config=$( get tempConfig )
 assertEquals "'tempConfig' not found" "7wjedw9djwejd" "$_temp_config"
+
+echo "ZGVmYXVsdC0+bm9uVmlzaWJsZTo9Cg==aGlkZGVuCg==" \
+    | tee -a "ws/.cnfgvals" > /dev/null
+
+_non_visible=$( get nonVisible )
+assertEquals "'nonVisible' part not found" "hidden" "$_non_visible"
 
 
 #  -test Remove key-value config

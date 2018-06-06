@@ -1580,7 +1580,7 @@ _append_body_to_file() {
             if [ "$_line" = "\n" ]; then
                 echo | tee -a "$_body_file" > /dev/null
             else
-                printf "$_line" | tee -a "$_body_file" > /dev/null
+                printf "%s" "$_line" | tee -a "$_body_file" > /dev/null
             fi
         done
         _appended=$(( _appended+1 ))

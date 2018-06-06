@@ -15,7 +15,7 @@ _shttp_help_content=(
     "                              [--auth-basic <cred>] [--auth-header <cred>] [--auth-qtoken <cred>]"
     "                              [--auth-qkeysec <cred>] [--auth-skip <cred>] [--times <value>] [--open]"
     ""
-    "                              [--help] [<addon-options>]"
+    "                              [--help] [<add-on-options>]"
     ""
     " Manage options:"
     "   --list:                        Display the <command> list (all functions defined into main script)"
@@ -111,19 +111,22 @@ if [ -z "$_curl_version" ]; then
     fatal "'curl' is not installed yet"
 fi
 
-#  'jq' (command-line JSON processor) is required
+#  'jq' (command-line JSON processor)
+#+ is required
 #+ https://github.com/stedolan/jq
 readonly _jq_version=$( jq --version )
 if [ -z "$_jq_version" ]; then
     fatal "'jq' is not installed yet"
 fi
 
-#  Output directory for trace and results files
+#  Output directory for trace and
+#+ results files
 if ! [ -d output ]; then
     mkdir output || fatal "Imposible to create 'output' directory"
 fi
 
-#  Workspace directory for data execution
+#  Workspace directory for data
+#+ execution
 if ! [ -d ws ]; then
     mkdir ws || fatal "Imposible to create 'ws' directory"
 fi
@@ -1194,15 +1197,20 @@ _init_vars() {
     _shttp_form=()
     _shttp_query_params=()
     _shttp_curl_opts=()
-    _shttp_editor_command=""
     _shttp_output=""
     if [[ "$_shttp_input_params" != *"--local"* ]]; then
         _shttp_protocol=""
         _shttp_domain=""
-    fi    
+    fi
+    if [[ "$_shttp_input_params" != *"--cred"* ]] \
+        && [[ "$_shttp_input_params" != *"--auth-"* ]]; then
+        _shttp_auth_credential=""
+    fi
     if [[ "$_shttp_input_params" != *"--auth-"* ]]; then
         _shttp_auth_mode=""
-        _shttp_auth_credential=""
+    fi
+    if [[ "$_shttp_input_params" != *"--open"* ]]; then
+        _shttp_editor_command=""
     fi
 }
 
@@ -1355,31 +1363,23 @@ _default_vars() {
 #  -param $1 Request command
 _request() {
     local _command=${1:-}
-
+    local _body_file=""
+    local _curl=""
     _default_config
     _default_vars
     _append_content_type
     _append_auth
-
-    local _body_file=""
-    local _curl=""
     _body_file=$( _append_body_to_file )
     _curl=$( _build_curl "$_body_file" )
-
     _execute_if_exist "before_${_command}"
-    
     eval "$_curl"
     _clean_trace "$_curl" "$_body_file"
-
     _execute_if_exist "after_${_command}"
-    
     printf '\n' ; cat "$_shttp_output.trace"
     printf '\n>>>>> response\n' ; cat "$_shttp_output.output"
     printf '\n\n'
-
     info "Created $_shttp_output.trace"
     info "Created $_shttp_output.output"
-    
     if [ "$_shttp_execution_type" = "FLOW" ]; then
         _flow_log "Created $_shttp_output.trace"
         _flow_log "Created $_shttp_output.output"
@@ -1655,21 +1655,22 @@ _clean_trace() {
     #  shellcheck disable=SC2178
     local _curl=${1:-}
     local _body_file=${2:-}
-
-    sed -i -e '/^[*{} ]/d' "$_shttp_output.trace" # Remove unnecessary log lines
-    sed -i -e 's/^..//' "$_shttp_output.trace" # Remove first two characters in each line
-
+    #  Remove unnecessary log lines
+    sed -i -e '/^[*{} ]/d' "$_shttp_output.trace" 
+    #  Remove first two characters in each line
+    sed -i -e 's/^..//' "$_shttp_output.trace"
     if [ -n "$_body_file" ]; then
         echo "" | tee -a "$_shttp_output.trace" > /dev/null
         echo ">>>>> body" | tee -a "$_shttp_output.trace" > /dev/null
-        < "$_body_file" tee -a "$_shttp_output.trace" > /dev/null # Append body content
+        #  Append body content
+        < "$_body_file" tee -a "$_shttp_output.trace" > /dev/null
         rm -f "$_body_file"
     fi
-
     echo "" | tee -a "$_shttp_output.trace" > /dev/null
     echo ">>>>> curl" | tee -a "$_shttp_output.trace" > /dev/null
+    #  Append CURL command
     #  shellcheck disable=SC2128
-    echo "$_curl" | tee -a "$_shttp_output.trace" > /dev/null # Append CURL command
+    echo "$_curl" | tee -a "$_shttp_output.trace" > /dev/null
 }
 
 #  Log a message about flow
@@ -1806,14 +1807,16 @@ _look_for_params() {
                 else
                     $_callback
                 fi
-                _found=2 # Executed flag
+                #  Executed flag
+                _found=2
                 _params=( "$_opt" )
             else
                 _params+=( "$_param" )
             fi
         fi
         if [ "$_param" = "$_opt" ]; then
-            _found=1 # Found flag
+            #  Found flag
+            _found=1
         fi
     done
     if [ $_found = 1 ]; then
@@ -1915,7 +1918,7 @@ _set_config() {
 _register_opt --set _set_config REQUEST
 expr "$*" : ".*--set" > /dev/null \
     && _look_for_params --set "$@"
-    
+
 #  Set '_shttp_domain' to 'localhost'.
 #+ Default port is 8080 but it can be
 #+ specified as first parameter and
@@ -2037,13 +2040,13 @@ expr "$*" : ".*--list" > /dev/null \
 #
 #  -param $1 Option
 #  -param $2 From environment
-#  -param $3 From environment
+#  -param $3 To environment
 _copy_env() {
     local _opt=${1:-}
     local _from=${2:-}
     local _to=${3:-}
     if [ -z "$_to" ]; then
-        fatal "Required [$2:env-to] parameter"
+        fatal "Required argument [to] for copy"
     fi
     if [ "$_from" = "$_to" ]; then
         fatal "Parameters are the same [$_from = $_to]"
@@ -2173,18 +2176,28 @@ _add_part() {
     local _part=${2:-}
     local _val=${3:-}
     case "$_part" in
-        -u) _part="username" ;;
-        -p) _part="password" ;;
-        -k) _part="key" ;;
-        -s) _part="secret" ;;
-        -t) _part="token" ;;
+        -u)
+            _part="username"
+        ;;
+        -p)
+            _part="password"
+        ;;
+        -k)
+            _part="key"
+        ;;
+        -s)
+            _part="secret"
+        ;;
+        -t)
+            _part="token"
+        ;;
     esac
     putPart "$_part" "$_val"
 }
 _register_opt --part _add_part MANAGE
 expr "$*" : ".*--part" > /dev/null \
     && _look_for_params --part "$@" \
-    && _exit 1
+    && _exit
 
 #  List the keys of 'ws/config[.<env>].json'.
 #
@@ -2286,14 +2299,11 @@ readonly _shttp_skip=${SKIP_HTTP_API:-}
 #    5. Finally function is executed.
 if [ "$_shttp_skip" != "true" ]; then
     trap _finally_http_api EXIT
-
     _shttp_command=${1:-}
     _has_shttp_main=$( _has_func main )
-
     if [[ "$_shttp_command" == "--"* ]]; then
         _shttp_command=""
     fi
-
     if [ -z "$_shttp_command" ]; then
         info "No command to execute"
     elif [[ "$_shttp_command" == "flow"* ]]; then

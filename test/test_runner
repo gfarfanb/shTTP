@@ -34,6 +34,8 @@ readonly _test_basename=$( basename "$0" )
 # ---------- Logging functions
 
 #  Log filename.
+#
+#  -param $* Log message
 readonly _test_log_file="/tmp/shTTP_${_test_basename%.*}.$( date '+%Y-%m-%d' ).log"
 
 #  Log a message object with the INFO level.
@@ -128,10 +130,8 @@ _finally_test_runner() {
             info "$( basename "$0" ): [FAILED] - [$_test_runner_failures] of [$_test_runner_assertions] assertions failed"
         fi
     fi
-
     #  shellcheck disable=SC1091
     . ./test_after_tests
-
     if [ $_test_runner_failures = 0 ] && [ $_test_runner_completed = 1 ]; then
         exit 0
     else
@@ -153,14 +153,11 @@ _finally_test_runner() {
 #    6. Finally function is executed.
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     trap _finally_test_runner EXIT
-
     #  shellcheck disable=SC1091
     . ./test_before_tests
     #  shellcheck disable=SC1091
     . ./test_asserts
-
     readonly _single=${1:-}
-
     if [ -n "$_single" ]; then
         info "+++ Test [./${_single}_test] sourced"
         eval ". ./${_single}_test"
@@ -178,6 +175,5 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
             info "Not tests found"
         fi
     fi
-
     _test_runner_completed=1
 fi

@@ -16,8 +16,8 @@ fail() {
     _inc_asserts
 }
 
-#  Assert that a given shell
-#+ condition is true.
+#  Assert that a given 'Bash Conditional
+#+ Expressions' is true.
 #
 #  -param $1 Fail message
 #  -param $2 Test condition content:
@@ -33,8 +33,8 @@ assertTrue() {
     _inc_asserts
 }
 
-#  Assert that a given shell
-#+ condition is false.
+#  Assert that a given 'Bash Conditional
+#+ Expressions' is false.
 #
 #  -param $1 Fail message
 #  -param $2 Test condition content:

@@ -1,24 +1,56 @@
 #! /usr/bin/env bash
 #  -author Giovanni Farfán B.
 
+#  This will be called before every request execution
+#+ but it is not show on the command list ('--list' option)
 before_api() {
+    #  all request will have as base:
+    #+ <protocol>://<domain>/authorizations
     basePath "/authorizations"
 }
 
+#  Set authorization mode via command parameters
+#  The request can take the method from the function name
+#+ only if the name begins with any of this word:
+#+ get, put, post, patch, delete, head, options.
+#  Set required configuration variable via
+#+ command parameters.
+#
 #  ./github_oauth get_auths --auth-basic sample --set otp <2fa-token>
 get_auths() {
+    #  Explicit protocol assignation
+    protocol https
+    #  Temporal config can be used for changing values
     headers "X-GitHub-OTP: $( get otp )"
 }
 
+#  This will be called before to execute the request
+#+ but it is not show on the command list ('--list' option)
 before_put_auth() {
-    #  Hidden value
-    put fingerprint "\"$( _str 25 )\"" PRIVATE
+    local _fingerprint=""
+    #  Generate random string with 25 characters
+    _fingerprint=$( _str 25 )
+    #  Revert generated fingerprint
+    _fingerprint=$( _rev "$_fingerprint" )
+    #  Put a configuration variable
+    #  Discard private values for commit
+    put fingerprint "\"_fingerprint\"" PRIVATE
 }
 
-#  ./github_oauth put_auth --auth-basic sample --set otp <2fa-token>
+#  Set required configuration variable via
+#+ command parameters.
+#
+#  ./github_oauth put_auth --set otp <2fa-token>
 put_auth() {
+    #  Explicit authorization mode assignation
+    authMode BASIC
+    #  Explicit credential assignation
+    credential sample
+    #  Final URL takes <basePath><endpoint>
     endpoint "/clients/$( getPart key )"
+    #  Explicit header assignation
     headers "X-GitHub-OTP: $( get otp )"
+    #  Explicit body assignation
     body "{
             \"scopes\": [
                 \"gist\"
@@ -29,34 +61,79 @@ put_auth() {
         }"
 }
 
+#  This will be called after to execute the request
+#+ but it is not show on the command list ('--list' option)
 after_put_auth() {
     local _last_token=""
+    #  Get a value from JSON response
     _last_token=$( getOutput token )
+    #  Any bash code is allowed
     if [ -n "$_last_token" ]; then
+        #  Put a value as credential part
         putPart 'token' "$_last_token"
+    else
+        #  Log an error
+        error "Token is already in use, remove that authorization"
     fi
-    #  Hidden value
+    #  Put a configuration variable
+    #  Discard private values for commit
     put 'authId' '.id' PRIVATE
+}
+
+#  This will be called before to execute the request
+#+ but it is not show on the command list ('--list' option)
+before_check_auth() {
+    local _token=""
+    #  Get a credential part
+    _token=$( getPart token )
+    if [ "$_token" = "null" ]; then
+        #  Log an error and break the execution
+        fatal "Token not found"
+    fi
 }
 
 #  ./github_oauth check_auth
 check_auth() {
+    #  Explicit method assignation
     method GET
+    #  Explicit authorization mode assignation
+    #+ MANUAL is not part of the original
+    #+ modes, an extension is required.
+    #  'auth_ext' file is the extension.
+    authMode MANUAL
+    #  Explicit credential assignation
     credential sample
+    #  Override last 'basePath'
     basePath "/applications/$( getPart key )/tokens/$( getPart token )"
-    curlOpts "--basic" "-u $( getPart key ):$( getPart secret )"
 }
 
+#  This will be called afters to execute the request
+#+ but it is not show on the command list ('--list' option)
 after_check_auth() {
     local _token=""
+    #  Get a value from JSON response
     _token=$( getOutput token )
-    putPart 'token' "$_token"
+    #  Put a value as credential part
+    putPart token "$_token"
 }
 
-#  ./github_oauth delete_auth --auth-basic sample --set otp <2fa-token>
+#  ./github_oauth delete_auth --set otp <2fa-token>
 delete_auth() {
+    #  Explicit authorization mode assignation
+    authMode BASIC
+    #  Explicit credential assignation
+    credential sample
+    #  Final URL takes <basePath><endpoint>
     endpoint "/$( get authId )"
+    #  Explicit header assignation
     headers "X-GitHub-OTP: $( get otp )"
+}
+
+#  This will be called after every request execution
+#+ but it is not show on the command list ('--list' option)
+after_api() {
+    #  Log an info
+    info "This will be executed after request call"
 }
 
 #  shellcheck disable=SC1091

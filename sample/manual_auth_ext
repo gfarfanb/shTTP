@@ -1,0 +1,25 @@
+#! /usr/bin/env bash
+#  Global after tests.
+# 'MANUAL' authorization mode extension.
+#  -author Giovanni Farfán B.
+
+
+#  Documentation for help content
+_help_content "   --auth-manual <credential>:    Set 'MANUAL' mode to '_shttp_auth_mode' and assign the credential"
+#  New option is added
+_register_opt --auth-manual _set_auth_mode REQUEST
+expr "$*" : ".*--auth-manual" > /dev/null \
+    && _look_for_params --auth-manual "$@"
+
+
+#  This will be call if specified
+#+ authorization mode is not found.
+proceed_auth() {
+    #  Implementation like '_append_auth'
+    case "$_shttp_auth_mode" in
+        MANUAL)
+            #  Explicit 'cURL' options assignation
+            curlOpts "--basic" "-u $( getPart key ):$( getPart secret )"
+        ;;
+    esac
+}

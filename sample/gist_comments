@@ -1,66 +1,127 @@
 #! /usr/bin/env bash
 #  -author Giovanni Farfán B.
 
+#  This will be called before every request execution
+#+ but it is not show on the command list ('--list' option)
 before_api() {
+    #  All request will have as base:
+    #+ <protocol>://<domain>/gists/<gist-id>/comments
     basePath "/gists/$( get gistId )/comments"
+    #  Put more than one header to request
+    #+ for all request
     headers \
         "User-Agent: $( get appName )" \
         "Accept: application/vnd.github.$( get apiVersion ).full+json" \
         "Content-Type: application/vnd.github.$( get apiVersion ).full+json"
+    #  Log a warning
+    warning "Flow discard execution of this function"
 }
 
+# ./gist_comment get_all
 get_all() {
+    #  Only request method was required for call
+    #+ and it was assigned on function name
     :
 }
 
+# ./gist_comment get_comment
 get_comment() {
+    #  Final URL takes <basePath><endpoint>
     endpoint "/$( get commentId )"
 }
 
+#  This will be called before to execute the request
+#+ but it is not show on the command list ('--list' option)
 before_post_comment() {
-    credential sample
+    #  Explicit authorization mode assignation
     authMode HEADER
+    #  Explicit credential assignation
+    credential sample
 }
 
+# ./gist_comment post_comment
 post_comment() {
+    #  Explicit body assignation
     body '{ "body": "shTTP-samples comment" }'
 }
 
+#  This will be called after to execute the request
+#+ but it is not show on the command list ('--list' option)
 after_post_comment() {
+    #  Assertion for equals
+    #  Get the HTTP response status
     areEquals "Unexpected status" "201" "$( getStatus )"
+    #  Assertion for non-null
+    #  Get a value from JSON response
     isNotNull "Comment ID not found" "$( getOutput id )"
+    #  Put a configuration variable
     put commentId '.id'
 }
 
-# ./gist_comment patch_comment --auth-header sample
+# ./gist_comment patch_comment
 patch_comment() {
+    #  Explicit authorization mode assignation
+    authMode HEADER
+    #  Explicit credential assignation
+    credential sample
+    #  Final URL takes <basePath><endpoint>
     endpoint "/$( get commentId )"
-    body '{ "body": "shTTP-samples comment update" }'
+    #  Explicit body assignation
+    body '{ "body": "'
+    #  Repeat content for 5 times
+    #+ offset is 0
+    body 0 '5t' 'Lorem ipsum'
+    #  Repeat until body had
+    #+ 50 bytes, offset is 0
+    body 0 '150s' 'Lorem ipsum'
+    #  Explicit body assignation
+    body '" }'
 }
 
+#  This will be called after to execute the request
+#+ but it is not show on the command list ('--list' option)
 after_patch_comment() {
+    #  Assertion for equals
+    #  Get the HTTP response status
     areEquals "Unexpected status" "200" "$( getStatus )"
 }
 
-# ./gist_comment delete_comment --auth-header sample
+# ./gist_comment patch_comment --auth-header sample
 delete_comment() {
+    #  Final URL takes <basePath><endpoint>
     endpoint "/$( get commentId )"
 }
 
+#  This will be called after to execute the request
+#+ but it is not show on the command list ('--list' option)
 after_delete_comment() {
+    #  Assertion for equals
+    #  Get the HTTP response status
     areEquals "Unexpected status" "204" "$( getStatus )"
+    #  Remove a configuration variable
     remove commentId
 }
 
+#  This will be called after every request execution
+#+ but it is not show on the command list ('--list' option)
 after_api() {
-    :
+    #  Log a warning
+    warning "Flow discard execution of this function"
 }
 
+#  Flow definition
+#
 # ./gist_comment flow_comment --auth-header sample
 flow_comment() {
-    step post_comment # Internally has defined credential and auth mode
-    step patch_comment --auth-header sample # Explicit credential ans auth mode definition
-    step delete_comment # Inherit credential and auth mode
+    #  Flow step definition
+    #  Internally it has defined credential and auth mode
+    step post_comment
+    #  Flow step definition
+    #  Explicit credential and auth mode
+    step patch_comment --auth-header sample
+    #  Flow step definition
+    #  Inherit, from main call, credential and auth mode
+    step delete_comment
 }
 
 #  shellcheck disable=SC1091

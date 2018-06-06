@@ -68,30 +68,31 @@ readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' )
 #  No test required.
 #
 #  -param $* Log message
-_hd() { local _m="$*" ; if [ -a "ws/.vlt" ]; then while read -r _h; do
+_hd() { if [ -a "ws/.vlt" ]; then while read -r _h; do
     _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
-    _m=${_m/$_h/'*****'} ; done < "ws/.vlt" ; fi ; echo "$_m" ; }
+    sed -i -- "s/$_h/*****/g" "$_shttp_log_file"
+    done < "ws/.vlt" ; fi ; }
 
 #  Log a message with the INFO level.
 #  No test required.
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $( _hd \"$*\" )" | tee -a "$_shttp_log_file" >&2 ; }
+info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the WARNING level.
 #  No test required.
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $( _hd \"$*\" )" | tee -a "$_shttp_log_file" >&2 ; }
+warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the ERROR level.
 #  No test required.
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $( _hd \"$*\" )" | tee -a "$_shttp_log_file" >&2 ; }
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the FATAL level, 
 #+ exit execution with 1.
@@ -99,7 +100,7 @@ error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $( _hd \"$*\" )" | tee -a 
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $( _hd \"$*\" )" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
+fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
 
 
 # ---------- Initialization
@@ -1750,7 +1751,8 @@ _editor_command() {
 }
 
 #  Cleanup all temp JSON files from
-#+ workspace.
+#+ workspace and hide private
+#+ data to log files.
 #  This function is called after
 #+ execute the main code or after
 #+ get an error.
@@ -1759,6 +1761,7 @@ _finally_http_api() {
         rm -f ws/*.json.tmp
         rm -f ws/.*.json.tmp
     fi
+    _hd
 }
 
 #  Execute finally function and
@@ -1942,9 +1945,9 @@ expr "$*" : ".*--local" > /dev/null \
 _set_auth_mode() {
     local _opt=${1:-}
     local _credential=${2:-}
-    local _env=${_opt/--auth-/}
-    _env=${_env^^}
-    authMode "$_env"
+    local _mode=${_opt/--auth-/}
+    _mode=${_mode^^}
+    authMode "$_mode"
     credential "$_credential"
 }
 _register_opt --auth-basic _set_auth_mode REQUEST
@@ -2163,12 +2166,19 @@ expr "$*" : ".*--remove" > /dev/null \
 #  Add credential part.
 #
 #  -param $1 Option
-#  -param $2 Part name
+#  -param $2 Part name or value
 #  -param $3 Part value
 _add_part() {
     local _opt=${1:-}
     local _part=${2:-}
     local _val=${3:-}
+    case "$_part" in
+        -u) _part="username" ;;
+        -p) _part="password" ;;
+        -k) _part="key" ;;
+        -s) _part="secret" ;;
+        -t) _part="token" ;;
+    esac
     putPart "$_part" "$_val"
 }
 _register_opt --part _add_part MANAGE

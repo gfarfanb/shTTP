@@ -95,9 +95,38 @@ _shttp_auth_credential="add-part-opt"
 update "ws/credentials.json" '. + [{
         "id": "add-part-opt"
     }]'
-_add_part --part secret 1234567890
+
+_add_part --part -u test.user
+_part_val=$( getPart username )
+assertEquals "'username' not found" "test.user" "$_part_val"
+
+_add_part --part -p t35t
+_part_val=$( getPart password )
+assertEquals "'password' not found" "t35t" "$_part_val"
+
+_add_part --part -k 12345
+_part_val=$( getPart key )
+assertEquals "'key' not found" "12345" "$_part_val"
+
+_add_part --part -s 1234567890
 _part_val=$( getPart secret )
 assertEquals "'secret' not found" "1234567890" "$_part_val"
+
+_add_part --part -t 0987654321
+_part_val=$( getPart token )
+assertEquals "'token' not found" "0987654321" "$_part_val"
+
+_add_part --part tokenParam access_token
+_part_val=$( getPart tokenParam )
+assertEquals "'tokenParam' not found" "access_token" "$_part_val"
+
+_add_part --part keyParam clientId
+_part_val=$( getPart keyParam )
+assertEquals "'keyParam' not found" "clientId" "$_part_val"
+
+_add_part --part secretParam clientSecret
+_part_val=$( getPart secretParam )
+assertEquals "'secretParam' not found" "clientSecret" "$_part_val"
 
 _shttp_auth_credential=""
 

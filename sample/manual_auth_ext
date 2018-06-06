@@ -16,6 +16,7 @@ expr "$*" : ".*--auth-manual" > /dev/null \
 #+ authorization mode is not found.
 proceed_auth() {
     #  Implementation like '_append_auth'
+    # shellcheck disable=SC2154
     case "$_shttp_auth_mode" in
         MANUAL)
             #  Explicit 'cURL' options assignation

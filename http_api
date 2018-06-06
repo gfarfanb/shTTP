@@ -7,15 +7,15 @@ IFS=$'\n\t'
 #  Help content.
 _shttp_help_content=(
     ""
-    " Usage: ./<file>.sh <command> [--list] [--copy <from> <to>] [--del <env>] [--get <key-name>]"
-    "                              [--add <key-name> <value>] [--remove <key-name>] [--part <cred-id> <part> <value>]"
-    "                              [--keys] [--clean]"
+    " Usage: ./<file>[.sh] <command> [--list] [--copy <from> <to>] [--del <env>] [--get <key-name>]"
+    "                                [--add <key-name> <value>] [--remove <key-name>] [--part <cred-id> <part> <value>]"
+    "                                [--keys] [--clean]"
     ""
-    "                              [--env <env>] [--cred <cred>] [--set <key-name> <value>] [--local <port>]"
-    "                              [--auth-basic <cred>] [--auth-header <cred>] [--auth-qtoken <cred>]"
-    "                              [--auth-qkeysec <cred>] [--auth-skip <cred>] [--times <value>] [--open]"
+    "                                [--env <env>] [--cred <cred>] [--set <key-name> <value>] [--local <port>]"
+    "                                [--auth-basic <cred>] [--auth-header <cred>] [--auth-qtoken <cred>]"
+    "                                [--auth-qkeysec <cred>] [--auth-skip <cred>] [--times <value>] [--open]"
     ""
-    "                              [--help] [<add-on-options>]"
+    "                                [--version] [--help] [<add-on-options>]"
     ""
     " Manage options:"
     "   --list:                        Display the <command> list (all functions defined into main script)"
@@ -49,6 +49,7 @@ _shttp_help_content=(
     "   --open:                        Set '_shttp_editor_command' with value defined on 'editorCommand'"
     "                                    from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
     " Manual options:"
+    "   --version:                     Display the 'shTTP' version"
     "   --help:                        Display this help message"
     ""
     " Add-on options: "
@@ -2246,6 +2247,15 @@ _register_opt --clean _clean_output_files MANAGE
 expr "$*" : ".*--clean" > /dev/null \
     && _look_for_params --clean "$@" \
     && _exit
+    
+#  Show the 'shTTP' version.
+#  No test required.
+_show_version() {
+    git describe --abbrev=0 --tags
+}
+expr "$*" : ".*--version" > /dev/null \
+    && _show_version \
+    && _exit
 
 
 # ---------- Add-ons
@@ -2273,7 +2283,7 @@ fi
 
 
 # ---------- Help content
-
+    
 #  Show the help content.
 #  No test required.
 _show_help_content() {

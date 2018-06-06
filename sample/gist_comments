@@ -70,10 +70,10 @@ patch_comment() {
     body '{ "body": "'
     #  Repeat content for 5 times
     #+ offset is 0
-    body 0 '5t' 'Lorem ipsum'
+    body 0 '5t' 'Lorem ipsum '
     #  Repeat until body had
     #+ 50 bytes, offset is 0
-    body 0 '150s' 'Lorem ipsum'
+    body 0 '150s' 'Lorem ipsum '
     #  Explicit body assignation
     body '" }'
 }

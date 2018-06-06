@@ -65,7 +65,7 @@ assertIsNull "'hidden' found" "$_hidden"
 #  shellcheck disable=SC2154
 _hidden_key="$_shttp_suffix->hidden:="
 _hidden_key=$( echo "$_hidden_key" | base64 )
-_hidden_val=$( grep -e "^$_hidden_key" "ws/.cnfgvals" )
+_hidden_val=$( grep -e "^$_hidden_key" "ws/.vlt" )
 
 assertEquals "'hidden' value not found" \
     "ZGVmYXVsdC0+aGlkZGVuOj0K!bm9uLXZpc2libGUK" \
@@ -106,7 +106,7 @@ _temp_config=$( get tempConfig )
 assertEquals "'tempConfig' not found" "7wjedw9djwejd" "$_temp_config"
 
 echo "ZGVmYXVsdC0+bm9uVmlzaWJsZTo9Cg==!aGlkZGVuCg==" \
-    | tee -a "ws/.cnfgvals" > /dev/null
+    | tee -a "ws/.vlt" > /dev/null
 
 _non_visible=$( get nonVisible )
 assertEquals "'nonVisible' part not found" "hidden" "$_non_visible"
@@ -160,14 +160,14 @@ _put_part_idx=$( < "ws/credentials.json" \
 _hidden_val=$( < "ws/credentials.json" jq ".[$_put_part_idx].secret" )
 _visible_val=$( < "ws/credentials.json" jq ".[$_put_part_idx].visible" )
 
-assertTrue "Credential parts not found" "-f ws/.credparts"
+assertTrue "Credential parts not found" "-f ws/.vlt"
 assertIsNull "Hidden credential part not found" "$_hidden_val"
 assertEquals "Visible credential part not found" "\"shown\"" "$_visible_val"
 
 #  shellcheck disable=SC2154
 _hidden_key="$_shttp_suffix->$_shttp_auth_credential->secret:="
 _hidden_key=$( echo "$_hidden_key" | base64 )
-_hidden_val=$( grep -e "^$_hidden_key" "ws/.credparts" )
+_hidden_val=$( grep -e "^$_hidden_key" "ws/.vlt" )
 
 assertEquals "Hidden value not found" \
     "ZGVmYXVsdC0+cHV0LXBhcnQtdGVzdC0+c2VjcmV0Oj0K!aGlkZGVuCg==" \
@@ -191,11 +191,11 @@ update "ws/credentials.json" '. + [{
         "secretParam": "clientSecret",
     }]'
 echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+cGFzc3dvcmQ6PQo=!dDM1dAo=" \
-    | tee -a "ws/.credparts" > /dev/null
+    | tee -a "ws/.vlt" > /dev/null
 echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+dG9rZW46PQo=!MTIzNDU2Nzg5MAo=" \
-    | tee -a "ws/.credparts" > /dev/null
+    | tee -a "ws/.vlt" > /dev/null
 echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+c2VjcmV0Oj0K!MTIzNDU2Nzg5MAo=" \
-    | tee -a "ws/.credparts" > /dev/null
+    | tee -a "ws/.vlt" > /dev/null
 
 _credential_username=""
 _credential_password=""

@@ -4,61 +4,55 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-#  Show the help content.
-#  No test required.
-_shttp_help_content() {
-    local _content=(
-        ""
-        " Usage: ./<file>.sh <command> [--list] [--copy <from> <to>] [--del <env>] [--get <key-name>]"
-        "                              [--add <key-name> <value>] [--remove <key-name>] [--part <cred-id> <part> <value>]"
-        "                              [--keys] [--clean]"
-        ""
-        "                              [--env <env>] [--cred <cred>] [--set <key-name> <value>] [--local <port>]"
-        "                              [--auth-basic <cred>] [--auth-header <cred>] [--auth-qtoken <cred>]"
-        "                              [--auth-qkeysec <cred>] [--auth-skip <cred>] [--times <value>] [--open]"
-        ""
-        "                              [--help]"
-        ""
-        " Manage options:"
-        "   --list:                        Display the <command> list (all functions defined into main script)"
-        "   --copy <env-from> <env-to>:    Copy the environment configuration and credentials files. Must exist the 'from'"
-        "                                    configuration files. If already exist the 'to' files those will be replaced."
-        "                                    If is required to copy from 'default' environment, the first parameters must"
-        "                                    contain 'default'"
-        "   --del <env>:                   Remove the selected environment: configuration and credentials files. If is"
-        "                                    required to remove 'default' environment, the parameter must contain 'default'"
-        "   --get <key-name>:              Display the value for key from 'ws/config[.<env>].json'"
-        "   --add <key-name> <value>:      Add new key-value to 'ws/config[.<env>].json'"
-        "   --remove <key-name>:           Remove the key-value from 'ws/config[.<env>].json'"
-        "   --part <part> <value>:         Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.credparts'."
-        "   --keys:                        Display all keys from 'ws/config[.<env>].json' file"
-        "   --clean:                       Clean up all output files 'output/*'"
-        ""
-        " Request options:"
-        "   --env <env>:                   Set the environment for script by changing configuration and credentials files:"
-        "                                    'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
-        "   --cred <credential>:           Set the credential for script by updating '_shttp_auth_credential."
-        "   --set <key-name> <value>:      Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
-        "   --local <port>:                Set variables to local execution:"
-        "                                    _shttp_protocol: http"
-        "                                    _shttp_domain: localhost:<port> (default 8080)"
-        "   --auth-basic <credential>:     Set 'BASIC' mode to '_shttp_auth_mode' and assign the credential"
-        "   --auth-header <credential>:    Set 'HEADER' mode to '_shttp_auth_mode' and assign the credential"
-        "   --auth-qtoken <credential>:    Set 'QTOKEN' mode to '_shttp_auth_mode' and assign the credential"
-        "   --auth-qkeysec <credential>:   Set 'QKEYSEC' mode to '_shttp_auth_mode' and assign the credential"
-        "   --auth-skip <credential>:      Set 'SKIP' mode to '_shttp_auth_mode' and assign the credential"
-        "   --times <value>:               Set the number of executions required for the request into '_shttp_request_times'"
-        "   --open:                        Set '_shttp_editor_command' with value defined on 'editorCommand'"
-        "                                    from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
-        " Manual options:"
-        "   --help:                        Display this help message"
-    )
-    echo "${_content[*]}"
-}
-expr "$*" : ".*--help" > /dev/null \
-    && _shttp_help_content \
-    && exit 0
-
+#  Help content.
+_shttp_help_content=(
+    ""
+    " Usage: ./<file>.sh <command> [--list] [--copy <from> <to>] [--del <env>] [--get <key-name>]"
+    "                              [--add <key-name> <value>] [--remove <key-name>] [--part <cred-id> <part> <value>]"
+    "                              [--keys] [--clean]"
+    ""
+    "                              [--env <env>] [--cred <cred>] [--set <key-name> <value>] [--local <port>]"
+    "                              [--auth-basic <cred>] [--auth-header <cred>] [--auth-qtoken <cred>]"
+    "                              [--auth-qkeysec <cred>] [--auth-skip <cred>] [--times <value>] [--open]"
+    ""
+    "                              [--help] [<addon-options>]"
+    ""
+    " Manage options:"
+    "   --list:                        Display the <command> list (all functions defined into main script)"
+    "   --copy <env-from> <env-to>:    Copy the environment configuration and credentials files. Must exist the 'from'"
+    "                                    configuration files. If already exist the 'to' files those will be replaced."
+    "                                    If is required to copy from 'default' environment, the first parameters must"
+    "                                    contain 'default'"
+    "   --del <env>:                   Remove the selected environment: configuration and credentials files. If is"
+    "                                    required to remove 'default' environment, the parameter must contain 'default'"
+    "   --get <key-name>:              Display the value for key from 'ws/config[.<env>].json'"
+    "   --add <key-name> <value>:      Add new key-value to 'ws/config[.<env>].json'"
+    "   --remove <key-name>:           Remove the key-value from 'ws/config[.<env>].json'"
+    "   --part <part> <value>:         Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'."
+    "   --keys:                        Display all keys from 'ws/config[.<env>].json' file"
+    "   --clean:                       Clean up all output files 'output/*'"
+    ""
+    " Request options:"
+    "   --env <env>:                   Set the environment for script by changing configuration and credentials files:"
+    "                                    'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
+    "   --cred <credential>:           Set the credential for script by updating '_shttp_auth_credential."
+    "   --set <key-name> <value>:      Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
+    "   --local <port>:                Set variables to local execution:"
+    "                                    _shttp_protocol: http"
+    "                                    _shttp_domain: localhost:<port> (default 8080)"
+    "   --auth-basic <credential>:     Set 'BASIC' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-header <credential>:    Set 'HEADER' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-qtoken <credential>:    Set 'QTOKEN' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-qkeysec <credential>:   Set 'QKEYSEC' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-skip <credential>:      Set 'SKIP' mode to '_shttp_auth_mode' and assign the credential"
+    "   --times <value>:               Set the number of executions required for the request into '_shttp_request_times'"
+    "   --open:                        Set '_shttp_editor_command' with value defined on 'editorCommand'"
+    "                                    from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
+    " Manual options:"
+    "   --help:                        Display this help message"
+    ""
+    " Add-on options: "
+)
 
 #  Script filename.
 readonly _shttp_basename=$( basename "$0" )
@@ -74,12 +68,9 @@ readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' )
 #  No test required.
 #
 #  -param $* Log message
-_hd() { local _m="$*" ; if [ -a "ws/.credparts" ]; then while read -r _h; do
+_hd() { local _m="$*" ; if [ -a "ws/.vlt" ]; then while read -r _h; do
     _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
-    _m=${_m/$_h/'*****'} ; done < "ws/.credparts" ; fi
-    if [ -a "ws/.cnfgvals" ]; then while read -r _h; do
-    _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
-    _m=${_m/$_h/'*****'} ; done < "ws/.cnfgvals" ; fi ; echo "$_m" ; }
+    _m=${_m/$_h/'*****'} ; done < "ws/.vlt" ; fi ; echo "$_m" ; }
 
 #  Log a message with the INFO level.
 #  No test required.
@@ -236,8 +227,7 @@ step() {
     local _command=${1:-}
     local _last_params="$_shttp_input_params"
     shift
-    local _length=$#
-    if (( _length > 0 )); then
+    if (( $# > 0 )); then
         _shttp_input_params="${*}"
     fi
     for _opt in "${_shttp_request_opts[@]}"; do
@@ -301,10 +291,10 @@ put() {
         _entry=$( echo "$_entry" | base64 )
         _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
         _val=$( echo "$_val" | base64 )
-        if [ -a "ws/.cnfgvals" ]; then
-            sed -i "/^$_entry/d" "ws/.cnfgvals"
+        if [ -a "ws/.vlt" ]; then
+            sed -i "/^$_entry/d" "ws/.vlt"
         fi
-        echo "$_entry!$_val" | tee -a "ws/.cnfgvals" > /dev/null
+        echo "$_entry!$_val" | tee -a "ws/.vlt" > /dev/null
         _val="$_desc"
     fi
     update "$_shttp_env" ". + { \"$_name\": $_val }"
@@ -328,10 +318,10 @@ get() {
     local _default=${2:-'null'}
     local _entry=""
     local _val=""
-    if [ -a "ws/.cnfgvals" ]; then
+    if [ -a "ws/.vlt" ]; then
         _entry="$_shttp_suffix->$_name:="
         _entry=$( echo "$_entry" | base64 )
-        _val=$( grep -e "^$_entry" "ws/.cnfgvals" )
+        _val=$( grep -e "^$_entry" "ws/.vlt" )
     fi
     if [ -n "$_val" ]; then
         _val="${_val/"$_entry!"/}"
@@ -402,10 +392,10 @@ putPart() {
             jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
         _entry=$( echo "$_entry" | base64 )
         _val=$( echo "$_val" | base64 )
-        if [ -a "ws/.credparts" ]; then
-            sed -i "/^$_entry/d" "ws/.credparts"
+        if [ -a "ws/.vlt" ]; then
+            sed -i "/^$_entry/d" "ws/.vlt"
         fi
-        echo "$_entry!$_val" | tee -a "ws/.credparts" > /dev/null
+        echo "$_entry!$_val" | tee -a "ws/.vlt" > /dev/null
         _val="$_desc"
     fi
     update "$_shttp_creds" ".[$_cred_idx].$_part=$_val"
@@ -423,10 +413,10 @@ getPart() {
     local _default=${2:-'null'}
     local _entry=""
     local _val=""
-    if [ -a "ws/.credparts" ]; then
+    if [ -a "ws/.vlt" ]; then
         _entry="$_shttp_suffix->$_shttp_auth_credential->$_part:="
         _entry=$( echo "$_entry" | base64 )
-        _val=$( grep -e "^$_entry" "ws/.credparts" )
+        _val=$( grep -e "^$_entry" "ws/.vlt" )
     fi
     if [ -n "$_val" ]; then
         _val="${_val/"$_entry!"/}"
@@ -850,8 +840,7 @@ method() {
 #
 #  -param $@ Request headers
 headers() {
-    local _length=$#
-    if (( _length > 0 )); then
+    if (( $# > 0 )); then
         for _header in "$@"; do
             _shttp_headers+=( "$_header" )
             info "Set [Header] with [$_header]"
@@ -935,8 +924,7 @@ body() {
 #
 #  -param $@ Request form
 form() {
-    local _length=$#
-    if (( _length > 0 )); then
+    if (( $# > 0 )); then
         for _form in "$@"; do
             _shttp_form+=( "$_form" )
             info "Set [Form] with [$_form]"
@@ -948,8 +936,7 @@ form() {
 #
 #  -param $@ Request query parameters
 queryParams() {
-    local _length=$#
-    if (( _length > 0 )); then
+    if (( $# > 0 )); then
         for _param in "$@"; do
             _shttp_query_params+=( "$_param" )
             info "Set [Query-Param] with [$_param]"
@@ -961,8 +948,7 @@ queryParams() {
 #
 #  -param $@ Additional cURL options
 curlOpts() {
-    local _length=$#
-    if (( _length > 0 )); then
+    if (( $# > 0 )); then
         for _opt in "$@"; do
             _shttp_curl_opts+=( "$_opt" )
             info "Set [cURL-opt] with [$_opt]"
@@ -1867,6 +1853,19 @@ _register_opt() {
     fi
 }
 
+#  Add help lines to
+#+ '_shttp_help_content'.
+#  No test required.
+#
+#  -param $* Help content
+_help_content() {
+    if (( $# > 0 )); then
+        for _help in "$@"; do
+            _shttp_help_content+=( "$_help" )
+        done
+    fi
+}
+
 #  Set the configuration environment
 #+ suffix. This value will be used
 #+ for get current configuration
@@ -2248,6 +2247,18 @@ if (( _shttp_add_ons_length > 0 )); then
 else
     info "No add-ons sourced"
 fi
+
+
+# ---------- Help content
+
+#  Show the help content.
+#  No test required.
+_show_help_content() {
+    echo "${_shttp_help_content[*]}"
+}
+expr "$*" : ".*--help" > /dev/null \
+    && _show_help_content \
+    && _exit
 
 
 # ---------- Main

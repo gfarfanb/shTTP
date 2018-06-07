@@ -14,10 +14,16 @@ isTrue "Is false" "-z \"$_input\""
 #  shellcheck disable=SC2154
 assertEquals "Incorrect number of assertions for 'isTrue'" 2 "$_shttp_assertions"
 #  shellcheck disable=SC2154
+assertEquals "Incorrect number of assertions flow for 'isTrue'" 2 "$_shttp_assertions_flow"
+#  shellcheck disable=SC2154
 assertEquals "Incorrect number of failures for 'isTrue'" 1 "$_shttp_failures"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of failures flow for 'isTrue'" 1 "$_shttp_failures_flow"
 
 _shttp_assertions=0
+_shttp_assertions_flow=0
 _shttp_failures=0
+_shttp_failures_flow=0
 
 
 #  -test Is false assertion
@@ -27,10 +33,16 @@ isFalse "Is true" "-z \"$_input\""
 #  shellcheck disable=SC2154
 assertEquals "Incorrect number of assertions for 'isFalse'" 2 "$_shttp_assertions"
 #  shellcheck disable=SC2154
+assertEquals "Incorrect number of assertions flow for 'isFalse'" 2 "$_shttp_assertions_flow"
+#  shellcheck disable=SC2154
 assertEquals "Incorrect number of failures for 'isFalse'" 1 "$_shttp_failures"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of failures flow for 'isFalse'" 1 "$_shttp_failures_flow"
 
 _shttp_assertions=0
+_shttp_assertions_flow=0
 _shttp_failures=0
+_shttp_failures_flow=0
 
 
 #  -test Are equals assertion
@@ -40,10 +52,16 @@ areEquals "Are not equals" 10 "$_input"
 #  shellcheck disable=SC2154
 assertEquals "Incorrect number of assertions for 'areEquals'" 2 "$_shttp_assertions"
 #  shellcheck disable=SC2154
+assertEquals "Incorrect number of assertions flow for 'areEquals'" 2 "$_shttp_assertions_flow"
+#  shellcheck disable=SC2154
 assertEquals "Incorrect number of failures for 'areEquals'" 1 "$_shttp_failures"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of failures flow for 'areEquals'" 1 "$_shttp_failures_flow"
 
 _shttp_assertions=0
+_shttp_assertions_flow=0
 _shttp_failures=0
+_shttp_failures_flow=0
 
 
 #  -test Are not equals assertion
@@ -53,7 +71,53 @@ areNotEquals "Are equals" 5 "$_input"
 #  shellcheck disable=SC2154
 assertEquals "Incorrect number of assertions for 'areNotEquals'" 2 "$_shttp_assertions"
 #  shellcheck disable=SC2154
+assertEquals "Incorrect number of assertions flow for 'areNotEquals'" 2 "$_shttp_assertions_flow"
+#  shellcheck disable=SC2154
 assertEquals "Incorrect number of failures for 'areNotEquals'" 1 "$_shttp_failures"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of failures flow for 'areNotEquals'" 1 "$_shttp_failures_flow"
 
 _shttp_assertions=0
+_shttp_assertions_flow=0
 _shttp_failures=0
+_shttp_failures_flow=0
+
+
+#  -test Is like assertion
+_input="v1.0.0-BETA"
+isLike "Is not like" "v[0-9]+\.[0-9]+\.[0-9]+.*" "$_input"
+_input="vBETA"
+isLike "Is not like" "v[0-9]+\.[0-9]+\.[0-9]+.*" "$_input"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of assertions for 'isLike'" 2 "$_shttp_assertions"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of assertions flow for 'isLike'" 2 "$_shttp_assertions_flow"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of failures for 'isLike'" 1 "$_shttp_failures"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of failures flow for 'isLike'" 1 "$_shttp_failures_flow"
+
+_shttp_assertions=0
+_shttp_assertions_flow=0
+_shttp_failures=0
+_shttp_failures_flow=0
+
+
+#  -test Is not like assertion
+_input="vBETA"
+isNotLike "Is like" "v[0-9]+\.[0-9]+\.[0-9]+.*" "$_input"
+_input="v1.0.0-BETA"
+isNotLike "Is like" "v[0-9]+\.[0-9]+\.[0-9]+.*" "$_input"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of assertions for 'isNotLike'" 2 "$_shttp_assertions"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of assertions flow for 'isNotLike'" 2 "$_shttp_assertions_flow"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of failures for 'isNotLike'" 1 "$_shttp_failures"
+#  shellcheck disable=SC2154
+assertEquals "Incorrect number of failures flow for 'isNotLike'" 1 "$_shttp_failures_flow"
+
+_shttp_assertions=0
+_shttp_assertions_flow=0
+_shttp_failures=0
+_shttp_failures_flow=0

@@ -82,6 +82,38 @@ assertNotEquals() {
     _inc_asserts
 }
 
+#  Assert that expected and actual
+#+ are like to one another.
+#
+#  -param $1 Fail message
+#  -param $2 Like regex
+#  -param $3 Actual value
+assertLike() {
+    local _message=${1:-}
+    local _expected=${2:-}
+    local _actual=${3:-}
+    if ! [[ "$_actual" =~ $_expected ]]; then
+        _fail "[[ $_actual =~ $_expected ]]: $_message"
+    fi
+    _inc_asserts
+}
+
+#  Assert that unexpected and actual
+#+ are not like to one another.
+#
+#  -param $1 Fail message
+#  -param $2 Like regex
+#  -param $3 Actual value
+assertNotLike() {
+    local _message=${1:-}
+    local _expected=${2:-}
+    local _actual=${3:-}
+    if [[ "$_actual" =~ $_expected ]]; then
+        _fail "! [[ $_actual =~ $_expected ]]: $_message"
+    fi
+    _inc_asserts
+}
+
 #  Assert that actual is
 #+ equals to null.
 #
@@ -91,7 +123,7 @@ assertIsNull() {
     local _message=${1:-}
     local _actual=${2:-}
     if [ "$_actual" != "null" ]; then
-        _fail "[ $_actual != null ]: $_message"
+        _fail "[ $_actual = null ]: $_message"
     fi
     _inc_asserts
 }
@@ -105,7 +137,7 @@ assertNonNull() {
     local _message=${1:-}
     local _actual=${2:-}
     if [ "$_actual" = "null" ]; then
-        _fail "[ $_actual = null ]: $_message"
+        _fail "[ $_actual != null ]: $_message"
     fi
     _inc_asserts
 }

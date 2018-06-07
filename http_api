@@ -576,6 +576,44 @@ areNotEquals() {
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
 }
 
+#  Assert that expected and actual
+#+ are like to one another.
+#
+#  -param $1 Fail message
+#  -param $2 Like regex
+#  -param $3 Actual value
+isLike() {
+    local _message=${1:-}
+    local _expected=${2:-}
+    local _actual=${3:-}
+    if ! [[ "$_actual" =~ $_expected ]]; then
+        _shttp_failures=$(( _shttp_failures+1 ))
+        _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
+        _assertion_log "[[ $_actual =~ $_expected ]]: $_message"
+    fi
+    _shttp_assertions=$(( _shttp_assertions+1 ))
+    _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
+}
+
+#  Assert that unexpected and actual
+#+ are not like to one another.
+#
+#  -param $1 Fail message
+#  -param $2 Like regex
+#  -param $3 Actual value
+isNotLike() {
+    local _message=${1:-}
+    local _expected=${2:-}
+    local _actual=${3:-}
+    if [[ "$_actual" =~ $_expected ]]; then
+        _shttp_failures=$(( _shttp_failures+1 ))
+        _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
+        _assertion_log "! [[ $_actual =~ $_expected ]]: $_message"
+    fi
+    _shttp_assertions=$(( _shttp_assertions+1 ))
+    _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
+}
+
 #  Assert that actual is
 #+ equals to null.
 #
@@ -587,7 +625,7 @@ isNull() {
     if [ "$_actual" != "null" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "[ $_actual != null ]: $_message"
+        _assertion_log "[ $_actual = null ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -604,7 +642,7 @@ isNotNull() {
     if [ "$_actual" = "null" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "[ $_actual = null ]: $_message"
+        _assertion_log "[ $_actual != null ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))

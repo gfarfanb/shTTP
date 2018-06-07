@@ -112,7 +112,7 @@ Conventions:
 
 ### Reporting bugs
 
-- Fill the [required template](./ISSUE_TEMPLATE.md).
+- Fill the [required template](./ISSUE_TEMPLATE/bug_report.md).
 - Make sure you are correctly following the checklist section.
 - The description must be concise.
 - It is important the indicate environment you are testing.
@@ -124,7 +124,7 @@ or post discussion (at the end of posts).
 ### Suggesting enhancements
 
 It is always welcome a new change idea, refactoring, design, features,
-new pages (not only posts), just propose it via issue requests or if
+new pages (not only posts), just propose it via [feature requests](./ISSUE_TEMPLATE/feature_request.md) or if
 consider better via pull requests. 
 
 ## Pull Requests

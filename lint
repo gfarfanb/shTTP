@@ -7,8 +7,9 @@ IFS=$'\n\t'
 
 shellcheck http_api
 shellcheck lint
-shellcheck mkexec
 shellcheck runtests
+shellcheck mkexec
+shellcheck incver
 shellcheck test/test_*
 shellcheck test/unit/*
 shellcheck test/mock/*_mock

@@ -1,10 +1,27 @@
 #! /usr/bin/env bash
 #  Make a script executable.
-#  If '-x' appears in the parameters
-#+ the execution permission is removed.
 #  -author Giovanni Farfán B.
 set -euo pipefail
 IFS=$'\n\t'
+
+#  Help content.
+readonly _shttp_help_content=(
+    ""
+    " Usage: ./mkexec <script> [-x] [--help]"
+    ""
+    " Add execution permissions and update git-index."
+    ""
+    " Options:"
+    "   -x:       Remove execution permissions."
+    ""
+    "   --help:   Display this help message"
+)
+_show_help_content() {
+    echo "${_shttp_help_content[*]}"
+}
+expr "$*" : ".*--help" > /dev/null \
+    && _show_help_content \
+    && exit 0
 
 readonly _script=${1:-}
 

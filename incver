@@ -1,0 +1,126 @@
+#! /usr/bin/env bash
+#  Increase version number by Semantic Versioning.
+#  -author Giovanni Farfán B.
+set -euo pipefail
+IFS=$'\n\t'
+
+#  Help content.
+readonly _shttp_help_content=(
+    ""
+    " Usage: ./incver [--mayor] [--minor] [--patch]"
+    "                    [--label <label>] [--no-label]"
+    "                    [--add] [--push]"
+    "                    [--help]"
+    ""
+    " Increases the number of the version. Based-on https://semver.org/."
+    " If there is no git-index option in command, by default prints the"
+    " new version."
+    " At least must to exists one tagged version."
+    ""
+    " Options:"
+    "   --mayor:           Increase in one the number of MAYOR version"
+    "   --minor:           Increase in one the number of MINOR version"
+    "   --patch:           Increase in one the number of PATCH version"
+    ""
+    "   --label <label>:   Append a label to new version"
+    "   --no-label:        Remove the label of the current version (if exists)"
+    ""
+    "   --add:             Add new version to local commit"
+    "   --push:            Push new version to remote repository"
+    ""
+    "   --help:            Display this help message"
+)
+_show_help_content() {
+    echo "${_shttp_help_content[*]}"
+}
+expr "$*" : ".*--help" > /dev/null \
+    && _show_help_content \
+    && exit 0
+
+#  Join the elements of the
+#+ array in a single string.
+#
+#  -param $1 Delimiter
+#  -param $* Elements
+_join_by(){ local IFS="$1"; shift; echo "$*"; }
+
+#  Get last tagged version
+readonly _current_version=$( git describe --abbrev=0 --tags )
+
+if ! [[ "$_current_version" =~ v[0-9]+\.[0-9]+\.[0-9]+.* ]]; then
+    echo "Invalid version number [$_current_version]"
+    exit 1
+fi
+
+#  Get version parts (only numbers)
+_version_parts=( $( echo "$_current_version" | grep -o '[0-9]*' ) )
+#  Save last version
+readonly _last_version="v$( _join_by '.' "${_version_parts[@]}" )"
+
+#  Check increase mode option
+readonly _opt=${1:-}
+case "$_opt" in
+    --mayor)
+        _position=0
+    ;;
+    --minor)
+        _position=1
+    ;;
+    --patch)
+        _position=2
+    ;;
+    *)
+        echo "Invalid option [$_opt]"
+        exit 1
+    ;;
+esac
+
+#  Increase to new version
+_version_parts[$_position]=$(( _version_parts[_position]+1 ))
+#  Save new version
+readonly _new_version="v$( _join_by '.' "${_version_parts[@]}" )"
+
+#  Check label option
+readonly _label_opt=${2:-}
+case "$_label_opt" in
+    --label)
+        _next=4
+        _label=${3:-}
+    ;;
+    --no-label)
+        _next=3
+        _label=""
+    ;;
+    *)
+        _next=2
+        _label=${_current_version/$_last_version/}
+    ;;
+esac
+
+#  Get the final version
+readonly _updated_version="$_new_version$_label"
+#  Get last commit
+readonly _last_commit=$( git rev-parse HEAD )
+#  Check if last commit contains tags
+readonly _contains_tag=$( git tag --contains "$_last_commit" )
+
+if [ -z "$_contains_tag" ]; then
+    #  Check tag option
+    readonly _tag_opt=${_next:-}
+    case "$_tag_opt" in
+        --add)
+            git tag "$_updated_version"
+        ;;
+        --push)
+            git tag "$_updated_version"
+            git push origin "$_updated_version"
+        ;;
+        *)
+            :
+        ;;
+    esac
+    echo "$_updated_version"
+else
+    echo "This commit is already tagged [$_contains_tag]"
+    exit 0
+fi

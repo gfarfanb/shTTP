@@ -9,7 +9,7 @@ about: Create a report to help us improve
 - [ ] Did you read the [contributing guidelines](./CONTRIBUTING.md)?
 - [ ] Support questions of help? Better ask in [out chat](https://gitter.im/shTTP/api-dev)
 - [ ] Did you ensure the issue haven't already reported?
-- [ ] Is this issue reproducible on the latest version?
+- [ ] Is this issue reproducible in the latest version?
 
 > *Remove this hint: delete the above section before submitting*
 

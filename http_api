@@ -382,21 +382,23 @@ remove() {
 #  -param $2 Part value
 #  -param $3 Secure type:
 #+           [PRIVATE | PUBLIC]
+#  -param $4 Credential
 putPart() {
     local _part=${1:-}
     local _val=${2:-}
     local _sec=${3:-"PRIVATE"}
+    local _credential=${4:-"$_shttp_auth_credential"}
     local _cred_idx=-1
     _cred_idx=$( < "$_shttp_creds" \
-        jq "map(.id==\"$_shttp_auth_credential\") | index(true)" )
+        jq "map(.id==\"$_credential\") | index(true)" )
     if [ "$_cred_idx" = "null" ]; then
-        fatal "Credential [$_shttp_auth_credential] not found"
+        fatal "Credential [$_credential] not found"
     fi
     if [ "$_sec" = "PRIVATE" ]; then
-        local _entry="$_shttp_suffix->$_shttp_auth_credential->$_part:="
+        local _entry="$_shttp_suffix->$_credential->$_part:="
         local _desc=""
         _desc=$( < "$_shttp_creds" \
-            jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
+            jq ".[] | select(.id==\"$_credential\") | .$_part")
         _entry=$( echo "$_entry" | base64 )
         _val=$( echo "$_val" | base64 )
         if [ -a "ws/.vlt" ]; then
@@ -406,22 +408,24 @@ putPart() {
         _val="$_desc"
     fi
     update "$_shttp_creds" ".[$_cred_idx].$_part=$_val"
-    info "Saved [$_part] with value [$_val] to credential [$_shttp_auth_credential]"
+    info "Saved [$_part] with value [$_val] to credential [$_credential]"
 }
 
 #  Get the credential part for
 #+ '_shttp_auth_credential'.
 #
 #  -param $1 Part name
-#  -param $2 Default name
+#  -param $2 Default value
+#  -param $3 Credential
 #  -return Credential part value
 getPart() {
     local _part=${1:-}
     local _default=${2:-'null'}
+    local _credential=${3:-"$_shttp_auth_credential"}
     local _entry=""
     local _val=""
     if [ -a "ws/.vlt" ]; then
-        _entry="$_shttp_suffix->$_shttp_auth_credential->$_part:="
+        _entry="$_shttp_suffix->$_credential->$_part:="
         _entry=$( echo "$_entry" | base64 )
         _val=$( grep -e "^$_entry" "ws/.vlt" )
     fi
@@ -430,7 +434,7 @@ getPart() {
         _val=$( echo "$_val" | base64 --decode )
     else
         _val=$( < "$_shttp_creds" \
-            jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
+            jq ".[] | select(.id==\"$_credential\") | .$_part")
         _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
         if [ "$_val" = "null" ]; then
             _val="$_default"
@@ -1137,12 +1141,14 @@ _has_func() {
 #+ already declared.
 #
 #  -param $1 Function name
+#  -param $* Parameters
 _execute_if_exist() {
     local _func=${1:-}
     local _has_func=0
+    shift
     _has_func=$( _has_func "$_func" )
     if (( _has_func == 1 )); then
-        $_func
+        $_func "$@"
     fi
 }
 
@@ -1159,6 +1165,7 @@ _execute_if_exist() {
 #    7. Execute 'after_flow' function
 #+      if it is declared.
 #    8. Show assertion results.
+#    8. Notify flow execution.
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number.
@@ -1172,10 +1179,10 @@ _execute_flow() {
     if (( _times < 1 )); then
         _times=1
     fi
-    _shttp_flow_tag="$( date '+%s' )"
-    mkdir "output/flow$_shttp_flow_tag"
-    _shttp_output_flow="output/flow$_shttp_flow_tag/$( basename "$0" ).main"
     for (( _flow_idx=1; _flow_idx<=_times; _flow_idx++ )); do
+        _shttp_flow_tag="$( date '+%s' )"
+        mkdir "output/flow$_shttp_flow_tag"
+        _shttp_output_flow="output/flow$_shttp_flow_tag/$( basename "$0" ).main"
         _shttp_flow_index="$_flow_idx"
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
@@ -1188,9 +1195,10 @@ _execute_flow() {
         _execute_if_exist after_flow
         info "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
         _flow_log "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
+        info "Created $_shttp_output_flow.trace"
+        _show_assertion_results FLOW
+        _notify_execution FLOW
     done
-    info "Created $_shttp_output_flow.trace"
-    _show_assertion_results "FLOW"
     _shttp_flow_index=0
     _shttp_flow_tag=""
     _shttp_output_flow=""
@@ -1210,6 +1218,7 @@ _execute_flow() {
 #+      if it is declared.
 #    7. Execute open editor task.
 #    8. Show assertion results.
+#    8. Notify request execution.
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number.
@@ -1241,13 +1250,14 @@ _execute() {
         _request "$_command"
         _execute_if_exist after_api
         _editor_command
-        _show_assertion_results "REQUEST"
+        _show_assertion_results REQUEST
         if [ "$_shttp_execution_type" = "FLOW" ]; then
             info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done request [$_command]"
             _flow_log "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done request [$_command]"
         else
             info "$_req_idx: Done request [$_command]"
         fi
+        _notify_execution REQUEST
     done
     _shttp_request_index=0
 }
@@ -1801,6 +1811,27 @@ _show_assertion_results() {
             fi
             cat "$_output.asserts"
         fi
+    fi
+}
+
+#  Takes an snapshot of the
+#+ execution and notify it.
+#  No test required.
+#
+#  -param $1 Execution type
+_notify_execution() {
+    local _type=${1:-}
+    local _message=""
+    case "$_shttp_execution_type" in
+        REQUEST)
+            _message="REQUEST"
+        ;;
+        FLOW)
+            _message="FLOW"
+        ;;
+    esac
+    if [ "$_shttp_execution_type" = "$_type" ]; then
+        _execute_if_exist proceed_notif "$_message"
     fi
 }
 

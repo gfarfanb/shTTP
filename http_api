@@ -1405,11 +1405,9 @@ _default_vars() {
     fi
     if [ -z "$_shttp_output" ]; then
         if [ "$_shttp_execution_type" = "FLOW" ]; then
-            local _output="output/flow$_shttp_flow_tag/$( basename "$0" ).$( date '+%y%m%d.%H%M%S.%N' )"
-            output "$_output"
+            output "output/flow$_shttp_flow_tag/$( basename "$0" ).$( date '+%y%m%d.%H%M%S.%N' )"
         else
-            local _output="output/$( basename "$0" ).$( date '+%y%m%d.%H%M%S.%N' )"
-            output "$_output"
+            output "output/$( basename "$0" ).$( date '+%y%m%d.%H%M%S.%N' )"
         fi
     fi
 }

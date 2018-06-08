@@ -44,11 +44,23 @@ assertEquals "'complete_check' function not found" 1 "$_check_exist"
 
 #  shellcheck disable=SC2034
 _shttp_execution_type="FLOW"
+_before_every_flow_var="Not executed yet"
+_before_flow_call_var="Not executed yet"
+_after_flow_call_var="Not executed yet"
+_after_every_flow_var="Not executed yet"
 _flow_execution_count=0
 
 get_repo_flow() {
     url "http://127.0.0.1:5555/info"
     _flow_execution_count=$(( _flow_execution_count+1 ))
+}
+
+before_flow() {
+    _before_every_flow_var="Executed"
+}
+
+before_flow_get_repo() {
+    _before_flow_call_var="Executed"
 }
 
 flow_get_repo() {
@@ -58,9 +70,21 @@ flow_get_repo() {
     step get_repo_flow --set a 5
 }
 
+after_flow_get_repo() {
+    _after_flow_call_var="Executed"
+}
+
+after_flow() {
+    _after_every_flow_var="Executed"
+}
+
 _execute_flow flow_get_repo
 
+assertEquals "'before_flow' not executed" "Executed" "$_before_every_flow_var"
+assertEquals "'before_flow_get_repo' not executed" "Executed" "$_before_flow_call_var"
 assertEquals "'flow_get_repo' not executed" 5 "$_flow_execution_count"
+assertEquals "'after_flow_get_repo' not executed" "Executed" "$_after_flow_call_var"
+assertEquals "'after_flow' not executed" "Executed" "$_after_every_flow_var"
 
 
 #  -test Request lifecycle

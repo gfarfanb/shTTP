@@ -133,7 +133,7 @@ delete_auth() {
 #+ but it is not show on the command list ('--list' option)
 after_api() {
     #  Log an info
-    info "This will be executed after request call"
+    info "This will be executed after everyrequest call"
 }
 
 #  shellcheck disable=SC1091

@@ -1131,8 +1131,16 @@ _execute_if_exist() {
 #  Execute flow lifecycle:
 #    1. Set flow tag.
 #    2. Set output flow basename.
-#    3. Execute the flow.
-#    4. Show assertion results.
+#    3. Execute 'before_flow' function
+#+      if it is declared.
+#    4. Execute 'before_<flow>' function
+#+      if it is declared.
+#    5. Execute the flow.
+#    6. Execute 'after_<flow>' function
+#+      if it is declared.
+#    7. Execute 'after_flow' function
+#+      if it is declared.
+#    8. Show assertion results.
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number.
@@ -1155,7 +1163,11 @@ _execute_flow() {
         _shttp_failures_flow=0
         info "$_flow_idx: [$_shttp_flow_tag] Init flow [$_command]"
         _flow_log "$_flow_idx: [$_shttp_flow_tag] Init flow [$_command]"
+        _execute_if_exist before_flow
+        _execute_if_exist "before_${_command}"
         $_command "$_shttp_flow_index"
+        _execute_if_exist "after_${_command}"
+        _execute_if_exist after_flow
         info "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
         _flow_log "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
     done

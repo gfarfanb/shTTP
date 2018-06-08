@@ -109,6 +109,19 @@ after_api() {
     warning "Flow discard execution of this function"
 }
 
+#  This will be called before every flow execution
+#+ but it is not show on the command list ('--list' option)
+before_flow() {
+    #  Log an info
+    info "This will be executed before every flow call"
+}
+
+#  This will be called before to execute the flow
+#+ but it is not show on the command list ('--list' option)
+before_flow_comment() {
+    info "This will be executed before 'flow_comment' call"
+}
+
 #  Flow definition
 #
 # ./gist_comment flow_comment --auth-header sample
@@ -122,6 +135,19 @@ flow_comment() {
     #  Flow step definition
     #  Inherit, from main call, credential and auth mode
     step delete_comment
+}
+
+#  This will be called after to execute the flow
+#+ but it is not show on the command list ('--list' option)
+after_flow_comment() {
+    info "This will be executed after 'flow_comment' call"
+}
+
+#  This will be called after every flow execution
+#+ but it is not show on the command list ('--list' option)
+after_flow() {
+    #  Log an info
+    info "This will be executed after every flow call"
 }
 
 #  shellcheck disable=SC1091

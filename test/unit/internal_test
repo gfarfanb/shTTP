@@ -64,7 +64,7 @@ before_flow_get_repo() {
 }
 
 flow_get_repo() {
-    step get_repo_flow --times 2 --local
+    step get_repo_flow --local
     step get_repo_flow --auth-basic user
     step get_repo_flow
     step get_repo_flow --set a 5
@@ -82,7 +82,7 @@ _execute_flow flow_get_repo
 
 assertEquals "'before_flow' not executed" "Executed" "$_before_every_flow_var"
 assertEquals "'before_flow_get_repo' not executed" "Executed" "$_before_flow_call_var"
-assertEquals "'flow_get_repo' not executed" 5 "$_flow_execution_count"
+assertEquals "'flow_get_repo' not executed" 4 "$_flow_execution_count"
 assertEquals "'after_flow_get_repo' not executed" "Executed" "$_after_flow_call_var"
 assertEquals "'after_flow' not executed" "Executed" "$_after_every_flow_var"
 
@@ -149,7 +149,7 @@ _shttp_auth_credential="not-empty"
 _shttp_editor_command="not-empty"
 _shttp_output="not-empty"
 
-_init_vars
+_reset_req_vars
 
 assertTrue "'_shttp_url' is not empty" "-z \"$_shttp_url\""
 assertTrue "'_shttp_protocol' is not empty" "-z \"$_shttp_protocol\""
@@ -232,7 +232,7 @@ assertEquals "'_shttp_auth_mode' not in config" "HEADER" "$_shttp_auth_mode"
 assertEquals "'_shttp_auth_credential' not in config" "test.user" "$_shttp_auth_credential"
 assertEquals "'_shttp_editor_command' not in config" "echo opening" "$_shttp_editor_command"
 
-_init_vars
+_reset_req_vars
 remove protocol
 remove domain
 remove basePath
@@ -256,7 +256,7 @@ assertEquals "'_shttp_url' is not empty" "https://" "$_shttp_url"
 assertEquals "'_shttp_auth_mode' is not empty" "SKIP" "$_shttp_auth_mode"
 assertTrue "'_shttp_output' is not empty" "-n \"$_shttp_output\""
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Request execution
@@ -287,7 +287,7 @@ _info_pronounced=$( < "$_shttp_output.output" jq ".pronounced" )
 
 assertEquals "Request not executed" "\"shell-ttp\"" "$_info_pronounced"
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Set request method
@@ -296,48 +296,48 @@ _set_method "get_api"
 #  shellcheck disable=SC2154
 assertEquals "'get_api' has no method" "GET" "$_shttp_method"
 
-_init_vars
+_reset_req_vars
 post_api() { : ; }
 _set_method "post_api"
 assertEquals "'post_api' has no method" "POST" "$_shttp_method"
 
-_init_vars
+_reset_req_vars
 put_api() { : ; }
 _set_method "put_api"
 #  shellcheck disable=SC2154
 assertEquals "'put_api' has no method" "PUT" "$_shttp_method"
 
-_init_vars
+_reset_req_vars
 patch_api() { : ; }
 _set_method "patch_api"
 #  shellcheck disable=SC2154
 assertEquals "'patch_api' has no method" "PATCH" "$_shttp_method"
 
-_init_vars
+_reset_req_vars
 delete_api() { : ; }
 _set_method "delete_api"
 #  shellcheck disable=SC2154
 assertEquals "'delete_api' has no method" "DELETE" "$_shttp_method"
 
-_init_vars
+_reset_req_vars
 head_api() { : ; }
 _set_method "head_api"
 #  shellcheck disable=SC2154
 assertEquals "'head_api' has no method" "HEAD" "$_shttp_method"
 
-_init_vars
+_reset_req_vars
 options_api() { : ; }
 _set_method "options_api"
 #  shellcheck disable=SC2154
 assertEquals "'options_api' has no method" "OPTIONS" "$_shttp_method"
 
-_init_vars
+_reset_req_vars
 unknown_api() { : ; }
 _set_method "unknown_api"
 #  shellcheck disable=SC2154
 assertTrue "'unknown_api' has method" "-z \"$_shttp_method\""
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Append if missing header
@@ -368,7 +368,7 @@ done
 
 assertEquals "'Present-Header' change its value" 0 "$_found"
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Append Content-Type
@@ -384,7 +384,7 @@ done
 
 assertEquals "'application/json' is not present" 1 "$_found"
 
-_init_vars
+_reset_req_vars
 form "key=value"
 
 _append_content_type
@@ -399,7 +399,7 @@ done
 
 assertEquals "'multipart/form-data' is not present" 1 "$_found"
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Append Authentication
@@ -436,7 +436,7 @@ done
 
 assertEquals "'BASIC' mode not set" 2 "$_found"
 
-_init_vars
+_reset_req_vars
 credential "auth"
 authMode "HEADER"
 
@@ -451,7 +451,7 @@ done
 
 assertEquals "'HEADER' mode not set" 1 "$_found"
 
-_init_vars
+_reset_req_vars
 credential "auth"
 authMode "QTOKEN"
 
@@ -468,7 +468,7 @@ done
 
 assertEquals "'QTOKEN' mode not set" 1 "$_found"
 
-_init_vars
+_reset_req_vars
 credential "auth"
 authMode "QKEYSEC"
 
@@ -490,7 +490,7 @@ done
 
 assertEquals "'QKEYSEC' mode not set" 2 "$_found"
 
-_init_vars
+_reset_req_vars
 credential "auth"
 authMode "SKIP"
 
@@ -503,29 +503,29 @@ _length=${#_shttp_query_params[@]}
 assertEquals "'SKIP' mode not set for query params" 0 "$_length"
 
 remove apiToken
-_init_vars
+_reset_req_vars
 
 
 #  -test Append body to file
 body '{ "body": "content" }'
 _body_file=$( _append_body_to_file )
 assertTrue "Body temporal file does not exist" "-f \"$_body_file\""
-_init_vars
+_reset_req_vars
 
 _body_file=$( _append_body_to_file )
 assertFalse "Body temporal file exists" "-f \"$_body_file\""
-_init_vars
+_reset_req_vars
 
 body '{' \
     '"body": "content"' \
     '}'
 _body_file=$( _append_body_to_file )
 assertTrue "Body (parts) temporal file does not exist" "-f \"$_body_file\""
-_init_vars
+_reset_req_vars
 
 _body_file=$( _append_body_to_file )
 assertFalse "Body (parts) temporal file exists" "-f \"$_body_file\""
-_init_vars
+_reset_req_vars
 
 
 #  -test Build cURL
@@ -552,7 +552,7 @@ _curl=$( _build_curl "ws/body_file.json.temp" )
 
 assertEquals "'cURL' command bad" "${_expected[*]}" "$_curl"
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Clean trace
@@ -593,7 +593,7 @@ _trace=$( cat "$_shttp_output.trace" )
 #  shellcheck disable=SC2128
 assertEquals "Clean trace file does not work" "$_expected" "$_trace"
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Open editor command
@@ -607,7 +607,7 @@ _editor_command
 #  shellcheck disable=SC2154
 assertTrue "Open editor command does not work" "-n \"$_command_version\""
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Script finallly

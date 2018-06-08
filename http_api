@@ -218,6 +218,11 @@ _str() {
 #+ and external request call:
 #+ input parameters processing,
 #+ and request execution.
+#  In a flow execution contex
+#+ the '--times' option
+#+ does not work for steps
+#+ because it is used for repeat
+#+ flow execution.
 #  It is recommended to use
 #+ inside a flow function.
 #  This is the step process:
@@ -240,12 +245,8 @@ step() {
             _look_for_params "$_opt" "${_params[@]}" || continue
         done
     fi
-    _execute "$_command" "$_shttp_request_times"
+    _execute "$_command"
     _shttp_input_params="$_last_params"
-    _shttp_request_times=0
-    _shttp_assertions=0
-    _shttp_failures=0
-    _init_vars
 }
 
 #  Update a JSON file using 'jq'.
@@ -1180,45 +1181,53 @@ _execute_flow() {
         _times=1
     fi
     for (( _flow_idx=1; _flow_idx<=_times; _flow_idx++ )); do
-        _shttp_flow_tag="$( date '+%s' )"
+        #  Initialize output flow variables
+        _shttp_flow_tag="$( date '+%s-%N' )"
         mkdir "output/flow$_shttp_flow_tag"
         _shttp_output_flow="output/flow$_shttp_flow_tag/$( basename "$0" ).main"
         _shttp_flow_index="$_flow_idx"
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
+        #  Log flow init
         info "$_flow_idx: [$_shttp_flow_tag] Init flow [$_command]"
         _flow_log "$_flow_idx: [$_shttp_flow_tag] Init flow [$_command]"
+        #  Main flow lifecycle
         _execute_if_exist before_flow
         _execute_if_exist "before_${_command}"
         $_command "$_shttp_flow_index"
         _execute_if_exist "after_${_command}"
         _execute_if_exist after_flow
+        #  Log flow end
         info "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
         _flow_log "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
+        #  Show flow results
         info "Created $_shttp_output_flow.trace"
         _show_assertion_results FLOW
         _notify_execution FLOW
+        #  Reset flow variables
+        _shttp_assertions_flow=0
+        _shttp_failures_flow=0
+        _shttp_flow_tag=""
+        _shttp_output_flow=""
     done
     _shttp_flow_index=0
-    _shttp_flow_tag=""
-    _shttp_output_flow=""
 }
 
 #  Execute request lifecycle:
-#    1. Initialize request variables.
-#    2. Execute 'before_api' function
+#    1. Execute 'before_api' function
 #+      if it is declared.
-#    3. Execute the command.
-#    4. Set request method based on
+#    2. Execute the command.
+#    3. Set request method based on
 #+      command name if it was not
 #+      assigned during the command
 #+      execution.
-#    5. Execute the request.
-#    6. Execute 'after_api' function
+#    4. Execute the request.
+#    5. Execute 'after_api' function
 #+      if it is declared.
-#    7. Execute open editor task.
-#    8. Show assertion results.
+#    6. Execute open editor task.
+#    7. Show assertion results.
 #    8. Notify request execution.
+#    9. Reset request variables.
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number.
@@ -1233,9 +1242,11 @@ _execute() {
         _times=1
     fi
     for (( _req_idx=1; _req_idx<=_times; _req_idx++ )); do
+        #  Initialize request variables
         _shttp_request_index="$_req_idx"
         _shttp_assertions=0
         _shttp_failures=0
+        #  Log request init
         if [ "$_shttp_execution_type" = "FLOW" ]; then
             info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init request [$_command]"
             _flow_log "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init request [$_command]"
@@ -1243,21 +1254,27 @@ _execute() {
         else
             info "$_req_idx: Init request [$_command]"
         fi
-        _init_vars
+        #  Main request lifecycle
         _execute_if_exist before_api
         $_command "$_shttp_request_index"
         _set_method "$_command"
         _request "$_command"
         _execute_if_exist after_api
         _editor_command
-        _show_assertion_results REQUEST
+        #  Log request end
         if [ "$_shttp_execution_type" = "FLOW" ]; then
             info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done request [$_command]"
             _flow_log "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done request [$_command]"
         else
             info "$_req_idx: Done request [$_command]"
         fi
+        #  Show request results
+        _show_assertion_results REQUEST
         _notify_execution REQUEST
+        #  Reset request variables
+        _reset_req_vars
+        _shttp_assertions=0
+        _shttp_failures=0
     done
     _shttp_request_index=0
 }
@@ -1266,7 +1283,7 @@ _execute() {
 #  If the variable was set via
 #+ options, the value will not
 #+ change.
-_init_vars() {
+_reset_req_vars() {
     _shttp_url=""
     _shttp_method=""
     _shttp_base_path=""
@@ -1277,20 +1294,11 @@ _init_vars() {
     _shttp_query_params=()
     _shttp_curl_opts=()
     _shttp_output=""
-    if [[ "$_shttp_input_params" != *"--local"* ]]; then
-        _shttp_protocol=""
-        _shttp_domain=""
-    fi
-    if [[ "$_shttp_input_params" != *"--cred"* ]] \
-        && [[ "$_shttp_input_params" != *"--auth-"* ]]; then
-        _shttp_auth_credential=""
-    fi
-    if [[ "$_shttp_input_params" != *"--auth-"* ]]; then
-        _shttp_auth_mode=""
-    fi
-    if [[ "$_shttp_input_params" != *"--open"* ]]; then
-        _shttp_editor_command=""
-    fi
+    _shttp_protocol=""
+    _shttp_domain=""
+    _shttp_auth_credential=""
+    _shttp_auth_mode=""
+    _shttp_editor_command=""
 }
 
 #  Put default values to empty

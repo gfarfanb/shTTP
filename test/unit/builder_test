@@ -7,35 +7,35 @@
 url "https://any.host/any/endpoint"
 #  shellcheck disable=SC2154
 assertEquals "Set URL does not work" "https://any.host/any/endpoint" "$_shttp_url"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set protocol
 protocol ftp
 #  shellcheck disable=SC2154
 assertEquals "Set protocol does not work" "ftp" "$_shttp_protocol"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set domain
 domain "0.0.0.0:0000"
 #  shellcheck disable=SC2154
 assertEquals "Set domain does not work" "0.0.0.0:0000" "$_shttp_domain"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set endpoint
 basePath "api/path"
 #  shellcheck disable=SC2154
 assertEquals "Set base path does not work" "api/path" "$_shttp_base_path"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set endpoint
 endpoint "id/test"
 #  shellcheck disable=SC2154
 assertEquals "Set endpoint does not work" "id/test" "$_shttp_endpoint"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set method
@@ -67,7 +67,7 @@ method "OPTIONS"
 #  shellcheck disable=SC2154
 assertEquals "Method 'OPTIONS' not found" "OPTIONS" "$_shttp_method"
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Set headers
@@ -75,7 +75,7 @@ headers "Header-1: test/1" "Header-2: test/2" "Header-3: test/3"
 #  shellcheck disable=SC2154
 _length=${#_shttp_headers[@]}
 assertEquals "Set headers does not work" 3 "$_length"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set body
@@ -83,19 +83,19 @@ body '{' '"key": "value"' ',' '"name": "test"' '}'
 #  shellcheck disable=SC2154
 _length=${#_shttp_body[@]}
 assertEquals "Set body does not work" 5 "$_length"
-_init_vars
+_reset_req_vars
 
 body 0 '5t' 'Lorem ipsum'
 _content="${_shttp_body[*]}"
 _length=${#_content}
 assertEquals "Set body does not work" 59 "$_length"
-_init_vars
+_reset_req_vars
 
 body 0 '110s' 'Lorem ipsum'
 _content="${_shttp_body[*]}"
 _length=${#_content}
 assertTrue "Set body does not work" "$_length -ge 110"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set form
@@ -103,7 +103,7 @@ form "key=value" "name=test"
 #  shellcheck disable=SC2154
 _length=${#_shttp_form[@]}
 assertEquals "Set form does not work" 2 "$_length"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set query parameters
@@ -111,7 +111,7 @@ queryParams "key=value" "name=test"
 #  shellcheck disable=SC2154
 _length=${#_shttp_query_params[@]}
 assertEquals "Set query parameters does not work" 2 "$_length"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set cURL options
@@ -119,7 +119,7 @@ curlOpts "--basic" "-u user:password"
 #  shellcheck disable=SC2154
 _length=${#_shttp_curl_opts[@]}
 assertEquals "Set cURL options does not work" 2 "$_length"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set authorization mode
@@ -139,14 +139,14 @@ authMode "SKIP"
 #  shellcheck disable=SC2154
 assertEquals "'SKIP' mode not found" "SKIP" "$_shttp_auth_mode"
 
-_init_vars
+_reset_req_vars
 
 
 #  -test Set authentication credential
 credential 'user'
 #  shellcheck disable=SC2154
 assertEquals "Set credential does not work" "user" "$_shttp_auth_credential"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set request execution times
@@ -160,14 +160,14 @@ _shttp_request_times=0
 editor 'vim script'
 #  shellcheck disable=SC2154
 assertEquals "Set editor command does not work" "vim script" "$_shttp_editor_command"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set output
 output 'output/response'
 #  shellcheck disable=SC2154
 assertEquals "Set output does not work" "output/response" "$_shttp_output"
-_init_vars
+_reset_req_vars
 
 
 #  -test Set environment

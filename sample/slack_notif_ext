@@ -12,7 +12,8 @@
 proceed_notif() {
     local _level=${1:-}
     local _message=${2:-}
-    local _slack="https://hooks.slack.com/services/$( get slackSrv )"
+    local _slack=""
+    _slack="https://hooks.slack.com/services/$( get slackSrv )"
     case "$_level" in
 		INFO) 
 			local _icon=":information_source:"
@@ -27,7 +28,12 @@ proceed_notif() {
       		local _icon=":grey_exclamation:"
       	;;
   	esac
+  	#  shellcheck disable=SC2154
     curl -X POST -H "Content-type: application/json" \
-        --data "{\"text\":\"${_icon} ${_message}\",\"username\":\"${_shttp_basename%.*}\",\"icon_emoji\":\":slack:\"}" \
- 		$_slack
+        --data "{
+            \"text\":\"$_icon $_message\",
+            \"username\":\"${_shttp_basename%.*}\",
+            \"icon_emoji\":\":slack:\"
+            }" \
+ 		"$_slack"
 }

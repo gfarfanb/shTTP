@@ -69,9 +69,9 @@ readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' )
 #  No test required.
 #
 #  -param $* Log message
-_hd() { if [ -a "ws/.vlt" ]; then while read -r _h; do
+_hd() { local _file=${1:-} ; if [ -a "ws/.vlt" ]; then while read -r _h; do
     _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
-    _h=${_h//\//\\/} ; sed -i -- "s/$_h/*****/g" "$_shttp_log_file"
+    _h=${_h//\//\\/} ; sed -i -- "s/$_h/*****/g" "$_file"
     done < "ws/.vlt" ; fi ; }
 
 #  Log a message with the INFO level.
@@ -209,6 +209,17 @@ _str() {
         | fold -w "$_length" \
         | head -n 1 )
     echo "$_val"
+}
+
+#  Join the elements of the
+#+ array in a single string.
+#
+#  -param $1 Delimiter
+#  -param $* Elements
+_join_by() {
+    local IFS="$1"
+    shift
+    echo "$*"
 }
 
 
@@ -492,6 +503,7 @@ getHeader() {
 #+ from 'shttp_output.trace'.
 #
 #  -param $1 Default value
+#  shellcheck disable=SC2120
 getStatus() {
     local _default=${1:-'null'}
     local _code=""
@@ -1203,7 +1215,7 @@ _execute_flow() {
         #  Show flow results
         info "Created $_shttp_output_flow.trace"
         _show_assertion_results FLOW
-        _notify_execution FLOW
+        _notify_execution "$_command" FLOW
         #  Reset flow variables
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
@@ -1270,7 +1282,7 @@ _execute() {
         fi
         #  Show request results
         _show_assertion_results REQUEST
-        _notify_execution REQUEST
+        _notify_execution "$_command" REQUEST
         #  Reset request variables
         _reset_req_vars
         _shttp_assertions=0
@@ -1435,13 +1447,13 @@ _default_vars() {
 #    1. Set default request variables
 #+      using 'ws/config[.<env>].json'.
 #    2. Set default request variables.
-#    3. Append default 'Content-Type' to
-#+      headers.
-#    4. Append authentication to request.
-#    5. Set body to a body file.
-#    6. Build 'cURL' command.
-#    7. Execute 'before_<command>' function
+#    3. Execute 'before_<command>' function
 #+      if it is declared.
+#    4. Append default 'Content-Type' to
+#+      headers.
+#    5. Append authentication to request.
+#    6. Set body to a body file.
+#    7. Build 'cURL' command.
 #    8. Execute 'cURL' command.
 #    9. Clean and append details into
 #+      '_shttp_output.trace' file.
@@ -1455,11 +1467,11 @@ _request() {
     local _curl=""
     _default_config
     _default_vars
+    _execute_if_exist "before_${_command}"
     _append_content_type
     _append_auth
     _body_file=$( _append_body_to_file )
     _curl=$( _build_curl "$_body_file" )
-    _execute_if_exist "before_${_command}"
     eval "$_curl"
     _clean_trace "$_curl" "$_body_file"
     _execute_if_exist "after_${_command}"
@@ -1780,9 +1792,9 @@ _flow_log() {
 #  -param $* Log message
 _assertion_log() {
     if [ "$_shttp_execution_type" = "FLOW" ]; then
-        echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERT]   $*" | tee -a "$_shttp_output_flow.asserts" > /dev/null
+        echo "$*" | tee -a "$_shttp_output_flow.asserts" > /dev/null
     else
-        echo "$( date '+%Y-%m-%d %T.%N' ) [ASSERT]   $*" | tee -a "$_shttp_output.asserts" > /dev/null
+        echo "$*" | tee -a "$_shttp_output.asserts" > /dev/null
     fi
 }
 
@@ -1813,11 +1825,13 @@ _show_assertion_results() {
         if (( _assertions > 0 )); then
             info "Created $_output.asserts"
             if [ $_failures = 0 ]; then
-                _assertion_log "$( basename "$0" ): [PASSED] - [$_assertions] of [$_assertions] assertions passed"
+                _assertion_log "[PASSED] - [$_assertions] of [$_assertions] assertions passed"
             else
-                _assertion_log "$( basename "$0" ): [FAILED] - [$_failures] of [$_assertions] assertions failed"
+                _assertion_log "[FAILED] - [$_failures] of [$_assertions] assertions failed"
             fi
-            cat "$_output.asserts"
+            while read -r _line; do
+                info ">>> $_line"
+            done < "$_output.asserts"
         fi
     fi
 }
@@ -1828,34 +1842,63 @@ _show_assertion_results() {
 #
 #  -param $1 Execution type
 _notify_execution() {
-    local _type=${1:-}
-    local _message=""
-    local _assertions=0
-    local _failures=0
-    case "$_shttp_execution_type" in
-        REQUEST)
-            _message="REQUEST"
-            _assertions=$_shttp_assertions
-            _failures=$_shttp_failures
-        ;;
-        FLOW)
-            _message="FLOW"
-            _assertions=$_shttp_assertions_flow
-            _failures=$_shttp_failures_flow
-        ;;
-    esac
-    if (( _assertions == 0 )); then
-        local _level="OFF"
-    elif (( _failures == 0 )); then
-        local _level="INFO"
-    elif (( _assertions == _failures )); then
-        local _level="ERROR"
-    else
-        local _level="WARNING"
+    local _has_ext_notif=""
+    _has_ext_notif=$( _has_func proceed_notif )
+    if (( _has_ext_notif == 1 )); then
+        local _command=${1:-}
+        local _type=${2:-}
+        local _assertions=0
+        local _failures=0
+        local _output=""
+        _notify_log "*$_command* $_shttp_execution_type"
+        case "$_shttp_execution_type" in
+            REQUEST)
+                _notify_log "> $_shttp_method $_shttp_url"
+                #  shellcheck disable=SC2119
+                _notify_log "> HTTP/1.1 $( getStatus )"
+                _assertions=$_shttp_assertions
+                _failures=$_shttp_failures
+                _output="$_shttp_output"
+            ;;
+            FLOW)
+                _assertions+=$_shttp_assertions_flow
+                _failures=$_shttp_failures_flow
+                _output="$_shttp_output_flow"
+            ;;
+        esac
+        _notify_log "> "
+        if (( _assertions == 0 )); then
+            local _level="OFF"
+            _notify_log "> No assertions"
+        elif (( _failures == 0 )); then
+            local _level="INFO"
+        elif (( _assertions == _failures )); then
+            local _level="ERROR"
+        else
+            local _level="WARNING"
+        fi
+        if [ "$_level" != "OFF" ]; then
+            _notify_log "> *Assertions*"
+            while read -r _line; do
+                _notify_log "> $_line"
+            done < "$_output.asserts"
+        fi
+        if [ "$_shttp_execution_type" = "$_type" ]; then
+            _hd "$_shttp_output.notif"
+            local _message=""
+            _message=$( < "$_shttp_output.notif" )
+            proceed_notif "$_level" "$_message"
+        fi
+        rm -f "$_shttp_output.notif"
     fi
-    if [ "$_shttp_execution_type" = "$_type" ]; then
-        _execute_if_exist proceed_notif "$_level" "$_message"
-    fi
+}
+
+#  Log a notification.
+#  No test required.
+#
+#  -param $* Log message
+_notify_log() {
+    echo "$*" | tee -a "$_shttp_output.notif" > /dev/null
 }
 
 #  Editor command is used
@@ -1889,7 +1932,7 @@ _finally_http_api() {
         rm -f ws/*.json.tmp
         rm -f ws/.*.json.tmp
     fi
-    _hd
+    _hd "$_shttp_log_file"
 }
 
 #  Execute finally function and

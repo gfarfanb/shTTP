@@ -30,3 +30,9 @@ for (( _i=1; _i<=100; _i++ )); do
 done
 
 assertEquals "Random repeated values found" 100 "${#_generated_strings[@]}"
+
+
+#  -test Join by
+_elements_parts=( "127" "0" "0" "1" )
+_localhost=$( _join_by '.' "${_elements_parts[@]}" )
+assertEquals "Joining does not work" "127.0.0.1" "$_localhost"

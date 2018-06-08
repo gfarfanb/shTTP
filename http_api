@@ -71,7 +71,7 @@ readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' )
 #  -param $* Log message
 _hd() { if [ -a "ws/.vlt" ]; then while read -r _h; do
     _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
-    sed -i -- "s/$_h/*****/g" "$_shttp_log_file"
+    _h=${_h//\//\\/} ; sed -i -- "s/$_h/*****/g" "$_shttp_log_file"
     done < "ws/.vlt" ; fi ; }
 
 #  Log a message with the INFO level.
@@ -1830,16 +1830,31 @@ _show_assertion_results() {
 _notify_execution() {
     local _type=${1:-}
     local _message=""
+    local _assertions=0
+    local _failures=0
     case "$_shttp_execution_type" in
         REQUEST)
             _message="REQUEST"
+            _assertions=$_shttp_assertions
+            _failures=$_shttp_failures
         ;;
         FLOW)
             _message="FLOW"
+            _assertions=$_shttp_assertions_flow
+            _failures=$_shttp_failures_flow
         ;;
     esac
+    if (( _assertions == 0 )); then
+        local _level="OFF"
+    elif (( _failures == 0 )); then
+        local _level="INFO"
+    elif (( _assertions == _failures )); then
+        local _level="ERROR"
+    else
+        local _level="WARNING"
+    fi
     if [ "$_shttp_execution_type" = "$_type" ]; then
-        _execute_if_exist proceed_notif "$_message"
+        _execute_if_exist proceed_notif "$_level" "$_message"
     fi
 }
 
@@ -2232,11 +2247,14 @@ expr "$*" : ".*--del" > /dev/null \
 #  -param $1 Option
 #  -param $2 Name of the entry
 #  -param $3 Value of the entry
+#  -param $4 Secure type:
+#+           [PRIVATE | PUBLIC]
 _add_config() {
     local _opt=${1:-}
     local _name=${2:-}
     local _val=${3:-}
-    put "$_name" "$_val"
+    local _sec_type=${4:-"PUBLIC"}
+    put "$_name" "$_val" "$_sec_type"
 }
 _register_opt --add _add_config MANAGE
 expr "$*" : ".*--add" > /dev/null \
@@ -2283,10 +2301,13 @@ expr "$*" : ".*--remove" > /dev/null \
 #  -param $1 Option
 #  -param $2 Part name or value
 #  -param $3 Part value
+#  -param $4 Secure type:
+#+           [PRIVATE | PUBLIC]
 _add_part() {
     local _opt=${1:-}
     local _part=${2:-}
     local _val=${3:-}
+    local _sec_type=${4:-"PRIVATE"}
     case "$_part" in
         -u)
             _part="username"
@@ -2304,7 +2325,7 @@ _add_part() {
             _part="token"
         ;;
     esac
-    putPart "$_part" "$_val"
+    putPart "$_part" "$_val" "$_sec_type"
 }
 _register_opt --part _add_part MANAGE
 expr "$*" : ".*--part" > /dev/null \

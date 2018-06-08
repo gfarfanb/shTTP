@@ -1,0 +1,33 @@
+#! /usr/bin/env bash
+#  Enables Slack notifications.
+#  -author Giovanni Farfán B.
+
+
+#  This will be call inside of
+#+ '_notify_execution' execution
+#+ (as part of lifecycle execution).
+#
+#  -param $1 Notification level
+#  -param $2 Notification message
+proceed_notif() {
+    local _level=${1:-}
+    local _message=${2:-}
+    local _slack="https://hooks.slack.com/services/$( get slackSrv )"
+    case "$_level" in
+		INFO) 
+			local _icon=":information_source:"
+		;;
+    	WARNING)
+      		local _icon=":warning:"
+      	;;
+    	ERROR)
+      		local _icon=":rotating_light:"
+      	;;
+    	*)
+      		local _icon=":grey_exclamation:"
+      	;;
+  	esac
+    curl -X POST -H "Content-type: application/json" \
+        --data "{\"text\":\"${_icon} ${_message}\",\"username\":\"${_shttp_basename%.*}\",\"icon_emoji\":\":slack:\"}" \
+ 		$_slack
+}

@@ -1,6 +1,5 @@
 #! /usr/bin/env bash
-#  Global after tests.
-# 'MANUAL' authorization mode extension.
+#  Enables 'MANUAL' authorization mode extension.
 #  -author Giovanni Farfán B.
 
 

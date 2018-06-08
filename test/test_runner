@@ -34,9 +34,10 @@ readonly _test_basename=$( basename "$0" )
 # ---------- Logging functions
 
 #  Log filename.
-#
-#  -param $* Log message
 readonly _test_log_file="/tmp/shTTP_${_test_basename%.*}.$( date '+%Y-%m-%d' ).log"
+
+#  Failed log filenmae
+readonly _failed_log_file="/tmp/shTTP_${_test_basename%.*}.failed.$( date '+%s.%N' ).log"
 
 #  Log a message object with the INFO level.
 #
@@ -58,6 +59,11 @@ error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_test_log_f
 #
 #  -param $* Log message
 fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_test_log_file" >&2 ; exit 1 ; }
+
+#  Log a failed assertion.
+#
+#  -param $* Log message
+failed() { echo "$( date '+%Y-%m-%d %T.%N' ) [FAILED]  $*" | tee -a "$_failed_log_file" >&2 ; }
 
 
 # ---------- Option functions
@@ -110,7 +116,7 @@ _inc_asserts() {
 #  Print the failed test message and
 #+ increase the '_test_runner_failures' count.
 _fail() {
-    info ">>>   [FAILED]   $*"
+    failed ">>>   $*"
     _test_runner_failures=$(( _test_runner_failures+1 ))
 }
 
@@ -121,13 +127,17 @@ _fail() {
 #+ get an error.
 _finally_test_runner() {
     local _code=$?
+    if [ -f "$_failed_log_file" ]; then
+        cat "$_failed_log_file"
+        rm -f "$_failed_log_file"
+    fi
     if [ $_code != 0 ]; then
         error "$( basename "$0" ): [INTERRUPTED] - [$_test_runner_failures] of [$_test_runner_assertions] assertions failed"
     else
         if [ $_test_runner_failures = 0 ]; then
             info "$( basename "$0" ): [PASSED] - [$_test_runner_assertions] of [$_test_runner_assertions] assertions passed"
         else
-            info "$( basename "$0" ): [FAILED] - [$_test_runner_failures] of [$_test_runner_assertions] assertions failed"
+            warning "$( basename "$0" ): [FAILED] - [$_test_runner_failures] of [$_test_runner_assertions] assertions failed"
         fi
     fi
     #  shellcheck disable=SC1091

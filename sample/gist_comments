@@ -17,14 +17,14 @@ before_api() {
     warning "Flow discard execution of this function"
 }
 
-# ./gist_comment get_all
+#  ./gist_comment get_all
 get_all() {
     #  Only request method was required for call
     #+ and it was assigned on function name
     :
 }
 
-# ./gist_comment get_comment
+#  ./gist_comment get_comment
 get_comment() {
     #  Final URL takes <basePath><endpoint>
     endpoint "/$( get commentId )"
@@ -39,7 +39,7 @@ before_post_comment() {
     credential sample
 }
 
-# ./gist_comment post_comment
+#  ./gist_comment post_comment
 post_comment() {
     #  Explicit body assignation
     body '{ "body": "shTTP-samples comment" }'
@@ -58,7 +58,7 @@ after_post_comment() {
     put commentId '.id'
 }
 
-# ./gist_comment patch_comment
+#  ./gist_comment patch_comment
 patch_comment() {
     #  Explicit authorization mode assignation
     authMode HEADER
@@ -86,7 +86,7 @@ after_patch_comment() {
     areEquals "Unexpected status" "200" "$( getStatus )"
 }
 
-# ./gist_comment patch_comment --auth-header sample
+#  ./gist_comment patch_comment --auth-header sample
 delete_comment() {
     #  Final URL takes <basePath><endpoint>
     endpoint "/$( get commentId )"
@@ -119,22 +119,26 @@ before_flow() {
 #  This will be called before to execute the flow
 #+ but it is not show on the command list ('--list' option)
 before_flow_comment() {
-    info "This will be executed before 'flow_comment' call"
+    #  Set default options only if input parameters
+    #+ were not specified.
+    mainOpts --auth-header sample
 }
 
 #  Flow definition
 #
-# ./gist_comment flow_comment --auth-header sample
+#  ./gist_comment flow_comment
 flow_comment() {
     #  Flow step definition
     #  Internally it has defined credential and auth mode
     step post_comment
     #  Flow step definition
     #  Explicit credential and auth mode
+    #+ only if input parameters were not specified
     step patch_comment --auth-header sample
     #  Flow step definition
-    #  Inherit, from main call, credential and auth mode
-    step delete_comment
+    #  Explicit credential and auth mode
+    #+ only if input parameters were not specified
+    step delete_comment --auth-header sample
 }
 
 #  This will be called after to execute the flow

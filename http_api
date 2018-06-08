@@ -232,12 +232,14 @@ step() {
     local _command=${1:-}
     local _last_params="$_shttp_input_params"
     shift
-    if (( $# > 0 )); then
-        _shttp_input_params="${*}"
+    mainOpts "$@"
+    local _params=( $(echo "$_shttp_input_params" | tr " " "\n") )
+    local _length=${#_params[@]}
+    if (( _length > 0 )); then
+        for _opt in "${_shttp_request_opts[@]}"; do
+            _look_for_params "$_opt" "${_params[@]}" || continue
+        done
     fi
-    for _opt in "${_shttp_request_opts[@]}"; do
-        _look_for_params "$_opt" "$@" || continue
-    done
     _execute "$_command" "$_shttp_request_times"
     _shttp_input_params="$_last_params"
     _shttp_request_times=0
@@ -1075,6 +1077,22 @@ env() {
     info "Set [Credentials] with [$_shttp_creds]"
 }
 
+#  Explicitly sets parameters to 
+#+ '_shttp_input_params' only if
+#+ there are no input parameters
+#+ (command is discarded in the
+#+ parameters count).
+#
+#  -param $* Defined input parameters
+mainOpts() {
+    local _main_params=( $(echo "$_shttp_input_params" | tr " " "\n") )
+    local _main_length=${#_main_params[@]}
+    _main_length=$(( _main_length-1 ))
+    if (( _main_length < 1 )); then
+        _shttp_input_params="${*}"
+    fi
+}
+
 
 # ---------- Internal functions
 
@@ -1715,9 +1733,11 @@ _clean_trace() {
         echo ">>>>> body" | tee -a "$_shttp_output.trace" > /dev/null
         #  Append body content
         < "$_body_file" tee -a "$_shttp_output.trace" > /dev/null
+        printf '\n\n' | tee -a "$_shttp_output.trace" > /dev/null
         rm -f "$_body_file"
+    else
+        echo | tee -a "$_shttp_output.trace" > /dev/null
     fi
-    echo "" | tee -a "$_shttp_output.trace" > /dev/null
     echo ">>>>> curl" | tee -a "$_shttp_output.trace" > /dev/null
     #  Append CURL command
     #  shellcheck disable=SC2128

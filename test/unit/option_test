@@ -43,13 +43,13 @@ _commands=( $( _list_commands --list ) )
 _found=0
 for _command in "${_commands[@]}"; do
     case "$_command" in
-        info | warning | error | fatal)
+        info | warning | error | fatal | failed)
             _found=$(( _found+1 ))
         ;;
     esac
 done
 
-assertEquals "Command not found" 4 "$_found"
+assertEquals "Command not found" 5 "$_found"
 
 
 #  -test Copy environment

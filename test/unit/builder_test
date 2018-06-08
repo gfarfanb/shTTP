@@ -184,3 +184,19 @@ assertEquals "Credentials 'test' not found" "ws/credentials.test.json" "$_shttp_
 env
 rm -f ws/config.test.json
 rm -f ws/credentials.test.json
+
+
+#  -test Set options
+_shttp_input_params=""
+mainOpts --set a a --set b b
+_input_parameters=( $(echo "$_shttp_input_params" | tr " " "\n") )
+_input_length=${#_input_parameters[@]}
+assertEquals "Main options not set" 6 "$_input_length"
+
+_shttp_input_params="get_all --auth-header test"
+mainOpts --set a a --set b b
+_input_parameters=( $(echo "$_shttp_input_params" | tr " " "\n") )
+_input_length=${#_input_parameters[@]}
+assertEquals "Main options set" 3 "$_input_length"
+
+_shttp_input_params=""

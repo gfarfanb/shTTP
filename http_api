@@ -506,12 +506,7 @@ getHeader() {
 #  shellcheck disable=SC2120
 getStatus() {
     local _default=${1:-'null'}
-    local _code=""
-    _code=$( grep -e "^HTTP\/1.1" "$_shttp_output.trace" )
-    _code=$( echo "$_code" \
-        | xargs echo -n \
-        | cut -d\  -f 2 )
-    echo "$_code"
+    getHeader http_code "$_default"
 }
 
 
@@ -1706,37 +1701,9 @@ _append_body_to_file() {
 #  -return cURL command as string
 _build_curl() {
     local _body_file=${1:-}
-    echo " content_type:  %{content_type}\n
-        filename_effective:  %{filename_effective}\n
-        ftp_entry_path:  %{ftp_entry_path}\n
-        http_code:  %{http_code}\n
-        response_code:  %{response_code}\n
-        http_connect:  %{http_connect}\n
-        local_ip:  %{local_ip}\n
-        local_port:  %{local_port}\n
-        num_connects:  %{num_connects}\n
-        num_redirects:  %{num_redirects}\n
-        redirect_url:  %{redirect_url}\n
-        remote_ip:  %{remote_ip}\n
-        remote_port:  %{remote_port}\n
-        size_download:  %{size_download}\n
-        size_header:  %{size_header}\n
-        size_request:  %{size_request}\n
-        size_upload:  %{size_upload}\n
-        speed_download:  %{speed_download}\n
-        speed_upload:  %{speed_upload}\n
-        ssl_verify_result:  %{ssl_verify_result}\n
-        time_appconnect:  %{time_appconnect}\n
-        time_connect:  %{time_connect}\n
-        time_namelookup:  %{time_namelookup}\n
-        time_pretransfer:  %{time_pretransfer}\n
-        time_redirect:  %{time_redirect}\n
-        time_starttransfer:  %{time_starttransfer}\n
-        time_total:  %{time_total}\n
-        url_effective:  %{url_effective}\n" > "$_shttp_output.txt"
+    
     local _curl=(
         "curl -X $_shttp_method -s -v \\"
-        "-w \"@$_shttp_output.txt\" \\"
         "-o \"$_shttp_output.output\" \\"
     )
     local _length=${#_shttp_headers[@]}
@@ -1766,8 +1733,49 @@ _build_curl() {
             _curl+=( "$_opt \\" )
         done
     fi
+    _curl_format
+    _curl+=( "-w \"@$_shttp_output.format\" \\" )
     _curl+=( "$_shttp_url > \"$_shttp_output.trace\" 2>&1" )
     echo "${_curl[*]}"
+}
+
+#  Create the file format
+#+ for '--write-out' 'cURL'
+#+ option. The filename is
+#+ saved into 
+#+ '_shttp_output.format'.
+_curl_format() {
+    local _format="\n"
+    _format+="--content_type: %{content_type}\n"
+    _format+="--filename_effective: %{filename_effective}\n"
+    _format+="--ftp_entry_path: %{ftp_entry_path}\n"
+    _format+="--http_code: %{http_code}\n"
+    _format+="--response_code: %{response_code}\n"
+    _format+="--http_connect: %{http_connect}\n"
+    _format+="--local_ip: %{local_ip}\n"
+    _format+="--local_port: %{local_port}\n"
+    _format+="--num_connects: %{num_connects}\n"
+    _format+="--num_redirects: %{num_redirects}\n"
+    _format+="--redirect_url: %{redirect_url}\n"
+    _format+="--remote_ip: %{remote_ip}\n"
+    _format+="--remote_port: %{remote_port}\n"
+    _format+="--size_download: %{size_download}\n"
+    _format+="--size_header: %{size_header}\n"
+    _format+="--size_request: %{size_request}\n"
+    _format+="--size_upload: %{size_upload}\n"
+    _format+="--speed_download: %{speed_download}\n"
+    _format+="--speed_upload: %{speed_upload}\n"
+    _format+="--ssl_verify_result: %{ssl_verify_result}\n"
+    _format+="--time_appconnect: %{time_appconnect}\n"
+    _format+="--time_connect: %{time_connect}\n"
+    _format+="--time_namelookup: %{time_namelookup}\n"
+    _format+="--time_pretransfer: %{time_pretransfer}\n"
+    _format+="--time_redirect: %{time_redirect}\n"
+    _format+="--time_starttransfer: %{time_starttransfer}\n"
+    _format+="--time_total: %{time_total}\n"
+    _format+="--url_effective: %{url_effective}\n"
+    _format+="\n"
+    echo "$_format" > "$_shttp_output.format"
 }
 
 #  Get a request detail file
@@ -1803,11 +1811,7 @@ _clean_trace() {
     #  Append CURL command
     #  shellcheck disable=SC2128
     echo "$_curl" | tee -a "$_shttp_output.trace" > /dev/null
-    #local _write=""
-    #_write=$( < "$_shttp_output.txt" )
-    #printf "\n\n>>>>> variables\n" | tee -a "$_shttp_output.trace" > /dev/null
-    #echo "$_write" | tee -a "$_shttp_output.trace" > /dev/null
-    #rm -f "$_shttp_output.txt"
+    rm -f "$_shttp_output.format"
 }
 
 #  Log a message about flow

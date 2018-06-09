@@ -291,6 +291,8 @@ _response_trace=(
     "HTTP/1.1 200 OK"
     "Server: AnyHost.com"
     "Vary: Accept"
+    ""
+    "http_code: 200"
 )
 output "output/trace.$( date '+%s.%N' ).json.tmp"
 for _line in "${_response_trace[@]}"; do

@@ -531,7 +531,7 @@ _reset_req_vars
 #  -test Build cURL
 url "https://any.host/any/endpoint"
 method "POST"
-output "result"
+output "output/result"
 headers "Defined-Header: test/value"
 queryParams "param=value"
 form "key=value"
@@ -539,19 +539,29 @@ curlOpts "--basic" "-u user:password"
 
 _expected=(
     "curl -X POST -s -v \\"
-    "-o \"result.output\" \\"
+    "-o \"output/result.output\" \\"
     "-H \"Defined-Header: test/value\" \\"
     "-d \"param=value\" \\"
     "-F \"key=value\" \\"
     "--data-binary \"@ws/body_file.json.temp\" \\"
     "--basic \\"
     "-u user:password \\"
-    "https://any.host/any/endpoint > \"result.trace\" 2>&1"
+    "-w \"@output/result.format\" \\"
+    "https://any.host/any/endpoint > \"output/result.trace\" 2>&1"
 )
 _curl=$( _build_curl "ws/body_file.json.temp" )
 
 assertEquals "'cURL' command bad" "${_expected[*]}" "$_curl"
 
+_reset_req_vars
+
+
+#  -test cURL format
+output "output/format"
+_curl_format
+_write_out=$( < "output/format.format" )
+assertTrue "Output format not found" "-f \"output/format.format\""
+assertTrue "Output format content is empty" "-n \"$_write_out\""
 _reset_req_vars
 
 

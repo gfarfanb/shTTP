@@ -67,6 +67,8 @@ after_put_auth() {
     local _last_token=""
     #  Get a value from JSON response
     _last_token=$( getOutput token )
+    #  Assertion for true
+    isTrue "Token is already in use" "-n \"$_last_token\""
     #  Any bash code is allowed
     if [ -n "$_last_token" ]; then
         #  Put a value as credential part
@@ -127,6 +129,14 @@ delete_auth() {
     endpoint "/$( get authId )"
     #  Explicit header assignation
     headers "X-GitHub-OTP: $( get otp )"
+}
+
+#  This will be called after to execute the request
+#+ but it is not show on the command list ('--list' option)
+after_delete_auth() {
+    #  Assertion for equals
+    #  Get the HTTP response status
+    areEquals "Unexpected status" "204" "$( getStatus )"
 }
 
 #  This will be called after every request execution

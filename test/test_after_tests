@@ -7,6 +7,7 @@
 #  Clean-up generated directories
 #+ because 'http_api'
 rm -rf output
+rm -rf hist
 rm -rf ws
 
 

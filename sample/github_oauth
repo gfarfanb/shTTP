@@ -34,7 +34,7 @@ before_put_auth() {
     _fingerprint=$( _rev "$_fingerprint" )
     #  Put a configuration variable
     #  Discard private values for commit
-    put fingerprint "\"_fingerprint\"" PRIVATE
+    put fingerprint "\"$_fingerprint\"" PRIVATE
 }
 
 #  Set required configuration variable via

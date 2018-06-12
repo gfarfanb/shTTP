@@ -126,6 +126,12 @@ if ! [ -d output ]; then
     mkdir output || fatal "Imposible to create 'output' directory"
 fi
 
+#  Output directory for execution
+#+ history.
+if ! [ -d hist ]; then
+    mkdir hist || fatal "Imposible to create 'hist' directory"
+fi
+
 #  Workspace directory for data
 #+ execution
 if ! [ -d ws ]; then
@@ -238,9 +244,10 @@ _join_by() {
 #+ inside a flow function.
 #  This is the step process:
 #    1. Execute option functions
-#+      based on input parameters.
-#    2. Execute request command.
-#    3. Reset request variables.
+#+      based on input parameters
+#    2. Log executed step
+#    3. Execute request command
+#    4. Reset request variables
 #
 #  -param $1 Request command
 #  -param $@ Request options
@@ -256,6 +263,7 @@ step() {
             _look_for_params "$_opt" "${_params[@]}" || continue
         done
     fi
+    _step_log "$_command"
     _execute "$_command"
     _shttp_input_params="$_last_params"
 }
@@ -748,6 +756,16 @@ _shttp_request_times=0
 #+ of the request.
 _shttp_editor_command=""
 
+#  Request execution date with
+#+ the following format:
+#+ yymmdd.hhmmss.000000000
+_shttp_date=""
+
+#  Request execution date with
+#+ the following format:
+#+ yymmdd.hhmmss.000000000
+_shttp_date_flow=""
+
 #  Response output base filename.
 #  During request this filename
 #+ will be used for make files:
@@ -1161,19 +1179,21 @@ _execute_if_exist() {
 }
 
 #  Execute flow lifecycle:
-#    1. Set flow tag.
-#    2. Set output flow basename.
+#    1. Set flow date
+#    1. Set flow tag
+#    2. Set output flow basename
 #    3. Execute 'before_flow' function
-#+      if it is declared.
+#+      if it is declared
 #    4. Execute 'before_<flow>' function
-#+      if it is declared.
-#    5. Execute the flow.
+#+      if it is declared
+#    5. Execute the flow
 #    6. Execute 'after_<flow>' function
-#+      if it is declared.
+#+      if it is declared
 #    7. Execute 'after_flow' function
-#+      if it is declared.
-#    8. Show assertion results.
-#    8. Notify flow execution.
+#+      if it is declared
+#    8. Save flow to history
+#    9. Show assertion results
+#    10. Notify flow execution
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number.
@@ -1189,6 +1209,7 @@ _execute_flow() {
     fi
     for (( _flow_idx=1; _flow_idx<=_times; _flow_idx++ )); do
         #  Initialize output flow variables
+        _shttp_date_flow=$( date '+%Y-%m-%d %T.%N %z' )
         _shttp_flow_tag="$( date '+%s-%N' )"
         mkdir "output/flow$_shttp_flow_tag"
         _shttp_output_flow="output/flow$_shttp_flow_tag/$( basename "$0" ).main"
@@ -1209,6 +1230,7 @@ _execute_flow() {
         _flow_log "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
         #  Show flow results
         info "Created $_shttp_output_flow.trace"
+        _save_history "$_command" FLOW
         _show_assertion_results FLOW
         _notify_execution "$_command" FLOW
         #  Reset flow variables
@@ -1221,20 +1243,22 @@ _execute_flow() {
 }
 
 #  Execute request lifecycle:
-#    1. Execute 'before_api' function
-#+      if it is declared.
-#    2. Execute the command.
-#    3. Set request method based on
+#    1. Set request date
+#    2. Execute 'before_api' function
+#+      if it is declared
+#    3. Execute the command
+#    4. Set request method based on
 #+      command name if it was not
 #+      assigned during the command
-#+      execution.
-#    4. Execute the request.
-#    5. Execute 'after_api' function
-#+      if it is declared.
-#    6. Execute open editor task.
-#    7. Show assertion results.
-#    8. Notify request execution.
-#    9. Reset request variables.
+#+      execution
+#    5. Execute the request
+#    6. Execute 'after_api' function
+#+      if it is declared
+#    7. Execute open editor task
+#    8. Save request to history
+#    9. Show assertion results
+#    10. Notify request execution
+#    11. Reset request variables
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number.
@@ -1250,6 +1274,7 @@ _execute() {
     fi
     for (( _req_idx=1; _req_idx<=_times; _req_idx++ )); do
         #  Initialize request variables
+        _shttp_date=$( date '+%Y-%m-%d %T.%N %z' )
         _shttp_request_index="$_req_idx"
         _shttp_assertions=0
         _shttp_failures=0
@@ -1276,6 +1301,7 @@ _execute() {
             info "$_req_idx: Done request [$_command]"
         fi
         #  Show request results
+        _save_history "$_command" REQUEST
         _show_assertion_results REQUEST
         _notify_execution "$_command" REQUEST
         #  Reset request variables
@@ -1416,8 +1442,8 @@ _default_config() {
 #+      <protocol>://<domain><base-path><endpoint>
 #    3. '_shttp_auth_mode': 'SKIP'
 #    4. '_shttp_output': 
-#+      'output/<main-script>.yymmdd.hhmmss.\d{9}'
-#+      'output/flow<flow-tag>/<main-script>.yymmdd.hhmmss.\d{9}'
+#+      'output/<main-script>.<date>'
+#+      'output/flow<flow-tag>/<main-script>.<date-flow>'
 _default_vars() {
     if [ -z "$_shttp_protocol" ]; then
         protocol "https"
@@ -1429,10 +1455,13 @@ _default_vars() {
         authMode "SKIP"
     fi
     if [ -z "$_shttp_output" ]; then
+        local _date=""
         if [ "$_shttp_execution_type" = "FLOW" ]; then
-            output "output/flow$_shttp_flow_tag/$( basename "$0" ).$( date '+%y%m%d.%H%M%S.%N' )"
+            _date=$( date -d "$_shttp_date_flow" '+%y%m%d.%H%M%S.%N' )
+            output "output/flow$_shttp_flow_tag/$( basename "$0" ).$_date"
         else
-            output "output/$( basename "$0" ).$( date '+%y%m%d.%H%M%S.%N' )"
+            _date=$( date -d "$_shttp_date" '+%y%m%d.%H%M%S.%N' )
+            output "output/$( basename "$0" ).$_date"
         fi
     fi
 }
@@ -1440,20 +1469,20 @@ _default_vars() {
 #  This lifecycle function is called
 #+ for request execution:
 #    1. Set default request variables
-#+      using 'ws/config[.<env>].json'.
-#    2. Set default request variables.
+#+      using 'ws/config[.<env>].json'
+#    2. Set default request variables
 #    3. Execute 'before_<command>' function
-#+      if it is declared.
+#+      if it is declared
 #    4. Append default 'Content-Type' to
-#+      headers.
+#+      headers
 #    5. Append authentication to request.
-#    6. Set body to a body file.
-#    7. Build 'cURL' command.
-#    8. Execute 'cURL' command.
+#    6. Set body to a body file
+#    7. Build 'cURL' command
+#    8. Execute 'cURL' command
 #    9. Clean and append details into
-#+      '_shttp_output.trace' file.
+#+      '_shttp_output.trace' file
 #    10. Execute 'after_<command>' function
-#+       if it is declared.
+#+       if it is declared
 #
 #  -param $1 Request command
 _request() {
@@ -1824,6 +1853,15 @@ _flow_log() {
     echo "$( date '+%Y-%m-%d %T.%N' ) [FLOW]   $*" | tee -a "$_shttp_output_flow.trace" > /dev/null
 }
 
+#  Log a step flow into
+#+ '_shttp_output_flow.steps'.
+#  No test required.
+#
+#  -param $* Command step
+_step_log() {
+    echo "$*" | tee -a "$_shttp_output_flow.steps" > /dev/null
+}
+
 #  Log a message about assertion fail
 #+ into '_shttp_output.asserts'.
 #  No test required.
@@ -1873,6 +1911,72 @@ _show_assertion_results() {
             done < "$_output.asserts"
         fi
     fi
+}
+
+#  Saves the execution history
+#+ into JSON output files. This
+#+ information must used for
+#+ API monitoring.
+#
+#  -param $1 Request command/flow
+#  -param $2 Execution type
+_save_history() {
+    local _command=${1:-}
+    local _type=${2:-}
+    local _output=""
+    local _hist=""
+    case "$_type" in
+        REQUEST)
+            _output="$_shttp_output"
+            local _time=""
+            _time=$( getHeader time_total )
+            local _entry="
+                \"date\": \"$_shttp_date\",
+                \"assertions\": $_shttp_assertions,
+                \"failures\": $_shttp_failures,
+                \"timeTotal\": $_time,"
+        ;;
+        FLOW)
+            _output="$_shttp_output_flow"
+            local _steps=""
+            if [ -f "$_output.steps" ]; then
+                while read -r _step; do
+                    _steps+="\"$_step\","
+                done < "$_output.steps"
+                if [ -n "$_steps" ]; then
+                    _steps="${_steps::-1}"
+                fi
+            fi
+            local _entry="
+                \"date\": \"$_shttp_date_flow\",
+                \"assertions\": $_shttp_assertions_flow,
+                \"failures\": $_shttp_failures_flow,
+                \"steps\": [ $_steps ],"
+        ;;
+    esac
+    _hist="${_shttp_basename%.*}"
+    if ! [ -d "hist/$_hist" ]; then
+        mkdir "hist/$_hist"
+    fi
+    if ! [ -f "hist/$_hist/$_command.json" ]; then
+        echo "{
+            \"api\": \"$_hist\",
+            \"command\": \"$_command\",
+            \"type\": \"$_type\",
+            \"data\": []
+        }" > "hist/$_hist/$_command.json"
+    fi
+    local _failed=""
+    if [ -f "$_output.asserts" ]; then
+        while read -r _line; do
+            failed+="\"$_line\","
+        done < "$_output.asserts"
+        if [ -n "$_failed" ]; then
+            _failed="${_failed::-1}"
+        fi
+    fi
+    _entry+="\"failed\": [ $_failed ]"
+    update "hist/$_hist/$_command.json" ".data+=[{ $_entry }]"
 }
 
 #  Takes an snapshot of the

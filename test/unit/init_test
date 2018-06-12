@@ -7,6 +7,10 @@
 assertTrue "Output directory not found" "-d output"
 
 
+#  -test History directory exists
+assertTrue "History directory not found" "-d hist"
+
+
 #  -test Workspace directory exists
 assertTrue "Workspace directory not found" "-d ws"
 

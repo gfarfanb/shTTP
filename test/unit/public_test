@@ -4,6 +4,7 @@
 
 
 #  -test Request step flow
+_shttp_output_flow="output/flow"
 _step_executed="Not executed yet"
 get_repo_step() {
     url "http://127.0.0.1:5555/info"
@@ -11,6 +12,8 @@ get_repo_step() {
 }
 step get_repo_step
 assertEquals "'step_get_repo' not executed" "Executed-step" "$_step_executed"
+#  shellcheck disable=SC2034
+_shttp_output_flow=""
 
 
 #  -beforeTests

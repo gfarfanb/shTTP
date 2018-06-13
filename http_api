@@ -538,7 +538,7 @@ isTrue() {
     if [ $_ok = 0 ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "[ $_condition ]: $_message"
+        _failed_log "[ $_condition ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -558,7 +558,7 @@ isFalse() {
     if [ $_ok = 0 ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "! [ $_condition ]: $_message"
+        _failed_log "! [ $_condition ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -577,7 +577,7 @@ areEquals() {
     if [ "$_expected" != "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "[ $_expected = $_actual ]: $_message"
+        _failed_log "[ $_expected = $_actual ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -596,7 +596,7 @@ areNotEquals() {
     if [ "$_expected" = "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "[ $_expected != $_actual ]: $_message"
+        _failed_log "[ $_expected != $_actual ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -615,7 +615,7 @@ isLike() {
     if ! [[ "$_actual" =~ $_expected ]]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "[[ $_actual =~ $_expected ]]: $_message"
+        _failed_log "[[ $_actual =~ $_expected ]]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -634,7 +634,7 @@ isNotLike() {
     if [[ "$_actual" =~ $_expected ]]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "! [[ $_actual =~ $_expected ]]: $_message"
+        _failed_log "! [[ $_actual =~ $_expected ]]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -651,7 +651,7 @@ isNull() {
     if [ "$_actual" != "null" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "[ $_actual = null ]: $_message"
+        _failed_log "[ $_actual = null ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -668,7 +668,7 @@ isNotNull() {
     if [ "$_actual" = "null" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
-        _assertion_log "[ $_actual != null ]: $_message"
+        _failed_log "[ $_actual != null ]: $_message"
     fi
     _shttp_assertions=$(( _shttp_assertions+1 ))
     _shttp_assertions_flow=$(( _shttp_assertions_flow+1 ))
@@ -752,6 +752,9 @@ _shttp_auth_mode=""
 #+      'keyParam', 'secretParam'
 _shttp_auth_credential=""
 
+#  Current request command.
+_shttp_current_request=""
+
 #  Number of request executions.
 _shttp_request_times=0
 
@@ -774,7 +777,7 @@ _shttp_date_flow=""
 #  During request this filename
 #+ will be used for make files:
 #+ '<output>.output', '<output>.trace'
-#+ and '<output>.asserts'.
+#+ and '<output>.failed'.
 _shttp_output=""
 
 #  Response output base filename
@@ -782,7 +785,7 @@ _shttp_output=""
 #  During request this filename
 #+ will be used for make files:
 #+ '<output>.trace' and 
-#+ '<output>.asserts'.
+#+ '<output>.failed'.
 _shttp_output_flow=""
 
 #  Flow tag for identify output
@@ -1243,6 +1246,8 @@ _execute_flow() {
         _shttp_flow_tag=""
         _shttp_output_flow=""
     done
+    _shttp_date_flow=""
+    _shttp_flow_tag=""
     _shttp_flow_index=0
 }
 
@@ -1278,6 +1283,7 @@ _execute() {
     fi
     for (( _req_idx=1; _req_idx<=_times; _req_idx++ )); do
         #  Initialize request variables
+        _shttp_current_request="$_command"
         _shttp_date=$( date '+%Y-%m-%d %T.%N %z' )
         _shttp_request_index="$_req_idx"
         _shttp_assertions=0
@@ -1286,7 +1292,6 @@ _execute() {
         if [ "$_shttp_execution_type" = "FLOW" ]; then
             info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init request [$_command]"
             _flow_log "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init request [$_command]"
-            _assertion_log "Request [$_command]"
         else
             info "$_req_idx: Init request [$_command]"
         fi
@@ -1313,6 +1318,8 @@ _execute() {
         _shttp_assertions=0
         _shttp_failures=0
     done
+    _shttp_current_request=""
+    _shttp_date=""
     _shttp_request_index=0
 }
 
@@ -1460,11 +1467,10 @@ _default_vars() {
     fi
     if [ -z "$_shttp_output" ]; then
         local _date=""
+        _date=$( date -d "$_shttp_date" '+%y%m%d.%H%M%S.%N' )
         if [ "$_shttp_execution_type" = "FLOW" ]; then
-            _date=$( date -d "$_shttp_date_flow" '+%y%m%d.%H%M%S.%N' )
             output "output/flow$_shttp_flow_tag/$( basename "$0" ).$_date"
         else
-            _date=$( date -d "$_shttp_date" '+%y%m%d.%H%M%S.%N' )
             output "output/$( basename "$0" ).$_date"
         fi
     fi
@@ -1901,10 +1907,10 @@ _save_history() {
         }" > "hist/$_hist/$_command.json"
     fi
     local _failed=""
-    if [ -f "$_output.asserts" ]; then
+    if [ -f "$_output.failed" ]; then
         while read -r _line; do
-            failed+="\"$_line\","
-        done < "$_output.asserts"
+            _failed+="\"$_line\","
+        done < "$_output.failed"
         if [ -n "$_failed" ]; then
             _failed="${_failed::-1}"
         fi
@@ -1972,15 +1978,17 @@ _show_assertion_results() {
     esac
     if [ "$_shttp_execution_type" = "$_type" ]; then
         if (( _assertions > 0 )); then
-            info "Created $_output.asserts"
-            if [ $_failures = 0 ]; then
-                _assertion_log "[PASSED] - [$_assertions] of [$_assertions] assertions passed"
-            else
-                _assertion_log "[FAILED] - [$_failures] of [$_assertions] assertions failed"
+            if [ -f "$_output.failed" ]; then
+                info "Created $_output.failed"
+                while read -r _line; do
+                    info ">>> $_line"
+                done < "$_output.failed"
             fi
-            while read -r _line; do
-                info ">>> $_line"
-            done < "$_output.asserts"
+            if [ $_failures = 0 ]; then
+                info "[PASSED] - [$_assertions] of [$_assertions] assertions passed"
+            else
+                warning "[FAILED] - [$_failures] of [$_assertions] assertions failed"
+            fi
         fi
     fi
 }
@@ -2013,6 +2021,13 @@ _notify_execution() {
                 _assertions+=$_shttp_assertions_flow
                 _failures=$_shttp_failures_flow
                 _output="$_shttp_output_flow"
+                if [ -f "$_output.steps" ]; then
+                    _notify_log "> "
+                    _notify_log "> *Steps*"
+                    while read -r _line; do
+                        _notify_log "> $_line"
+                    done < "$_output.steps"
+                fi
             ;;
         esac
         _notify_log "> "
@@ -2027,10 +2042,12 @@ _notify_execution() {
             local _level="WARNING"
         fi
         if [ "$_level" != "OFF" ]; then
-            _notify_log "> *Assertions*"
-            while read -r _line; do
-                _notify_log "> $_line"
-            done < "$_output.asserts"
+            if [ -f "$_output.failed" ]; then
+                _notify_log "> *Assertions*"
+                while read -r _line; do
+                    _notify_log "> $_line"
+                done < "$_output.failed"
+            fi
         fi
         if [ "$_shttp_execution_type" = "$_type" ]; then
             _hd "$_shttp_output.notif"
@@ -2061,16 +2078,17 @@ _step_log() {
     echo "$*" | tee -a "$_shttp_output_flow.steps" > /dev/null
 }
 
-#  Log a message about assertion fail
-#+ into '_shttp_output.asserts'.
+#  Log a message about assertion
+#+ failed into '_shttp_output.failed'.
 #  No test required.
 #
 #  -param $* Log message
-_assertion_log() {
+_failed_log() {
     if [ "$_shttp_execution_type" = "FLOW" ]; then
-        echo "$*" | tee -a "$_shttp_output_flow.asserts" > /dev/null
+        echo "$_shttp_current_request: $*" | tee -a "$_shttp_output_flow.failed" > /dev/null
+        echo "$*" | tee -a "$_shttp_output.failed" > /dev/null
     else
-        echo "$*" | tee -a "$_shttp_output.asserts" > /dev/null
+        echo "$*" | tee -a "$_shttp_output.failed" > /dev/null
     fi
 }
 

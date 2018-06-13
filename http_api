@@ -497,10 +497,14 @@ getHeader() {
     local _default=${2:-'null'}
     local _val=""
     _header="$_header:"
-    _val=$( grep -e "^$_header" "$_shttp_output.trace" | tail -1 )
-    if [ -n "$_val" ]; then
-        _val=${_val/$_header/}
-        _val=$( echo "$_val" | xargs echo -n )
+    if [ -f "$_shttp_output.trace" ]; then
+        _val=$( grep -e "^$_header" "$_shttp_output.trace" | tail -1 )
+        if [ -n "$_val" ]; then
+            _val=${_val/$_header/}
+            _val=$( echo "$_val" | xargs echo -n )
+        else
+            _val="$_default"
+        fi
     else
         _val="$_default"
     fi
@@ -1843,76 +1847,6 @@ _clean_trace() {
     rm -f "$_shttp_output.format"
 }
 
-#  Log a message about flow
-#+ processing into
-#+ '_shttp_output_flow.trace'.
-#  No test required.
-#
-#  -param $* Log message
-_flow_log() {
-    echo "$( date '+%Y-%m-%d %T.%N' ) [FLOW]   $*" | tee -a "$_shttp_output_flow.trace" > /dev/null
-}
-
-#  Log a step flow into
-#+ '_shttp_output_flow.steps'.
-#  No test required.
-#
-#  -param $* Command step
-_step_log() {
-    echo "$*" | tee -a "$_shttp_output_flow.steps" > /dev/null
-}
-
-#  Log a message about assertion fail
-#+ into '_shttp_output.asserts'.
-#  No test required.
-#
-#  -param $* Log message
-_assertion_log() {
-    if [ "$_shttp_execution_type" = "FLOW" ]; then
-        echo "$*" | tee -a "$_shttp_output_flow.asserts" > /dev/null
-    else
-        echo "$*" | tee -a "$_shttp_output.asserts" > /dev/null
-    fi
-}
-
-#  Show assertion results if
-#+ assetion count is greater
-#+ than '0'.
-#  No test required.
-#
-#  -param $1 Execution type
-_show_assertion_results() {
-    local _type=${1:-}
-    local _assertions=0
-    local _failures=0
-    local _output=""
-    case "$_shttp_execution_type" in
-        REQUEST)
-            _assertions=$_shttp_assertions
-            _failures=$_shttp_failures
-            _output="$_shttp_output"
-        ;;
-        FLOW)
-            _assertions=$_shttp_assertions_flow
-            _failures=$_shttp_failures_flow
-            _output="$_shttp_output_flow"
-        ;;
-    esac
-    if [ "$_shttp_execution_type" = "$_type" ]; then
-        if (( _assertions > 0 )); then
-            info "Created $_output.asserts"
-            if [ $_failures = 0 ]; then
-                _assertion_log "[PASSED] - [$_assertions] of [$_assertions] assertions passed"
-            else
-                _assertion_log "[FAILED] - [$_failures] of [$_assertions] assertions failed"
-            fi
-            while read -r _line; do
-                info ">>> $_line"
-            done < "$_output.asserts"
-        fi
-    fi
-}
-
 #  Saves the execution history
 #+ into JSON output files. This
 #+ information must used for
@@ -1979,6 +1913,78 @@ _save_history() {
     update "hist/$_hist/$_command.json" ".data+=[{ $_entry }]"
 }
 
+#  Editor command is used
+#+ after request processing.
+#  The design was thinking
+#+ about to open request
+#+ results into file
+#+ editor and then process
+#+ it manually.
+#  Execution takes two steps:
+#    1. Variables resolution
+#+      if any exist in the
+#+      original definition.
+#    2. Command execution.
+_editor_command() {
+    if [ -n "$_shttp_editor_command" ]; then
+        eval "_shttp_editor_command=\"$_shttp_editor_command\""
+        info "Start [$_shttp_editor_command]"
+        eval "$_shttp_editor_command"
+    fi
+}
+
+#  Cleanup all temp JSON files from
+#+ workspace and hide private
+#+ data to log files.
+#  This function is called after
+#+ execute the main code or after
+#+ get an error.
+_finally_http_api() {
+    if [ -d ws ]; then
+        rm -f ws/*.json.tmp
+        rm -f ws/.*.json.tmp
+    fi
+    _hd "$_shttp_log_file"
+}
+
+#  Show assertion results if
+#+ assetion count is greater
+#+ than '0'.
+#  No test required.
+#
+#  -param $1 Execution type
+_show_assertion_results() {
+    local _type=${1:-}
+    local _assertions=0
+    local _failures=0
+    local _output=""
+    case "$_shttp_execution_type" in
+        REQUEST)
+            _assertions=$_shttp_assertions
+            _failures=$_shttp_failures
+            _output="$_shttp_output"
+        ;;
+        FLOW)
+            _assertions=$_shttp_assertions_flow
+            _failures=$_shttp_failures_flow
+            _output="$_shttp_output_flow"
+        ;;
+    esac
+    if [ "$_shttp_execution_type" = "$_type" ]; then
+        if (( _assertions > 0 )); then
+            info "Created $_output.asserts"
+            if [ $_failures = 0 ]; then
+                _assertion_log "[PASSED] - [$_assertions] of [$_assertions] assertions passed"
+            else
+                _assertion_log "[FAILED] - [$_failures] of [$_assertions] assertions failed"
+            fi
+            while read -r _line; do
+                info ">>> $_line"
+            done < "$_output.asserts"
+        fi
+    fi
+}
+
 #  Takes an snapshot of the
 #+ execution and notify it.
 #  No test required.
@@ -2036,46 +2042,44 @@ _notify_execution() {
     fi
 }
 
+#  Log a message about flow
+#+ processing into
+#+ '_shttp_output_flow.trace'.
+#  No test required.
+#
+#  -param $* Log message
+_flow_log() {
+    echo "$( date '+%Y-%m-%d %T.%N' ) [FLOW]   $*" | tee -a "$_shttp_output_flow.trace" > /dev/null
+}
+
+#  Log a step flow into
+#+ '_shttp_output_flow.steps'.
+#  No test required.
+#
+#  -param $* Command step
+_step_log() {
+    echo "$*" | tee -a "$_shttp_output_flow.steps" > /dev/null
+}
+
+#  Log a message about assertion fail
+#+ into '_shttp_output.asserts'.
+#  No test required.
+#
+#  -param $* Log message
+_assertion_log() {
+    if [ "$_shttp_execution_type" = "FLOW" ]; then
+        echo "$*" | tee -a "$_shttp_output_flow.asserts" > /dev/null
+    else
+        echo "$*" | tee -a "$_shttp_output.asserts" > /dev/null
+    fi
+}
+
 #  Log a notification.
 #  No test required.
 #
 #  -param $* Log message
 _notify_log() {
     echo "$*" | tee -a "$_shttp_output.notif" > /dev/null
-}
-
-#  Editor command is used
-#+ after request processing.
-#  The design was thinking
-#+ about to open request
-#+ results into file
-#+ editor and then process
-#+ it manually.
-#  Execution takes two steps:
-#    1. Variables resolution
-#+      if any exist in the
-#+      original definition.
-#    2. Command execution.
-_editor_command() {
-    if [ -n "$_shttp_editor_command" ]; then
-        eval "_shttp_editor_command=\"$_shttp_editor_command\""
-        info "Start [$_shttp_editor_command]"
-        eval "$_shttp_editor_command"
-    fi
-}
-
-#  Cleanup all temp JSON files from
-#+ workspace and hide private
-#+ data to log files.
-#  This function is called after
-#+ execute the main code or after
-#+ get an error.
-_finally_http_api() {
-    if [ -d ws ]; then
-        rm -f ws/*.json.tmp
-        rm -f ws/.*.json.tmp
-    fi
-    _hd "$_shttp_log_file"
 }
 
 #  Execute finally function and

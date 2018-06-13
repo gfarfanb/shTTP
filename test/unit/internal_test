@@ -606,6 +606,26 @@ assertEquals "Clean trace file does not work" "$_expected" "$_trace"
 _reset_req_vars
 
 
+#  -test Save history
+
+_shttp_output="output/history"
+_save_history saving_request REQUEST
+
+assertTrue "History directory for 'REQUEST' not found" "-d hist/test_runner"
+assertTrue "History file for 'REQUEST' not found" "-f hist/test_runner/saving_request.json"
+
+_shttp_output=""
+
+_shttp_output_flow="output/flow-history"
+_save_history saving_flow FLOW
+
+assertTrue "History directory for 'FLOW' not found" "-d hist/test_runner"
+assertTrue "History file for 'FLOW' not found" "-f hist/test_runner/saving_flow.json"
+
+#  shellcheck disable=SC2034
+_shttp_output_flow=""
+
+
 #  -test Open editor command
 put program "\"jq\""
 

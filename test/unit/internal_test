@@ -259,6 +259,17 @@ assertTrue "'_shttp_output' is not empty" "-n \"$_shttp_output\""
 _reset_req_vars
 
 
+#  -test Get output directory
+_shttp_execution_type="FLOW"
+_output_directory="$( _output_dir "flow_request" )"
+assertTrue "Output directory for flow not found" "-d \"$_output_directory\""
+
+#  shellcheck disable=SC2034
+_shttp_execution_type="REQUEST"
+_output_directory="$( _output_dir "single_request" )"
+assertTrue "Output directory for request not found" "-d \"$_output_directory\""
+
+
 #  -test Request execution
 _before_request_var="Not executed yet"
 _after_request_var="Not executed yet"

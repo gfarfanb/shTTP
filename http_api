@@ -1217,13 +1217,13 @@ _execute_flow() {
         #  Initialize output flow variables
         _shttp_date_flow=$( date '+%Y-%m-%d %T.%N %z' )
         _shttp_current_flow="$_command"
-        _shttp_output_flow="$( _output_dir \"$_command\" )/main"
+        _shttp_output_flow="$( _output_dir "$_command" )/main"
         _shttp_flow_index="$_flow_idx"
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
         #  Log flow init
-        info "$_flow_idx: [$_shttp_flow_tag] Init flow [$_command]"
-        _flow_log "$_flow_idx: [$_shttp_flow_tag] Init flow [$_command]"
+        info "$_flow_idx: [$_shttp_current_flow] Init flow [$_command]"
+        _flow_log "$_flow_idx: [$_shttp_current_flow] Init flow [$_command]"
         #  Main flow lifecycle
         _execute_if_exist before_flow
         _execute_if_exist "before_${_command}"
@@ -1231,8 +1231,8 @@ _execute_flow() {
         _execute_if_exist "after_${_command}"
         _execute_if_exist after_flow
         #  Log flow end
-        info "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
-        _flow_log "$_flow_idx: [$_shttp_flow_tag] Done flow [$_command]"
+        info "$_flow_idx: [$_shttp_current_flow] Done flow [$_command]"
+        _flow_log "$_flow_idx: [$_shttp_current_flow] Done flow [$_command]"
         #  Show flow results
         info "Created $_shttp_output_flow.trace"
         _save_history "$_command" FLOW
@@ -1241,11 +1241,10 @@ _execute_flow() {
         #  Reset flow variables
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
-        _shttp_flow_tag=""
+        _shttp_date_flow=""
+        _shttp_current_flow=""
         _shttp_output_flow=""
     done
-    _shttp_date_flow=""
-    _shttp_current_flow=""
     _shttp_flow_index=0
 }
 
@@ -1288,8 +1287,8 @@ _execute() {
         _shttp_failures=0
         #  Log request init
         if [ "$_shttp_execution_type" = "FLOW" ]; then
-            info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init request [$_command]"
-            _flow_log "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Init request [$_command]"
+            info "$_shttp_flow_index: [$_shttp_current_flow] >>> $_req_idx: Init request [$_command]"
+            _flow_log "$_shttp_flow_index: [$_shttp_current_flow] >>> $_req_idx: Init request [$_command]"
         else
             info "$_req_idx: Init request [$_command]"
         fi
@@ -1302,8 +1301,8 @@ _execute() {
         _editor_command
         #  Log request end
         if [ "$_shttp_execution_type" = "FLOW" ]; then
-            info "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done request [$_command]"
-            _flow_log "$_shttp_flow_index: [$_shttp_flow_tag] >>> $_req_idx: Done request [$_command]"
+            info "$_shttp_flow_index: [$_shttp_current_flow] >>> $_req_idx: Done request [$_command]"
+            _flow_log "$_shttp_flow_index: [$_shttp_current_flow] >>> $_req_idx: Done request [$_command]"
         else
             info "$_req_idx: Done request [$_command]"
         fi
@@ -1467,7 +1466,7 @@ _default_vars() {
         authMode "SKIP"
     fi
     if [ -z "$_shttp_output" ]; then
-        output "$( _output_dir \"$_command\" )/$( date -d "$_shttp_date" '+%s.%N' )"
+        output "$( _output_dir "$_command" )/$( date -d "$_shttp_date" '+%s.%N' )"
     fi
 }
 
@@ -1477,18 +1476,27 @@ _default_vars() {
 #  -return Output directory
 _output_dir() {
     local _command=${1:-}
-    local _output="output/$( basename "$0" )"
+    local _output=""
+    _output="output/$( basename "$0" )"
     if ! [ -d "$_output" ]; then
         mkdir "$_output"
     fi
     if [ "$_shttp_execution_type" = "FLOW" ]; then
-        _output="$_output/$( date -d "$_shttp_date_flow" '+%Y-%m-%d' )"
-        if ! [ -d "$_output" ]; then
-            mkdir "$_output"
-        fi
-        _output="$_output/$( date -d "$_shttp_date_flow" '+%s-%N' )"
-        if ! [ -d "$_output" ]; then
-            mkdir "$_output"
+        if [ -z "$_shttp_output_flow" ]; then
+            _output="$_output/$_command"
+            if ! [ -d "$_output" ]; then
+                mkdir "$_output"
+            fi
+            _output="$_output/$( date -d "$_shttp_date_flow" '+%Y-%m-%d' )"
+            if ! [ -d "$_output" ]; then
+                mkdir "$_output"
+            fi
+            _output="$_output/$( date -d "$_shttp_date_flow" '+%s-%N' )"
+            if ! [ -d "$_output" ]; then
+                mkdir "$_output"
+            fi
+        else
+            _output=${_shttp_output_flow/main/}
         fi
     else
         _output="$_output/$_command"
@@ -1911,7 +1919,7 @@ _save_history() {
                     _steps+="\"$_step\","
                 done < "$_output.steps"
                 if [ -n "$_steps" ]; then
-                    _steps="${_steps::-1}"
+                    _steps=${_steps::-1}
                 fi
             fi
             local _entry="
@@ -1939,7 +1947,7 @@ _save_history() {
             _failed+="\"$_line\","
         done < "$_output.failed"
         if [ -n "$_failed" ]; then
-            _failed="${_failed::-1}"
+            _failed=${_failed::-1}
         fi
     fi
     _entry+="\"failed\": [ $_failed ]"

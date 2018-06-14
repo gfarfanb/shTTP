@@ -68,7 +68,7 @@ after_put_auth() {
     #  Get a value from JSON response
     _last_token=$( getOutput token )
     #  Assertion for true
-    isTrue "Token is already in use" "-n \"$_last_token\""
+    isTrue "Token is already in use" "-n '$_last_token'"
     #  Any bash code is allowed
     if [ -n "$_last_token" ]; then
         #  Put a value as credential part
@@ -115,6 +115,8 @@ after_check_auth() {
     local _token=""
     #  Get a value from JSON response
     _token=$( getOutput token )
+     #  Assertion for true
+    isTrue "Token is already in use" "-n '$_token'"
     #  Put a value as credential part
     putPart token "$_token"
 }

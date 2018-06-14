@@ -1898,10 +1898,14 @@ _clean_trace() {
 _save_history() {
     local _command=${1:-}
     local _type=${2:-}
+    local _assertions=0
+    local _failures=0
     local _output=""
     local _hist=""
     case "$_type" in
         REQUEST)
+            _assertions=$_shttp_assertions
+            _failures=$_shttp_failures
             _output="$_shttp_output"
             local _time=""
             _time=$( getHeader time_total )
@@ -1912,6 +1916,8 @@ _save_history() {
                 \"timeTotal\": $_time,"
         ;;
         FLOW)
+            _assertions=$_shttp_assertions_flow
+            _failures=$_shttp_failures_flow
             _output="$_shttp_output_flow"
             local _steps=""
             if [ -f "$_output.steps" ]; then
@@ -1930,6 +1936,13 @@ _save_history() {
         ;;
     esac
     _hist="${_shttp_basename%.*}"
+    if (( _assertions == 0 )); then
+        local _status="BLANK"
+    elif (( _failures == 0 )); then
+        local _status="SUCCESS"
+    else
+        local _status="FAILED"
+    fi
     if ! [ -d "hist/$_hist" ]; then
         mkdir "hist/$_hist"
     fi
@@ -1950,6 +1963,7 @@ _save_history() {
             _failed=${_failed::-1}
         fi
     fi
+    _entry+="\"status\": \"$_status\","
     _entry+="\"failed\": [ $_failed ]"
     update "hist/$_hist/$_command.json" ".data+=[{ $_entry }]"
 }
@@ -2067,7 +2081,7 @@ _notify_execution() {
         esac
         _notify_log "> "
         if (( _assertions == 0 )); then
-            local _level="OFF"
+            local _level="BLANK"
             _notify_log "> No assertions"
         elif (( _failures == 0 )); then
             local _level="INFO"
@@ -2076,7 +2090,7 @@ _notify_execution() {
         else
             local _level="WARNING"
         fi
-        if [ "$_level" != "OFF" ]; then
+        if [ "$_level" != "BLANK" ]; then
             if [ -f "$_output.failed" ]; then
                 _notify_log "> *Assertions*"
                 while read -r _line; do

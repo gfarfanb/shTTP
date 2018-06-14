@@ -755,6 +755,9 @@ _shttp_auth_credential=""
 #  Current request command.
 _shttp_current_request=""
 
+#  Current flow command.
+_shttp_current_flow=""
+
 #  Number of request executions.
 _shttp_request_times=0
 
@@ -787,10 +790,6 @@ _shttp_output=""
 #+ '<output>.trace' and 
 #+ '<output>.failed'.
 _shttp_output_flow=""
-
-#  Flow tag for identify output
-#+ flow files.
-_shttp_flow_tag=""
 
 #  Current environment suffix.
 _shttp_suffix="default"
@@ -1217,9 +1216,8 @@ _execute_flow() {
     for (( _flow_idx=1; _flow_idx<=_times; _flow_idx++ )); do
         #  Initialize output flow variables
         _shttp_date_flow=$( date '+%Y-%m-%d %T.%N %z' )
-        _shttp_flow_tag="$( date '+%s-%N' )"
-        mkdir "output/flow$_shttp_flow_tag"
-        _shttp_output_flow="output/flow$_shttp_flow_tag/$( basename "$0" ).main"
+        _shttp_current_flow="$_command"
+        _shttp_output_flow="$( _output_dir \"$_command\" )/main"
         _shttp_flow_index="$_flow_idx"
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
@@ -1247,7 +1245,7 @@ _execute_flow() {
         _shttp_output_flow=""
     done
     _shttp_date_flow=""
-    _shttp_flow_tag=""
+    _shttp_current_flow=""
     _shttp_flow_index=0
 }
 
@@ -1455,7 +1453,10 @@ _default_config() {
 #    4. '_shttp_output': 
 #+      'output/<main-script>.<date>'
 #+      'output/flow<flow-tag>/<main-script>.<date-flow>'
+#
+#  -param $1 Request command
 _default_vars() {
+    local _command=${1:-}
     if [ -z "$_shttp_protocol" ]; then
         protocol "https"
     fi
@@ -1466,14 +1467,40 @@ _default_vars() {
         authMode "SKIP"
     fi
     if [ -z "$_shttp_output" ]; then
-        local _date=""
-        _date=$( date -d "$_shttp_date" '+%y%m%d.%H%M%S.%N' )
-        if [ "$_shttp_execution_type" = "FLOW" ]; then
-            output "output/flow$_shttp_flow_tag/$( basename "$0" ).$_date"
-        else
-            output "output/$( basename "$0" ).$_date"
+        output "$( _output_dir \"$_command\" )/$( date -d "$_shttp_date" '+%s.%N' )"
+    fi
+}
+
+#  Generates an output directory.
+#
+#  -param $1 Request/Flow command
+#  -return Output directory
+_output_dir() {
+    local _command=${1:-}
+    local _output="output/$( basename "$0" )"
+    if ! [ -d "$_output" ]; then
+        mkdir "$_output"
+    fi
+    if [ "$_shttp_execution_type" = "FLOW" ]; then
+        _output="$_output/$( date -d "$_shttp_date_flow" '+%Y-%m-%d' )"
+        if ! [ -d "$_output" ]; then
+            mkdir "$_output"
+        fi
+        _output="$_output/$( date -d "$_shttp_date_flow" '+%s-%N' )"
+        if ! [ -d "$_output" ]; then
+            mkdir "$_output"
+        fi
+    else
+        _output="$_output/$_command"
+        if ! [ -d "$_output" ]; then
+            mkdir "$_output"
+        fi
+        _output="$_output/$( date -d "$_shttp_date" '+%Y-%m-%d' )"
+        if ! [ -d "$_output" ]; then
+            mkdir "$_output"
         fi
     fi
+    echo "$_output"
 }
 
 #  This lifecycle function is called
@@ -1500,7 +1527,7 @@ _request() {
     local _body_file=""
     local _curl=""
     _default_config
-    _default_vars
+    _default_vars "$_command"
     _execute_if_exist "before_${_command}"
     _append_content_type
     _append_auth

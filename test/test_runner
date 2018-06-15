@@ -144,8 +144,10 @@ _finally_test_runner() {
     . ./test_after_tests
     if [ $_test_runner_failures = 0 ] && [ $_test_runner_completed = 1 ]; then
         exit 0
-    else
+    elif [ $_code != 0 ]; then
         exit $_code
+    else
+        exit 1
     fi
 }
 

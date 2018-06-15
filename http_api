@@ -829,6 +829,11 @@ _shttp_flow_index=0
 #+ after complete all iterations.
 _shttp_request_index=0
 
+#  Script execution status:
+#    = 0: Success
+#    > 0: Failed 
+_shttp_status=0
+
 #  Assertions count.
 _shttp_assertions_flow=0
 
@@ -1200,6 +1205,8 @@ _execute_if_exist() {
 #    8. Save flow to history
 #    9. Show assertion results
 #    10. Notify flow execution
+#    11. Set execution status
+#    12. Reset flow variables
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number.
@@ -1238,6 +1245,8 @@ _execute_flow() {
         _save_history "$_command" FLOW
         _show_assertion_results FLOW
         _notify_execution "$_command" FLOW
+        #  Set execution status
+        _shttp_status=$(( _shttp_status+_shttp_failures_flow ))
         #  Reset flow variables
         _shttp_assertions_flow=0
         _shttp_failures_flow=0
@@ -1264,7 +1273,8 @@ _execute_flow() {
 #    8. Save request to history
 #    9. Show assertion results
 #    10. Notify request execution
-#    11. Reset request variables
+#    11. Set execution status
+#    12. Reset request variables
 #  If times parameter is passed
 #+ the execution will be performed
 #+ for that number.
@@ -1310,6 +1320,8 @@ _execute() {
         _save_history "$_command" REQUEST
         _show_assertion_results REQUEST
         _notify_execution "$_command" REQUEST
+        #  Set execution status
+        _shttp_status=$(( _shttp_status+_shttp_failures ))
         #  Reset request variables
         _reset_req_vars
         _shttp_assertions=0
@@ -1995,11 +2007,19 @@ _editor_command() {
 #+ execute the main code or after
 #+ get an error.
 _finally_http_api() {
+    local _code=$?
     if [ -d ws ]; then
         rm -f ws/*.json.tmp
         rm -f ws/.*.json.tmp
     fi
     _hd "$_shttp_log_file"
+    if [ $_shttp_status = 0 ]; then
+        exit 0
+    elif [ $_code != 0 ]; then
+        exit $_code
+    else
+        exit 1
+    fi
 }
 
 #  Show assertion results if

@@ -15,5 +15,6 @@ shellcheck test/unit/*
 shellcheck test/mock/*_mock
 shellcheck sample/gist_comments
 shellcheck sample/github_oauth
+shellcheck sample/image_chart_ext
 shellcheck sample/manual_auth_ext
 shellcheck sample/slack_notif_ext

@@ -1,0 +1,33 @@
+#! /usr/bin/env bash
+#  Generates URL for 'Image Charts'.
+#  https://www.image-charts.com/
+#  -author Giovanni Farfán B.
+
+#  Create and get 'Image Charts'
+#+ url.
+#  No test required.
+#
+#  -param $1 Api name
+#  -param $1 Request/Flow command
+_create_chart_url() {
+    local _api=${1:-}
+    local _command=${2:-}
+    local _assertions=( $( jq '.data[] | .assertions - .failures' "hist/$_api/$_command.json" ) )
+    local _failures=( $( jq '.data[] | .failures' "hist/$_api/$_command.json" ) )
+    local _url="https://image-charts.com/chart?"
+    _url+="chs=700x200"
+    _url+="cht=bvs"
+    _url+="chd=t:$( _join_by ',' "${_failures[@]}" )|$( _join_by ',' "${_assertions[@]}" )"
+    _url+="chg=20,50"
+    _url+="chdl=Failures|Assertions"
+    _url+="chxt=x,y"
+    _url+="chco=f0372d,45b001"
+    echo "$_url"
+}
+#  Documentation for help content
+_help_content "   --chart <api> <command>:       Generates URL for 'Image Charts'"
+#  New option is added
+_register_opt --chart _create_chart_url MANAGE
+expr "$*" : ".*--chart" > /dev/null \
+    && _look_for_params --chart "$@" \
+    && _exit

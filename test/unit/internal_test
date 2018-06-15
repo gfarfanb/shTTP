@@ -649,13 +649,3 @@ _editor_command
 assertTrue "Open editor command does not work" "-n \"$_command_version\""
 
 _reset_req_vars
-
-
-#  -test Script finallly
-echo '{}' > ws/cleanable_config.json.tmp
-
-_finally_http_api
-
-assertFalse "Workspace file is currently exists" "-f ws/cleanable_config.json.tmp"
-
-echo '{ }' > "ws/.override.json.tmp"

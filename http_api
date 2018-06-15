@@ -2006,6 +2006,9 @@ _editor_command() {
 #  This function is called after
 #+ execute the main code or after
 #+ get an error.
+#  No test required.
+#
+#  -param $? Exit code
 _finally_http_api() {
     local _code=$?
     if [ -d ws ]; then

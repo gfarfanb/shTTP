@@ -2269,8 +2269,9 @@ _set_env() {
     env "$_env"
 }
 _register_opt --env _set_env REQUEST
-expr "$*" : ".*--env" > /dev/null \
-    && _look_for_params --env "$@"
+if expr "$*" : ".*--env" > /dev/null; then
+    _look_for_params --env "$@"
+fi
 
 #  Set the credential for script.
 #
@@ -2282,8 +2283,9 @@ _set_credential() {
     credential "$_credential"
 }
 _register_opt --cred _set_credential REQUEST
-expr "$*" : ".*--cred" > /dev/null \
-    && _look_for_params --cred "$@"
+if expr "$*" : ".*--cred" > /dev/null; then
+    _look_for_params --cred "$@"
+fi
 
 #  Add a new variable, into script,
 #+ which will be taken as priority
@@ -2300,8 +2302,9 @@ _set_config() {
     info "Set temporal [$_name] with value [$_val]"
 }
 _register_opt --set _set_config REQUEST
-expr "$*" : ".*--set" > /dev/null \
-    && _look_for_params --set "$@"
+if expr "$*" : ".*--set" > /dev/null; then
+    _look_for_params --set "$@"
+fi
 
 #  Set '_shttp_domain' to 'localhost'.
 #+ Default port is 8080 but it can be
@@ -2322,8 +2325,9 @@ _set_localhost() {
     domain "localhost:$_port"
 }
 _register_opt --local _set_localhost REQUEST
-expr "$*" : ".*--local" > /dev/null \
-    && _look_for_params --local "$@"
+if expr "$*" : ".*--local" > /dev/null; then
+    _look_for_params --local "$@"
+fi
 
 #  Set credential to '_shttp_auth_credential'.
 #
@@ -2338,24 +2342,29 @@ _set_auth_mode() {
     credential "$_credential"
 }
 _register_opt --auth-basic _set_auth_mode REQUEST
-expr "$*" : ".*--auth-basic" > /dev/null \
-    && _look_for_params --auth-basic "$@"
+if expr "$*" : ".*--auth-basic" > /dev/null; then
+    _look_for_params --auth-basic "$@"
+fi
 
 _register_opt --auth-header _set_auth_mode REQUEST
-expr "$*" : ".*--auth-header" > /dev/null \
-    && _look_for_params --auth-header "$@"
+if expr "$*" : ".*--auth-header" > /dev/null; then
+    _look_for_params --auth-header "$@"
+fi
 
 _register_opt --auth-qtoken _set_auth_mode REQUEST
-expr "$*" : ".*--auth-qtoken" > /dev/null \
-    && _look_for_params --auth-qtoken "$@"
+if expr "$*" : ".*--auth-qtoken" > /dev/null; then
+    _look_for_params --auth-qtoken "$@"
+fi
 
 _register_opt --auth-qkeysec _set_auth_mode REQUEST
-expr "$*" : ".*--auth-qkeysec" > /dev/null \
-    && _look_for_params --auth-qkeysec "$@"
+if expr "$*" : ".*--auth-qkeysec" > /dev/null; then
+    _look_for_params --auth-qkeysec "$@"
+fi
 
 _register_opt --auth-skip _set_auth_mode REQUEST
-expr "$*" : ".*--auth-skip" > /dev/null \
-    && _look_for_params --auth-skip "$@"
+if expr "$*" : ".*--auth-skip" > /dev/null; then
+    _look_for_params --auth-skip "$@"
+fi
 
 #  Set request execution times
 #+ to '_shttp_request_times'.
@@ -2368,8 +2377,9 @@ _set_times() {
     times "$_times"
 }
 _register_opt --times _set_times REQUEST
-expr "$*" : ".*--times" > /dev/null \
-    && _look_for_params --times "$@"
+if expr "$*" : ".*--times" > /dev/null; then
+    _look_for_params --times "$@"
+fi
 
 #  Get saved editor command from
 #+ 'ws/config[.<env>].json and the value
@@ -2381,8 +2391,9 @@ _open_editor() {
     editor "$( get editorCommand )"
 }
 _register_opt --open _open_editor REQUEST
-expr "$*" : ".*--open" > /dev/null \
-    && _look_for_params --open "$@"
+if expr "$*" : ".*--open" > /dev/null; then
+    _look_for_params --open "$@"
+fi
 
 #  List the names of main script
 #+ functions. Names contained
@@ -2413,9 +2424,10 @@ _list_commands() {
     fi
 }
 _register_opt --list _list_commands MANAGE
-expr "$*" : ".*--list" > /dev/null \
-    && _look_for_params --list "$@" \
-    && _exit
+if expr "$*" : ".*--list" > /dev/null; then
+    _look_for_params --list "$@"
+    _exit
+fi
 
 #  Copy the configuration and credentials
 #+ files. The 'from' files must exist. If
@@ -2465,9 +2477,10 @@ _copy_env() {
     info "Added [ws/credentials$_to.json] file"
 }
 _register_opt --copy _copy_env MANAGE
-expr "$*" : ".*--copy" > /dev/null \
-    && _look_for_params --copy "$@" \
-    && _exit
+if expr "$*" : ".*--copy" > /dev/null; then
+    _look_for_params --copy "$@"
+    _exit
+fi
 
 #  Remove the configuration and credentials
 #+ files for specified environment.
@@ -2494,9 +2507,10 @@ _del_env() {
     info "Deleted [ws/credentials$_env.json] file"
 }
 _register_opt --del _del_env MANAGE
-expr "$*" : ".*--del" > /dev/null \
-    && _look_for_params --del "$@" \
-    && _exit
+if expr "$*" : ".*--del" > /dev/null; then
+    _look_for_params --del "$@"
+    _exit
+fi
 
 #  Save key-value to 'ws/config[.<env>].json'
 #+ using 'put' function.
@@ -2514,9 +2528,10 @@ _add_config() {
     put "$_name" "$_val" "$_sec_type"
 }
 _register_opt --add _add_config MANAGE
-expr "$*" : ".*--add" > /dev/null \
-    && _look_for_params --add "$@" \
-    && _exit
+if expr "$*" : ".*--add" > /dev/null; then
+    _look_for_params --add "$@"
+    _exit
+fi
 
 #  Get key-value from 'ws/config[.<env>].json'
 #+ using 'get' function.
@@ -2534,9 +2549,10 @@ _get_config() {
     echo "$_val"
 }
 _register_opt --get _get_config MANAGE
-expr "$*" : ".*--get" > /dev/null \
-    && _look_for_params --get "$@" \
-    && _exit
+if expr "$*" : ".*--get" > /dev/null; then
+    _look_for_params --get "$@"
+    _exit
+fi
 
 #  Remove key-value to 'ws/config[.<env>].json'
 #+ using 'remove' function.
@@ -2549,9 +2565,10 @@ _remove_config() {
     remove "$_name"
 }
 _register_opt --remove _remove_config MANAGE
-expr "$*" : ".*--remove" > /dev/null \
-    && _look_for_params --remove "$@" \
-    && _exit
+if expr "$*" : ".*--remove" > /dev/null; then
+    _look_for_params --remove "$@"
+    _exit
+fi
 
 #  Add credential part.
 #
@@ -2585,9 +2602,10 @@ _add_part() {
     putPart "$_part" "$_val" "$_sec_type"
 }
 _register_opt --part _add_part MANAGE
-expr "$*" : ".*--part" > /dev/null \
-    && _look_for_params --part "$@" \
-    && _exit
+if expr "$*" : ".*--part" > /dev/null; then
+    _look_for_params --part "$@"
+    _exit
+fi
 
 #  List the keys of 'ws/config[.<env>].json'.
 #
@@ -2606,9 +2624,10 @@ _get_config_keys() {
     fi
 }
 _register_opt --keys _get_config_keys MANAGE
-expr "$*" : ".*--keys" > /dev/null \
-    && _look_for_params --keys "$@" \
-    && _exit
+if expr "$*" : ".*--keys" > /dev/null; then
+    _look_for_params --keys "$@"
+    _exit
+fi
 
 #  Clean all files from 'output'
 #+ directory.
@@ -2633,18 +2652,20 @@ _clean_output_files() {
     fi
 }
 _register_opt --clean _clean_output_files MANAGE
-expr "$*" : ".*--clean" > /dev/null \
-    && _look_for_params --clean "$@" \
-    && _exit
+if expr "$*" : ".*--clean" > /dev/null; then
+    _look_for_params --clean "$@"
+    _exit
+fi
     
 #  Show the 'shTTP' version.
 #  No test required.
 _show_version() {
     git describe --abbrev=0 --tags
 }
-expr "$*" : ".*--version" > /dev/null \
-    && _show_version \
-    && _exit
+if expr "$*" : ".*--version" > /dev/null; then
+    _show_version
+    _exit
+fi
 
 
 # ---------- Add-ons
@@ -2678,9 +2699,10 @@ fi
 _show_help_content() {
     echo "${_shttp_help_content[*]}"
 }
-expr "$*" : ".*--help" > /dev/null \
-    && _show_help_content \
-    && _exit
+if expr "$*" : ".*--help" > /dev/null; then
+    _show_help_content
+    _exit
+fi
 
 
 # ---------- Main

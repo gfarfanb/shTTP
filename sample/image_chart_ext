@@ -7,27 +7,37 @@
 #+ url.
 #  No test required.
 #
-#  -param $1 Api name
-#  -param $1 Request/Flow command
+#  -param $1 Option
+#  -param $2 Api name
+#  -param $3 Request/Flow command
+#  -param $4 Width in pixels
+#  -param $5 Height in pixels
 _create_chart_url() {
-    local _api=${1:-}
-    local _command=${2:-}
+    #  shellcheck disable=SC2034
+    local _option=${1:-}
+    local _api=${2:-}
+    local _command=${3:-}
+    local _width=${4:-"800"}
+    local _height=${5:-"200"}
     local _assertions=( $( jq '.data[] | .assertions - .failures' "hist/$_api/$_command.json" ) )
     local _failures=( $( jq '.data[] | .failures' "hist/$_api/$_command.json" ) )
     local _url="https://image-charts.com/chart?"
-    _url+="chs=700x200"
-    _url+="cht=bvs"
-    _url+="chd=t:$( _join_by ',' "${_failures[@]}" )|$( _join_by ',' "${_assertions[@]}" )"
-    _url+="chg=20,50"
-    _url+="chdl=Failures|Assertions"
-    _url+="chxt=x,y"
-    _url+="chco=f0372d,45b001"
+    _url+="chs=${_width}x${_height}"
+    _url+="&cht=bvs"
+    _url+="&chd=t:$( _join_by ',' "${_failures[@]}" )|$( _join_by ',' "${_assertions[@]}" )"
+    _url+="&chg=20,50"
+    _url+="&chdl=Failures|Assertions"
+    _url+="&chxt=x,y"
+    _url+="&chco=f0372d,45b001"
     echo "$_url"
 }
 #  Documentation for help content
-_help_content "   --chart <api> <command>:       Generates URL for 'Image Charts'"
+_help_content \
+    "   --chart <api> <command>        Generates URL for 'Image Charts'" \
+    "          <width> <height>:"
 #  New option is added
-_register_opt --chart _create_chart_url MANAGE
-expr "$*" : ".*--chart" > /dev/null \
-    && _look_for_params --chart "$@" \
-    && _exit
+_register_opt --chart _create_chart_url
+if expr "$*" : ".*--chart" > /dev/null; then
+    _look_for_params --chart "$@"
+    _exit
+fi

@@ -9,7 +9,7 @@ _shttp_help_content=(
     ""
     " Usage: ./<file>[.sh] <command> [--list] [--copy <from> <to>] [--del <env>] [--get <key-name>]"
     "                                [--add <key-name> <value>] [--remove <key-name>] [--part <cred-id> <part> <value>]"
-    "                                [--keys] [--clean]"
+    "                                [--keys] [--parts <credential>] [--clean]"
     ""
     "                                [--env <env>] [--cred <cred>] [--set <key-name> <value>] [--local <port>]"
     "                                [--auth-basic <cred>] [--auth-header <cred>] [--auth-qtoken <cred>]"
@@ -30,6 +30,7 @@ _shttp_help_content=(
     "   --remove <key-name>:           Remove the key-value from 'ws/config[.<env>].json'"
     "   --part <part> <value>:         Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'."
     "   --keys:                        Display all keys from 'ws/config[.<env>].json' file"
+    "   --parts <credential>:          Display all keys from 'ws/credentials[.<env>].json' file"
     "   --clean:                       Clean up all output files 'output/*'"
     ""
     " Request options:"
@@ -256,7 +257,7 @@ step() {
     local _last_params="$_shttp_input_params"
     shift
     mainOpts "$@"
-    local _params=( $(echo "$_shttp_input_params" | tr " " "\n") )
+    local _params=( $( echo "$_shttp_input_params" | tr " " "\n" ) )
     local _length=${#_params[@]}
     if (( _length > 0 )); then
         for _opt in "${_shttp_request_opts[@]}"; do
@@ -1126,7 +1127,7 @@ env() {
 #
 #  -param $* Defined input parameters
 mainOpts() {
-    local _main_params=( $(echo "$_shttp_input_params" | tr " " "\n") )
+    local _main_params=( $( echo "$_shttp_input_params" | tr " " "\n" ) )
     local _main_length=${#_main_params[@]}
     _main_length=$(( _main_length-1 ))
     if (( _main_length < 1 )); then
@@ -2292,7 +2293,7 @@ _set_env() {
     env "$_env"
 }
 _register_opt --env _set_env REQUEST
-if expr "$*" : ".*--env" > /dev/null; then
+if expr "$*" : ".*--env\s" > /dev/null; then
     _look_for_params --env "$@"
 fi
 
@@ -2306,7 +2307,7 @@ _set_credential() {
     credential "$_credential"
 }
 _register_opt --cred _set_credential REQUEST
-if expr "$*" : ".*--cred" > /dev/null; then
+if expr "$*" : ".*--cred\s" > /dev/null; then
     _look_for_params --cred "$@"
 fi
 
@@ -2325,7 +2326,7 @@ _set_config() {
     info "Set temporal [$_name] with value [$_val]"
 }
 _register_opt --set _set_config REQUEST
-if expr "$*" : ".*--set" > /dev/null; then
+if expr "$*" : ".*--set\s" > /dev/null; then
     _look_for_params --set "$@"
 fi
 
@@ -2365,27 +2366,27 @@ _set_auth_mode() {
     credential "$_credential"
 }
 _register_opt --auth-basic _set_auth_mode REQUEST
-if expr "$*" : ".*--auth-basic" > /dev/null; then
+if expr "$*" : ".*--auth-basic\s" > /dev/null; then
     _look_for_params --auth-basic "$@"
 fi
 
 _register_opt --auth-header _set_auth_mode REQUEST
-if expr "$*" : ".*--auth-header" > /dev/null; then
+if expr "$*" : ".*--auth-header\s" > /dev/null; then
     _look_for_params --auth-header "$@"
 fi
 
 _register_opt --auth-qtoken _set_auth_mode REQUEST
-if expr "$*" : ".*--auth-qtoken" > /dev/null; then
+if expr "$*" : ".*--auth-qtoken\s" > /dev/null; then
     _look_for_params --auth-qtoken "$@"
 fi
 
 _register_opt --auth-qkeysec _set_auth_mode REQUEST
-if expr "$*" : ".*--auth-qkeysec" > /dev/null; then
+if expr "$*" : ".*--auth-qkeysec\s" > /dev/null; then
     _look_for_params --auth-qkeysec "$@"
 fi
 
 _register_opt --auth-skip _set_auth_mode REQUEST
-if expr "$*" : ".*--auth-skip" > /dev/null; then
+if expr "$*" : ".*--auth-skip\s" > /dev/null; then
     _look_for_params --auth-skip "$@"
 fi
 
@@ -2400,7 +2401,7 @@ _set_times() {
     times "$_times"
 }
 _register_opt --times _set_times REQUEST
-if expr "$*" : ".*--times" > /dev/null; then
+if expr "$*" : ".*--times\s" > /dev/null; then
     _look_for_params --times "$@"
 fi
 
@@ -2426,22 +2427,20 @@ fi
 #  -return Command list
 _list_commands() {
     local _opt=${1:-}
-    declare -a _functions=(
-        $( declare -F )
+    local _functions=(
+        $( declare -F -p | cut -d " " -f 3 | tr " " "\n" )
     )
     local _length=${#_functions[@]}
     if (( _length > 0 )); then
         for _function in "${_functions[@]}"; do
-            local _name=""
             local _belong=""
             local _is_key=0
-            _name=$( echo "$_function" | cut -d ' ' -f 3 )
-            _belong=$( grep "${_name}\s*()" "$0" )
+            _belong=$( grep "${_function}\s*()" "$0" )
             _is_key=$( _is_keyword "$_name" )
             if [ -n "$_belong" ] \
-                   && [[ "$_name" != "_"* ]] \
-                   && (( _is_key == 0 )); then
-                echo "$_name"
+                    && [[ "$_function" != "_"* ]] \
+                    && (( _is_key == 0 )); then
+                echo "[$_function]"
             fi
         done
     fi
@@ -2500,7 +2499,7 @@ _copy_env() {
     info "Added [ws/credentials$_to.json] file"
 }
 _register_opt --copy _copy_env MANAGE
-if expr "$*" : ".*--copy" > /dev/null; then
+if expr "$*" : ".*--copy\s" > /dev/null; then
     _look_for_params --copy "$@"
     _exit
 fi
@@ -2530,7 +2529,7 @@ _del_env() {
     info "Deleted [ws/credentials$_env.json] file"
 }
 _register_opt --del _del_env MANAGE
-if expr "$*" : ".*--del" > /dev/null; then
+if expr "$*" : ".*--del\s" > /dev/null; then
     _look_for_params --del "$@"
     _exit
 fi
@@ -2551,7 +2550,7 @@ _add_config() {
     put "$_name" "$_val" "$_sec_type"
 }
 _register_opt --add _add_config MANAGE
-if expr "$*" : ".*--add" > /dev/null; then
+if expr "$*" : ".*--add\s" > /dev/null; then
     _look_for_params --add "$@"
     _exit
 fi
@@ -2572,7 +2571,7 @@ _get_config() {
     echo "$_val"
 }
 _register_opt --get _get_config MANAGE
-if expr "$*" : ".*--get" > /dev/null; then
+if expr "$*" : ".*--get\s" > /dev/null; then
     _look_for_params --get "$@"
     _exit
 fi
@@ -2588,7 +2587,7 @@ _remove_config() {
     remove "$_name"
 }
 _register_opt --remove _remove_config MANAGE
-if expr "$*" : ".*--remove" > /dev/null; then
+if expr "$*" : ".*--remove\s" > /dev/null; then
     _look_for_params --remove "$@"
     _exit
 fi
@@ -2625,7 +2624,7 @@ _add_part() {
     putPart "$_part" "$_val" "$_sec_type"
 }
 _register_opt --part _add_part MANAGE
-if expr "$*" : ".*--part" > /dev/null; then
+if expr "$*" : ".*--part\s" > /dev/null; then
     _look_for_params --part "$@"
     _exit
 fi
@@ -2649,6 +2648,30 @@ _get_config_keys() {
 _register_opt --keys _get_config_keys MANAGE
 if expr "$*" : ".*--keys" > /dev/null; then
     _look_for_params --keys "$@"
+    _exit
+fi
+
+#  List the keys of 'ws/credentials[.<env>].json'.
+#
+#  -param $1 Option
+#  -param $2 Credential
+#  -return 'ws/credentials[.<env>].json' keys
+_get_cred_keys() {
+    local _opt=${1:-}
+    local _cred=${2:-}
+    local _keys=(
+        $( jq ".[] | select(.id==\"$_cred\") | keys | .[]" "$_shttp_creds" )
+    )
+    local _length=${#_keys[@]}
+    if (( _length > 0 )); then
+        for _key in "${_keys[@]}"; do
+            echo "$_key" | sed -e 's/^"//' -e 's/"$//'
+        done
+    fi
+}
+_register_opt --parts _get_cred_keys MANAGE
+if expr "$*" : ".*--parts\s" > /dev/null; then
+    _look_for_params --parts "$@"
     _exit
 fi
 

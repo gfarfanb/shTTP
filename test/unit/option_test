@@ -145,6 +145,25 @@ done
 assertEquals "'namedKey' key not found" 1 "$_found"
 
 
+#  -test Get credential keys
+update "ws/credentials.json" '. + [{
+        "id": "keys",
+        "username": "test",
+        "password": "t35t"
+    }]'
+_keys=( $( _get_cred_keys --cred-keys keys ) )
+_found=0
+for _key in "${_keys[@]}"; do
+    case "$_key" in
+        id | username | password)
+            _found=$(( _found+1 ))
+        ;;
+    esac
+done
+
+assertEquals "Credential keys not found" 3 "$_found"
+
+
 #  -test Clean option
 echo '{}' > output/cleanable_output.json
 

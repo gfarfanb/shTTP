@@ -9,7 +9,7 @@ _shttp_help_content=(
     ""
     " Usage: ./<file>[.sh] <command> [--list] [--copy <from> <to>] [--del <env>] [--get <key-name>]"
     "                                [--add <key-name> <value>] [--remove <key-name>] [--part <cred-id> <part> <value>]"
-    "                                [--keys] [--parts <credential>] [--clean]"
+    "                                [--keys] [--cred-keys <credential>] [--clean]"
     ""
     "                                [--env <env>] [--cred <cred>] [--set <key-name> <value>] [--local <port>]"
     "                                [--auth-basic <cred>] [--auth-header <cred>] [--auth-qtoken <cred>]"
@@ -30,7 +30,7 @@ _shttp_help_content=(
     "   --remove <key-name>:           Remove the key-value from 'ws/config[.<env>].json'"
     "   --part <part> <value>:         Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'."
     "   --keys:                        Display all keys from 'ws/config[.<env>].json' file"
-    "   --parts <credential>:          Display all keys from 'ws/credentials[.<env>].json' file"
+    "   --cred-keys <credential>:      Display all keys from 'ws/credentials[.<env>].json' file for a specific credential"
     "   --clean:                       Clean up all output files 'output/*'"
     ""
     " Request options:"
@@ -2667,9 +2667,9 @@ _get_cred_keys() {
         done
     fi
 }
-_register_opt --parts _get_cred_keys MANAGE
-if expr "$*" : ".*--parts\s" > /dev/null; then
-    _look_for_params --parts "$@"
+_register_opt --cred-keys _get_cred_keys MANAGE
+if expr "$*" : ".*--cred-keys\s" > /dev/null; then
+    _look_for_params --cred-keys "$@"
     _exit
 fi
 

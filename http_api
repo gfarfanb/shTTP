@@ -2433,14 +2433,12 @@ _list_commands() {
     local _length=${#_functions[@]}
     if (( _length > 0 )); then
         for _function in "${_functions[@]}"; do
-            local _belong=""
             local _is_key=0
-            _belong=$( grep "${_function}\s*()" "$0" )
-            _is_key=$( _is_keyword "$_name" )
-            if [ -n "$_belong" ] \
+            _is_key=$( _is_keyword "$_function" )
+            if grep -e "${_function}\s*()" "$0" > /dev/null \
                     && [[ "$_function" != "_"* ]] \
                     && (( _is_key == 0 )); then
-                echo "[$_function]"
+                echo "$_function"
             fi
         done
     fi

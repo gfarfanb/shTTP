@@ -140,7 +140,7 @@ _shttp_method="not-empty"
 _shttp_base_path="not-empty"
 _shttp_endpoint="not-empty"
 _shttp_headers=( "not-empty" )
-_shttp_body=( "not-empty" )
+_shttp_body="not-empty"
 _shttp_form=( "not-empty" )
 _shttp_query_params=( "not-empty" )
 _shttp_curl_opts=( "not-empty" )
@@ -161,7 +161,7 @@ assertTrue "'_shttp_endpoint' is not empty" "-z \"$_shttp_endpoint\""
 _length=${#_shttp_headers[@]}
 assertEquals "'_shttp_headers' is not empty" 0 "$_length"
 
-_length=${#_shttp_body[@]}
+_length=${#_shttp_body}
 assertEquals "'_shttp_body' is not empty" 0 "$_length"
 
 _length=${#_shttp_form[@]}
@@ -216,8 +216,8 @@ assertEquals "'_shttp_endpoint' not in config" "any-endpoint" "$_shttp_endpoint"
 _length=${#_shttp_headers[@]}
 assertEquals "'_shttp_headers' not in config" 1 "$_length"
 
-_length=${#_shttp_body[@]}
-assertEquals "'_shttp_body' not in config" 1 "$_length"
+_length=$( stat -c%s "$_shttp_body" )
+assertTrue "'_shttp_body' not in config" "$_length -ge 13"
 
 _length=${#_shttp_form[@]}
 assertEquals "'_shttp_form' not in config" 1 "$_length"
@@ -517,28 +517,6 @@ remove apiToken
 _reset_req_vars
 
 
-#  -test Append body to file
-body '{ "body": "content" }'
-_body_file=$( _append_body_to_file )
-assertTrue "Body temporal file does not exist" "-f \"$_body_file\""
-_reset_req_vars
-
-_body_file=$( _append_body_to_file )
-assertFalse "Body temporal file exists" "-f \"$_body_file\""
-_reset_req_vars
-
-body '{' \
-    '"body": "content"' \
-    '}'
-_body_file=$( _append_body_to_file )
-assertTrue "Body (parts) temporal file does not exist" "-f \"$_body_file\""
-_reset_req_vars
-
-_body_file=$( _append_body_to_file )
-assertFalse "Body (parts) temporal file exists" "-f \"$_body_file\""
-_reset_req_vars
-
-
 #  -test Build cURL
 url "https://any.host/any/endpoint"
 method "POST"
@@ -554,7 +532,6 @@ _expected=(
     "-H \"Defined-Header: test/value\" \\"
     "-d \"param=value\" \\"
     "-F \"key=value\" \\"
-    "--data-binary \"@ws/body_file.json.temp\" \\"
     "--basic \\"
     "-u user:password \\"
     "-w \"@output/result.format\" \\"
@@ -590,12 +567,11 @@ for _line in "${_trace[@]}"; do
     echo "$_line" | tee -a "$_shttp_output.trace" > /dev/null
 done
 
-_body_file="ws/body.$( date '+%s.%N' ).json.tmp"
-echo '{ "body": "content" }' | tee -a "$_body_file" > /dev/null
+body '{ "body": "content" }'
 
 _curl='curl https://any.host/any/endpoint'
 
-_clean_trace "$_curl" "$_body_file"
+_clean_trace "$_curl"
 
 #  shellcheck disable=SC2178
 _expected='GET /endpoint HTTP/1.1
@@ -604,7 +580,6 @@ HTTP/1.1 200 Ok
 
 >>>>> body
 { "body": "content" }
-
 
 >>>>> curl
 curl https://any.host/any/endpoint' 

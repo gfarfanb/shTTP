@@ -712,10 +712,10 @@ _shttp_method=""
 #+ execution.
 _shttp_headers=()
 
-#  Request body in parts. During
-#+ request execution these parts
-#+ will be concatenated.
-_shttp_body=()
+#  Request body filename. During
+#+ request execution will be
+#+ appended to 'cURL'.
+_shttp_body=""
 
 #  Request key-value entries for
 #+ data form. If it is specified
@@ -969,11 +969,11 @@ body() {
             fi
         fi
     fi
-    local _length=${#_shttp_body[@]}
     local _current_total=0
-    if (( _length > 0 )); then
-        local _current_body="${_shttp_body[*]}"
-        _current_total=${#_current_body}
+    if [ -f "$_shttp_body" ]; then
+        _current_total=$( stat -c%s "$_shttp_body" )
+    else
+        _shttp_body="ws/.body.$( date '+%s.%N' ).json.tmp"
     fi
     local _size=0
     if (( $# > 0 )); then
@@ -981,7 +981,7 @@ body() {
             _repeat=$(( _repeat-_offset ))
             for (( _i=1; _i<=_repeat; _i++ )); do
                 for _part in "$@"; do
-                    _shttp_body+=( "$_part" )
+                    _append_to_body "$_part"
                     _size=$(( _size+${#_part}  ))
                 done
             done
@@ -989,7 +989,7 @@ body() {
             _max_size=$(( _max_size-_current_total-_offset ))
             for (( ; ; )); do
                 for _part in "$@"; do
-                    _shttp_body+=( "$_part" )
+                    _append_to_body "$_part"
                     _size=$(( _size+${#_part} ))
                 done
                 if (( _size >= _max_size )); then
@@ -998,7 +998,7 @@ body() {
             done
         else
             for _part in "$@"; do
-                _shttp_body+=( "$_part" )
+                _append_to_body "$_part"
                 _size=$(( _size+${#_part} ))
             done
         fi
@@ -1343,7 +1343,7 @@ _reset_req_vars() {
     _shttp_base_path=""
     _shttp_endpoint=""
     _shttp_headers=()
-    _shttp_body=()
+    _shttp_body=""
     _shttp_form=()
     _shttp_query_params=()
     _shttp_curl_opts=()
@@ -1422,8 +1422,7 @@ _default_config() {
             for _i in "${_vals[@]}"; do headers "$_i" ; done
         fi
     fi
-    _length=${#_shttp_body[@]}
-    if (( _length == 0 )); then
+    if ! [ -f "$_shttp_body" ]; then
         _length=$( jq  '.body | length' "$_shttp_env" )
         if (( _length > 0)); then
             _vals=( $( jq ".body | .[]" "$_shttp_env" ) )
@@ -1534,28 +1533,25 @@ _output_dir() {
 #    4. Append default 'Content-Type' to
 #+      headers
 #    5. Append authentication to request.
-#    6. Set body to a body file
-#    7. Build 'cURL' command
-#    8. Execute 'cURL' command
-#    9. Clean and append details into
+#    6. Build 'cURL' command
+#    7. Execute 'cURL' command
+#    8. Clean and append details into
 #+      '_shttp_output.trace' file
-#    10. Execute 'after_<command>' function
-#+       if it is declared
+#    9. Execute 'after_<command>' function
+#+      if it is declared
 #
 #  -param $1 Request command
 _request() {
     local _command=${1:-}
-    local _body_file=""
     local _curl=""
     _default_config
     _default_vars "$_command"
     _execute_if_exist "before_${_command}"
     _append_content_type
     _append_auth
-    _body_file=$( _append_body_to_file )
-    _curl=$( _build_curl "$_body_file" )
+    _curl=$( _build_curl )
     eval "$_curl"
-    _clean_trace "$_curl" "$_body_file"
+    _clean_trace "$_curl"
     _execute_if_exist "after_${_command}"
     printf '\n' ; cat "$_shttp_output.trace"
     printf '\n>>>>> response\n' ; cat "$_shttp_output.output"
@@ -1741,38 +1737,6 @@ _append_auth() {
     esac
 }
 
-#  Append every '_shttp_body' element
-#+ into body content. A new line can
-#+ be done using '\n' as unique
-#+ characters in the line.
-#  At least one variable must be
-#+ appended for generate the body
-#+ file.
-#
-#  -return Body temporal file if
-#+         it was generated otherwise
-#+         return empty
-_append_body_to_file() {
-    local _body_file=""
-    local _length=${#_shttp_body[@]}
-    local _appended=0
-    _body_file="ws/.body.$( date '+%s.%N' ).json.tmp"
-    if (( _length > 0 )); then
-        for _line in "${_shttp_body[@]}"; do
-            if [ "$_line" = "\n" ]; then
-                echo | tee -a "$_body_file" > /dev/null
-            else
-                printf "%s" "$_line" | tee -a "$_body_file" > /dev/null
-            fi
-        done
-        _appended=$(( _appended+1 ))
-    fi
-    if (( _appended < 1 )); then
-        _body_file=""
-    fi
-    echo "$_body_file"
-}
-
 #  Build 'cURL' command. This
 #+ uses the following template:
 #    'curl -X <_shttp_method> -s -v \
@@ -1780,15 +1744,12 @@ _append_body_to_file() {
 #+       -H "<_shttp_headers[1..n]>" \
 #+       -d "<_shttp_query_params[1..n]>" \
 #+       -F "<_shttp_form[1..n]>" \
-#+       --data-binary "@<:body_file>" \
+#+       --data-binary "@<:_shttp_body>" \
 #+       <_shttp_curl_opts[1..n]> \
 #+       <_shttp_url> > "<_shttp_output>.trace" 2>&1'
 #
-#  -param $1 Body temporal file
 #  -return cURL command as string
 _build_curl() {
-    local _body_file=${1:-}
-    
     local _curl=(
         "curl -X $_shttp_method -s -v \\"
         "-o \"$_shttp_output.output\" \\"
@@ -1811,8 +1772,8 @@ _build_curl() {
             _curl+=( "-F \"$_form\" \\" )
         done
     fi
-    if [ -n "$_body_file" ]; then
-        _curl+=( "--data-binary \"@$_body_file\" \\" )
+    if [ -f "$_shttp_body" ]; then
+        _curl+=( "--data-binary \"@$_shttp_body\" \\" )
     fi
     _length=${#_shttp_curl_opts[@]}
     if (( _length > 0 )); then
@@ -1875,22 +1836,20 @@ _curl_format() {
 #+ and captured variables.
 #
 #  -param $1 cURL command
-#  -param $2 Body temporal file
 _clean_trace() {
     #  shellcheck disable=SC2178
     local _curl=${1:-}
-    local _body_file=${2:-}
     #  Remove unnecessary log lines
     sed -i -e '/^[*{} ]/d' "$_shttp_output.trace" 
     #  Remove first two characters in each line
     sed -i -e 's/^..//' "$_shttp_output.trace"
-    if [ -n "$_body_file" ]; then
+    if [ -f "$_shttp_body" ]; then
         echo | tee -a "$_shttp_output.trace" > /dev/null
         echo ">>>>> body" | tee -a "$_shttp_output.trace" > /dev/null
         #  Append body content
-        < "$_body_file" tee -a "$_shttp_output.trace" > /dev/null
+        < "$_shttp_body" tee -a "$_shttp_output.trace" > /dev/null
         printf '\n\n' | tee -a "$_shttp_output.trace" > /dev/null
-        rm -f "$_body_file"
+        rm -f "$_shttp_body"
     else
         echo | tee -a "$_shttp_output.trace" > /dev/null
     fi
@@ -2129,6 +2088,20 @@ _notify_execution() {
             proceed_notif "$_level" "$_message"
         fi
         rm -f "$_shttp_output.notif"
+    fi
+}
+
+#  Append line to body file
+#+ '_shttp_body'.
+#  No test required.
+#
+#  -param $1 Body line
+_append_to_body() {
+    local _line=${1:-}
+    if [ "$_line" = "\n" ]; then
+        echo | tee -a "$_shttp_body" > /dev/null
+    else
+        printf "%s" "$_line" | tee -a "$_shttp_body" > /dev/null
     fi
 }
 

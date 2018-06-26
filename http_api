@@ -7,6 +7,8 @@ IFS=$'\n\t'
 #  Help content.
 _shttp_help_content=(
     ""
+    " Simple HTTP API development environment by command line."
+    ""
     " Usage: ./<file>[.sh] <command> [--list] [--copy <from> <to>] [--del <env>] [--get <key-name>]"
     "                                [--add <key-name> <value>] [--remove <key-name>] [--part <cred-id> <part> <value>]"
     "                                [--keys] [--cred-keys <credential>] [--clean]"
@@ -19,6 +21,7 @@ _shttp_help_content=(
     ""
     " Manage options:"
     "   --list:                        Display the <command> list (all functions defined into main script)"
+    "   --envs:                        Display all environments based on configuration files"
     "   --copy <env-from> <env-to>:    Copy the environment configuration and credentials files. Must exist the 'from'"
     "                                    configuration files. If already exist the 'to' files those will be replaced."
     "                                    If is required to copy from 'default' environment, the first parameters must"
@@ -28,15 +31,16 @@ _shttp_help_content=(
     "   --get <key-name>:              Display the value for key from 'ws/config[.<env>].json'"
     "   --add <key-name> <value>:      Add new key-value to 'ws/config[.<env>].json'"
     "   --remove <key-name>:           Remove the key-value from 'ws/config[.<env>].json'"
-    "   --part <part> <value>:         Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'."
     "   --keys:                        Display all keys from 'ws/config[.<env>].json' file"
+    "   --part <part> <value>:         Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'"
+    "   --creds:                       Display all credentials ids from 'ws/credentials[.<env>].json'"
     "   --cred-keys <credential>:      Display all keys from 'ws/credentials[.<env>].json' file for a specific credential"
     "   --clean:                       Clean up all output files 'output/*'"
     ""
     " Request options:"
     "   --env <env>:                   Set the environment for script by changing configuration and credentials files:"
     "                                    'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
-    "   --cred <credential>:           Set the credential for script by updating '_shttp_auth_credential."
+    "   --cred <credential>:           Set the credential for script by updating '_shttp_auth_credential"
     "   --set <key-name> <value>:      Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
     "   --local <port>:                Set variables to local execution:"
     "                                    _shttp_protocol: http"
@@ -80,21 +84,21 @@ _hd() { local _file=${1:-} ; if [ -a "ws/.vlt" ]; then while read -r _h; do
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_shttp_log_file" >&2 ; }
+info() { echo "$( date '+%Y-%m-%d %T.%N' ) INFO      $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the WARNING level.
 #  No test required.
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_shttp_log_file" >&2 ; }
+warning() { echo "$( date '+%Y-%m-%d %T.%N' ) WARNING   $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the ERROR level.
 #  No test required.
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_shttp_log_file" >&2 ; }
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) ERROR     $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the FATAL level, 
 #+ exit execution with 1.
@@ -102,7 +106,7 @@ error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_shttp_log_
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
+fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
 
 
 # ---------- Initialization
@@ -2422,6 +2426,36 @@ if expr "$*" : ".*--list" > /dev/null; then
     _exit
 fi
 
+#  List the environment IDs based
+#+ on configuration files.
+#
+#  -param $1 Option
+#  -return Environments IDs
+_get_envs() {
+    local _opt=${1:-}
+    local _configs=(
+        $( find ws -name "config*.json" )
+    )
+    local _length=${#_configs[@]}
+    if (( _length > 0 )); then
+        for _config in "${_configs[@]}"; do
+            _config=${_config/ws\/config/}
+            _config=${_config/json/}
+            _config=${_config//\./}
+            if [ -z "$_config" ]; then
+                echo "default"
+            else
+                echo "$_config"
+            fi
+        done
+    fi
+}
+_register_opt --envs _get_envs MANAGE
+if expr "$*" : ".*--envs" > /dev/null; then
+    _look_for_params --envs "$@"
+    _exit
+fi
+
 #  Copy the configuration and credentials
 #+ files. The 'from' files must exist. If
 #+ 'to' files already exist those will be
@@ -2563,6 +2597,28 @@ if expr "$*" : ".*--remove\s" > /dev/null; then
     _exit
 fi
 
+#  List the keys of 'ws/config[.<env>].json'.
+#
+#  -param $1 Option
+#  -return 'ws/config[.<env>].json' keys
+_get_config_keys() {
+    local _opt=${1:-}
+    local _keys=(
+        $( jq "keys | .[]" "$_shttp_env" )
+    )
+    local _length=${#_keys[@]}
+    if (( _length > 0 )); then
+        for _key in "${_keys[@]}"; do
+            echo "$_key" | sed -e 's/^"//' -e 's/"$//'
+        done
+    fi
+}
+_register_opt --keys _get_config_keys MANAGE
+if expr "$*" : ".*--keys" > /dev/null; then
+    _look_for_params --keys "$@"
+    _exit
+fi
+
 #  Add credential part.
 #
 #  -param $1 Option
@@ -2600,29 +2656,31 @@ if expr "$*" : ".*--part\s" > /dev/null; then
     _exit
 fi
 
-#  List the keys of 'ws/config[.<env>].json'.
+#  List the credential IDs from
+#+ 'ws/credentials[.<env>].json'.
 #
 #  -param $1 Option
-#  -return 'ws/config[.<env>].json' keys
-_get_config_keys() {
+#  -return 'ws/credentials[.<env>].json' ids
+_get_cred_ids() {
     local _opt=${1:-}
-    local _keys=(
-        $( jq "keys | .[]" "$_shttp_env" )
+    local _ids=(
+        $( jq ".[] | .id" "$_shttp_creds" )
     )
-    local _length=${#_keys[@]}
+    local _length=${#_ids[@]}
     if (( _length > 0 )); then
-        for _key in "${_keys[@]}"; do
-            echo "$_key" | sed -e 's/^"//' -e 's/"$//'
+        for _id in "${_ids[@]}"; do
+            echo "$_id" | sed -e 's/^"//' -e 's/"$//'
         done
     fi
 }
-_register_opt --keys _get_config_keys MANAGE
-if expr "$*" : ".*--keys" > /dev/null; then
-    _look_for_params --keys "$@"
+_register_opt --creds _get_cred_ids MANAGE
+if expr "$*" : ".*--creds" > /dev/null; then
+    _look_for_params --creds "$@"
     _exit
 fi
 
-#  List the keys of 'ws/credentials[.<env>].json'.
+#  List the keys from
+#+ 'ws/credentials[.<env>].json'.
 #
 #  -param $1 Option
 #  -param $2 Credential

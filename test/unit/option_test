@@ -52,6 +52,20 @@ done
 assertEquals "Command not found" 5 "$_found"
 
 
+#  -test List environment IDs
+_envs=( $( _get_envs --envs ) )
+_found=0
+for _env in "${_envs[@]}"; do
+    case "$_env" in
+        default)
+            _found=$(( _found+1 ))
+        ;;
+    esac
+done
+
+assertEquals "Environment IDs not found" 1 "$_found"
+
+
 #  -test Copy environment
 _copy_env --copy default env
 assertTrue "Configuration 'env' file does not exist" "-f ws/config.env.json"
@@ -88,6 +102,20 @@ put removedVal "\"value\""
 _remove_config --remove "removedVal"
 _null_val=$( get removedVal )
 assertIsNull "'removedVal' found" "$_null_val"
+
+
+#  -test Get keys option
+put namedKey -1
+_keys=( $( _get_config_keys --keys ) )
+_found=0
+for _key in "${_keys[@]}"; do
+    if [ "$_key" = "namedKey" ]; then
+        _found=1
+        break;
+    fi
+done
+
+assertEquals "'namedKey' key not found" 1 "$_found"
 
 
 #  -test Add part option
@@ -131,18 +159,27 @@ assertEquals "'secretParam' not found" "clientSecret" "$_part_val"
 _shttp_auth_credential=""
 
 
-#  -test Get keys option
-put namedKey -1
-_keys=( $( _get_config_keys --keys ) )
+#  -test Get credential IDs
+update "ws/credentials.json" '. + [{
+        "id": "id-test",
+        "username": "test",
+        "password": "t35t"
+    },{
+        "id": "id-cred",
+        "username": "test",
+        "password": "t35t"
+    }]'
+_ids=( $( _get_cred_ids --creds ) )
 _found=0
-for _key in "${_keys[@]}"; do
-    if [ "$_key" = "namedKey" ]; then
-        _found=1
-        break;
-    fi
+for _id in "${_ids[@]}"; do
+    case "$_id" in
+        id-test | id-cred)
+            _found=$(( _found+1 ))
+        ;;
+    esac
 done
 
-assertEquals "'namedKey' key not found" 1 "$_found"
+assertEquals "Credential IDs not found" 2 "$_found"
 
 
 #  -test Get credential keys

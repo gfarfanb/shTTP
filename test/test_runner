@@ -42,28 +42,28 @@ readonly _failed_log_file="/tmp/shTTP_${_test_basename%.*}.failed.$( date '+%s.%
 #  Log a message object with the INFO level.
 #
 #  -param $* Log message
-info() { echo "$( date '+%Y-%m-%d %T.%N' ) [INFO]    $*" | tee -a "$_test_log_file" >&2 ; }
+info() { echo "$( date '+%Y-%m-%d %T.%N' ) INFO      $*" | tee -a "$_test_log_file" >&2 ; }
 
 #  Log a message object with the WARNING level.
 #
 #  -param $* Log message
-warning() { echo "$( date '+%Y-%m-%d %T.%N' ) [WARNING] $*" | tee -a "$_test_log_file" >&2 ; }
+warning() { echo "$( date '+%Y-%m-%d %T.%N' ) WARNING   $*" | tee -a "$_test_log_file" >&2 ; }
 
 #  Log a message object with the ERROR level.
 #
 #  -param $* Log message
-error() { echo "$( date '+%Y-%m-%d %T.%N' ) [ERROR]   $*" | tee -a "$_test_log_file" >&2 ; }
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) ERROR     $*" | tee -a "$_test_log_file" >&2 ; }
 
 #  Log a message object with the FATAL level, 
 #+ exit execution with 1.
 #
 #  -param $* Log message
-fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) [FATAL]   $*" | tee -a "$_test_log_file" >&2 ; exit 1 ; }
+fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" | tee -a "$_test_log_file" >&2 ; exit 1 ; }
 
 #  Log a failed assertion.
 #
 #  -param $* Log message
-failed() { echo "$( date '+%Y-%m-%d %T.%N' ) [FAILED]  $*" | tee -a "$_failed_log_file" >&2 ; }
+failed() { echo "$( date '+%Y-%m-%d %T.%N' ) FAILED    $*" | tee -a "$_failed_log_file" >&2 ; }
 
 
 # ---------- Option functions

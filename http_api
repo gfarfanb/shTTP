@@ -860,6 +860,9 @@ declare -A _shttp_registered_opts
 #  Mock output filename.
 _shttp_mock_output=""
 
+#  Mock trace filename.
+_shttp_mock_trace=""
+
 
 # ---------- Builder functions
 
@@ -1104,6 +1107,31 @@ mockOutput() {
         _shttp_mock_output="ws/.mock-output.$( date '+%s.%N' ).json.tmp"
     fi
     _append_content_file "$_shttp_mock_output" "$@"
+}
+
+#  Setter for response HTTP
+#+ status for mocked request.
+#
+#  -param $1 HTTP Status
+mockStatus() {
+    local _status=${1:-}
+    if ! [ -f "$_shttp_mock_trace" ]; then
+        _shttp_mock_trace="ws/.mock-trace.$( date '+%s.%N' ).json.tmp"
+    fi
+    echo "http_code: $_status" | tee -a "$_shttp_mock_trace" > /dev/null
+}
+
+#  Setter for response HTTP
+#+ headers for mocked request.
+#
+#  -param $@ HTTP Headers
+mockHeaders() {
+    if ! [ -f "$_shttp_mock_trace" ]; then
+        _shttp_mock_trace="ws/.mock-trace.$( date '+%s.%N' ).json.tmp"
+    fi
+    for _header in "$@"; do
+        echo "$_header" | tee -a "$_shttp_mock_trace" > /dev/null
+    done
 }
 
 

@@ -3,7 +3,7 @@
 #  -author Giovanni Farfán B.
 
 
-#  -test Set body
+#  -test Set mock output
 mockOutput '{' '"key": "value"' ',' '"name": "test"' '}'
 #  shellcheck disable=SC2154
 _length=$( stat -c%s "$_shttp_mock_output" )
@@ -19,3 +19,21 @@ mockOutput 0 '110s' 'Lorem ipsum'
 _length=$( stat -c%s "$_shttp_mock_output" )
 assertTrue "Set mock output does not work" "$_length -ge 110"
 _shttp_mock_output=""
+
+
+#  -test Set mock HTTP status
+mockStatus 400
+_mock_status=$( grep -e "^http_code:" "$_shttp_mock_trace" | tail -1 )
+assertTrue "Set mock HTTP status does not work" "-n \"$_mock_status\""
+_shttp_mock_trace=""
+
+
+#  -test Set mock HTTP headers
+mockHeaders 'Content-Type: application/json' 'Authorization: Bearer <token>'
+
+_mock_header=$( grep -e "^Content-Type:" "$_shttp_mock_trace" | tail -1 )
+assertTrue "Set mock HTTP header does not work" "-n \"$_mock_header\""
+
+_mock_header=$( grep -e "^Authorization:" "$_shttp_mock_trace" | tail -1 )
+assertTrue "Set mock HTTP header does not work" "-n \"$_mock_header\""
+_shttp_mock_trace=""

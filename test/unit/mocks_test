@@ -1,0 +1,21 @@
+#! /usr/bin/env bash
+#  Tests for 'http_api' mock functions.
+#  -author Giovanni Farfán B.
+
+
+#  -test Set body
+mockOutput '{' '"key": "value"' ',' '"name": "test"' '}'
+#  shellcheck disable=SC2154
+_length=$( stat -c%s "$_shttp_mock_output" )
+assertTrue "Set mock output does not work" "$_length -ge 31"
+_shttp_mock_output=""
+
+mockOutput 0 '5t' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_mock_output" )
+assertTrue "Set mock output does not work" "$_length -ge 55"
+_shttp_mock_output=""
+
+mockOutput 0 '110s' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_mock_output" )
+assertTrue "Set mock output does not work" "$_length -ge 110"
+_shttp_mock_output=""

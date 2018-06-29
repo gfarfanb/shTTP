@@ -624,3 +624,20 @@ _editor_command
 assertTrue "Open editor command does not work" "-n \"$_command_version\""
 
 _reset_req_vars
+
+
+#  -test Append content to file
+_content_file="ws/.content.$( date '+%s.%N' ).json.tmp"
+
+_append_content_file "$_content_file" '{' '"key": "value"' ',' '"name": "test"' '}'
+#  shellcheck disable=SC2154
+_length=$( stat -c%s "$_content_file" )
+assertTrue "Append content file does not work" "$_length -ge 31"
+
+_append_content_file "$_content_file" 0 '5t' 'Lorem ipsum'
+_length=$( stat -c%s "$_content_file" )
+assertTrue "Append content file does not work" "$_length -ge 55"
+
+_append_content_file "$_content_file" 0 '110s' 'Lorem ipsum'
+_length=$( stat -c%s "$_content_file" )
+assertTrue "Append content file does not work" "$_length -ge 110"

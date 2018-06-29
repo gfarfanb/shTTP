@@ -857,6 +857,9 @@ _shttp_request_opts=()
 #  List of registered options.
 declare -A _shttp_registered_opts
 
+#  Mock output filename.
+_shttp_mock_output=""
+
 
 # ---------- Builder functions
 
@@ -1081,6 +1084,26 @@ mainOpts() {
     if (( _main_length < 1 )); then
         _shttp_input_params="${*}"
     fi
+}
+
+
+# ---------- Mock functions
+
+#  Setter for '_shttp_mock_output'
+#+ file.
+#
+#  -param $1 Offset value
+#  -param $2 Repeat option:
+#+           '[0-9]+t' for times
+#+           '[0-9]+s' for size
+#+           in bytes
+#  -param $@ Mock output parts
+#  -see _append_content_file
+mockOutput() {
+    if ! [ -f "$_shttp_mock_output" ]; then
+        _shttp_mock_output="ws/.mock-output.$( date '+%s.%N' ).json.tmp"
+    fi
+    _append_content_file "$_shttp_mock_output" "$@"
 }
 
 

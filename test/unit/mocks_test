@@ -3,6 +3,12 @@
 #  -author Giovanni Farfán B.
 
 
+#  -test Enable mock mode
+mockEnabled
+assertEquals "Enable mock does not work" 1 "$_shttp_mock_enabled"
+_shttp_mock_enabled=0
+
+
 #  -test Set mock output
 mockOutput '{' '"key": "value"' ',' '"name": "test"' '}'
 #  shellcheck disable=SC2154

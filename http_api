@@ -857,6 +857,12 @@ _shttp_request_opts=()
 #  List of registered options.
 declare -A _shttp_registered_opts
 
+#  Flag for enable request
+#+ mock:
+#    1: enabled
+#    0: disabled
+_shttp_mock_enabled=0
+
 #  Mock output filename.
 _shttp_mock_output=""
 
@@ -1091,6 +1097,12 @@ mainOpts() {
 
 
 # ---------- Mock functions
+
+#  Set to enabled '_shttp_mock_enabled'.
+mockEnabled() {
+    _shttp_mock_enabled=1
+    info "Set [Mock-Enabled] with [true]"
+}
 
 #  Setter for '_shttp_mock_output'
 #+ file.
@@ -1352,6 +1364,9 @@ _reset_req_vars() {
     _shttp_auth_credential=""
     _shttp_auth_mode=""
     _shttp_editor_command=""
+    _shttp_mock_enabled=0
+    _shttp_mock_output=""
+    _shttp_mock_trace=""
 }
 
 #  Put default values to empty
@@ -1549,7 +1564,20 @@ _request() {
     _append_content_type
     _append_auth
     _curl=$( _build_curl )
-    eval "$_curl"
+    if (( _shttp_mock_enabled == 1 )); then
+        if [ -f "$_shttp_mock_output" ]; then
+            mv "$_shttp_mock_output" "$_shttp_output.output"
+        else
+            echo "" > "$_shttp_output.output"
+        fi
+        if [ -f "$_shttp_mock_trace" ]; then
+            mv "$_shttp_mock_trace" "$_shttp_output.trace"
+        else
+            echo "" > "$_shttp_output.trace"
+        fi
+    else
+        eval "$_curl"
+    fi
     _clean_trace "$_curl"
     _execute_if_exist "after_${_command}"
     printf '\n' ; cat "$_shttp_output.trace"
@@ -2449,6 +2477,18 @@ _open_editor() {
 _register_opt --open _open_editor REQUEST
 if expr "$*" : ".*--open" > /dev/null; then
     _look_for_params --open "$@"
+fi
+
+#  Set enabled request mock.
+#
+#  -param $1 Option
+_enable_mock() {
+    local _opt=${1:-}
+    mockEnabled
+}
+_register_opt --mock _enable_mock REQUEST
+if expr "$*" : ".*--mock" > /dev/null; then
+    _look_for_params --mock "$@"
 fi
 
 #  List the names of main script

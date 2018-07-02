@@ -29,7 +29,7 @@ _shttp_mock_output=""
 
 #  -test Set mock HTTP status
 mockStatus 400
-_mock_status=$( grep -e "^http_code:" "$_shttp_mock_trace" | tail -1 )
+_mock_status=$( grep -e "^< http_code:" "$_shttp_mock_trace" | tail -1 )
 assertTrue "Set mock HTTP status does not work" "-n \"$_mock_status\""
 _shttp_mock_trace=""
 
@@ -37,9 +37,37 @@ _shttp_mock_trace=""
 #  -test Set mock HTTP headers
 mockHeaders 'Content-Type: application/json' 'Authorization: Bearer <token>'
 
-_mock_header=$( grep -e "^Content-Type:" "$_shttp_mock_trace" | tail -1 )
+_mock_header=$( grep -e "^< Content-Type:" "$_shttp_mock_trace" | tail -1 )
 assertTrue "Set mock HTTP header does not work" "-n \"$_mock_header\""
 
-_mock_header=$( grep -e "^Authorization:" "$_shttp_mock_trace" | tail -1 )
+_mock_header=$( grep -e "^< Authorization:" "$_shttp_mock_trace" | tail -1 )
 assertTrue "Set mock HTTP header does not work" "-n \"$_mock_header\""
 _shttp_mock_trace=""
+
+
+#  -test Mock execution
+
+#  shellcheck disable=SC2034
+_shttp_execution_type="REQUEST"
+
+get_mock() {
+    url "http://127.0.0.1:5555/info"
+    mockEnabled
+    mockOutput '{"name": "mock"}'
+    mockStatus 200
+    mockHeaders 'Mock-Token: 212k3123i12w1k23'
+}
+
+after_get_mock() {
+    _mock_name=$( getOutput name )
+    _mock_status=$( getStatus )
+    _mock_header=$( getHeader 'Mock-Token' )
+}
+
+_execute get_mock
+
+assertEquals "Mock name does not match" "mock" "$_mock_name"
+assertEquals "Mock HTTP status does not match" 200 "$_mock_status"
+assertEquals "Mock header not match" "212k3123i12w1k23" "$_mock_header"
+
+_reset_req_vars

@@ -63,7 +63,7 @@ fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" | tee -a "$_test_log_f
 #  Log a failed assertion.
 #
 #  -param $* Log message
-failed() { echo "$( date '+%Y-%m-%d %T.%N' ) FAILED    $*" | tee -a "$_failed_log_file" >&2 ; }
+failed() { echo "$( date '+%Y-%m-%d %T.%N' ) FAILED    $*" | tee -a "$_failed_log_file" > /dev/null ; }
 
 
 # ---------- Option functions

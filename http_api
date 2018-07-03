@@ -17,7 +17,7 @@ _shttp_help_content=(
     "                                [--auth-basic <cred>] [--auth-header <cred>] [--auth-qtoken <cred>]"
     "                                [--auth-qkeysec <cred>] [--auth-skip <cred>] [--times <value>] [--open]"
     ""
-    "                                [--version] [--help] [<add-on-options>]"
+    "                                [--help] [<add-on-options>]"
     ""
     " Manage options:"
     "   --list:                        Display the <command> list (all functions defined into main script)"
@@ -54,7 +54,6 @@ _shttp_help_content=(
     "   --open:                        Set '_shttp_editor_command' with value defined on 'editorCommand'"
     "                                    from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
     " Manual options:"
-    "   --version:                     Display the 'shTTP' version"
     "   --help:                        Display this help message"
     ""
     " Add-on options: "
@@ -1581,8 +1580,11 @@ _request() {
     _clean_trace "$_curl"
     _execute_if_exist "after_${_command}"
     printf '\n' ; cat "$_shttp_output.trace"
-    printf '\n>>>>> response\n' ; cat "$_shttp_output.output"
+    printf '\n' ; cat "$_shttp_output.output"
     printf '\n\n'
+    if [ -f "$_shttp_output.body" ]; then
+        info "Created $_shttp_output.body"
+    fi
     info "Created $_shttp_output.trace"
     info "Created $_shttp_output.output"
     if [ "$_shttp_execution_type" = "FLOW" ]; then
@@ -1800,7 +1802,8 @@ _build_curl() {
         done
     fi
     if [ -f "$_shttp_body" ]; then
-        _curl+=( "--data-binary \"@$_shttp_body\" \\" )
+        mv "$_shttp_body" "$_shttp_output.body"
+        _curl+=( "--data-binary \"@$_shttp_output.body\" \\" )
     fi
     _length=${#_shttp_curl_opts[@]}
     if (( _length > 0 )); then
@@ -1857,9 +1860,7 @@ _curl_format() {
 #+ based on verbose 'cURL' file.
 #  The trace file contains:
 #+ request headers, response
-#+ headers, request body content,
-#+ response body content,
-#+ 'cURL' command used,
+#+ headers, 'cURL' command used,
 #+ and captured variables.
 #
 #  -param $1 cURL command
@@ -1870,17 +1871,6 @@ _clean_trace() {
     sed -i -e '/^[*{} ]/d' "$_shttp_output.trace" 
     #  Remove first two characters in each line
     sed -i -e 's/^..//' "$_shttp_output.trace"
-    if [ -f "$_shttp_body" ]; then
-        echo | tee -a "$_shttp_output.trace" > /dev/null
-        echo ">>>>> body" | tee -a "$_shttp_output.trace" > /dev/null
-        #  Append body content
-        < "$_shttp_body" tee -a "$_shttp_output.trace" > /dev/null
-        printf '\n\n' | tee -a "$_shttp_output.trace" > /dev/null
-        rm -f "$_shttp_body"
-    else
-        echo | tee -a "$_shttp_output.trace" > /dev/null
-    fi
-    echo ">>>>> curl" | tee -a "$_shttp_output.trace" > /dev/null
     #  Append CURL command
     #  shellcheck disable=SC2128
     echo "$_curl" | tee -a "$_shttp_output.trace" > /dev/null
@@ -2072,11 +2062,16 @@ _append_content_file() {
 #  -param $? Exit code
 _finally_http_api() {
     local _code=$?
-    if [ -d ws ]; then
-        rm -f ws/*.json.tmp
-        rm -f ws/.*.json.tmp
-    fi
-    _hd "$_shttp_log_file"
+    (
+        if [ -d ws ]; then
+            rm -f ws/.*.json.tmp &
+        fi
+        if [ -d output ]; then
+            find . -name "*.format" -delete
+            find . -type d -empty -delete
+        fi
+        _hd "$_shttp_log_file"
+    ) &
     if [ $_shttp_status = 0 ]; then
         exit 0
     elif [ $_code != 0 ]; then
@@ -2826,16 +2821,6 @@ if expr "$*" : ".*--clean" > /dev/null; then
     _look_for_params --clean "$@"
     _exit
 fi
-    
-#  Show the 'shTTP' version.
-#  No test required.
-_show_version() {
-    git describe --abbrev=0 --tags
-}
-if expr "$*" : ".*--version" > /dev/null; then
-    _show_version
-    _exit
-fi
 
 
 # ---------- Add-ons
@@ -2863,7 +2848,34 @@ fi
 
 
 # ---------- Help content
-    
+
+#  Show the 'cURL' command.
+#  No test required.
+_show_curl() {
+    _execute_if_exist before_api
+    $_shttp_command
+    _set_method "$_shttp_command"
+    _default_config
+    _default_vars "$_shttp_command"
+    _execute_if_exist "before_${_shttp_command}"
+    _append_content_type
+    _append_auth
+    _shttp_output="output/curl.tmp"
+    _build_curl
+}
+if expr "$*" : ".*--curl" > /dev/null; then
+    _shttp_command=${1:-}
+    if [[ "$_shttp_command" == "--"* ]]; then
+        _shttp_command=""
+    fi
+    if [ -z "$_shttp_command" ]; then
+        info "No command to execute"
+    else
+        _show_curl
+    fi
+    _exit
+fi
+
 #  Show the help content.
 #  No test required.
 _show_help_content() {

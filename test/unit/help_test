@@ -1,0 +1,29 @@
+#! /usr/bin/env bash
+#  Tests for 'http_api' help functions.
+#  -author Giovanni Farfán B.
+
+
+#  -test Show cURL command
+
+get_curl_command() {
+    url "http://127.0.0.1:5555/info"
+}
+
+_shttp_command="get_curl_command"
+_curl_expected="curl -X GET -s -v \\
+-o \"output/curl.tmp.output\" \\
+-H \"Content-Type: application/json\" \\
+-w \"@output/curl.tmp.format\" \\
+http://127.0.0.1:5555/info > \"output/curl.tmp.trace\" 2>&1"
+
+_curl_command=$( _show_curl )
+
+assertEquals "'cURL' command does not match" "$_curl_expected" "$_curl_command"
+
+#  shellcheck disable=SC2034
+_shttp_command=""
+
+
+#  -test Show help content
+_help_content=$( _show_help_content )
+assertTrue "Help content is empty" "-n \"$_help_content\""

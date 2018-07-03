@@ -38,6 +38,16 @@ _callback_func="${_shttp_registered_opts[--change]}"
 assertEquals "Option not registered" "_change_func" "$_callback_func"
 
 
+#  -test Add help content
+
+#  shellcheck disable=SC2154
+_last_length=${#_shttp_help_content[@]}
+_last_length=$(( _last_length+2 ))
+_help_content '--new-option-1' '--new-option-2'
+_length=${#_shttp_help_content[@]}
+assertEquals "Help content not added" "$_last_length" "$_length"
+
+
 #  -test List available commands
 _commands=( $( _list_commands --list ) )
 _found=0

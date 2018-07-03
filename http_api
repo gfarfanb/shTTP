@@ -68,16 +68,6 @@ readonly _shttp_basename=$( basename "$0" )
 #  Log filename.
 readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' ).log"
 
-#  Mask logging for secret
-#+ values.
-#  No test required.
-#
-#  -param $* Log message
-_hd() { local _file=${1:-} ; if [ -a "ws/.vlt" ]; then while read -r _h; do
-    _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
-    _h=${_h//\//\\/} ; sed -i -- "s/$_h/*****/g" "$_file"
-    done < "ws/.vlt" ; fi ; }
-
 #  Log a message with the INFO level.
 #  No test required.
 #
@@ -267,7 +257,7 @@ step() {
             _look_for_params "$_opt" "${_params[@]}" || continue
         done
     fi
-    _step_log "$_command"
+    echo "$_command" | tee -a "$_shttp_output_flow.steps" > /dev/null
     _execute "$_command"
     _shttp_input_params="$_last_params"
 }
@@ -1254,7 +1244,7 @@ _execute_flow() {
         #  Show flow results
         info "Created $_shttp_output_flow.trace"
         _save_history "$_command" FLOW
-        _show_assertion_results FLOW
+        _assertion_results_log FLOW
         _notify_execution "$_command" FLOW
         #  Set execution status
         _shttp_status=$(( _shttp_status+_shttp_failures_flow ))
@@ -1329,7 +1319,7 @@ _execute() {
         fi
         #  Show request results
         _save_history "$_command" REQUEST
-        _show_assertion_results REQUEST
+        _assertion_results_log REQUEST
         _notify_execution "$_command" REQUEST
         #  Set execution status
         _shttp_status=$(( _shttp_status+_shttp_failures ))
@@ -2051,79 +2041,8 @@ _append_content_file() {
     info "Appended [$_size] bytes to [$_file], total [$_current_total]"
 }
 
-#  Cleanup all temp JSON files from
-#+ workspace and hide private
-#+ data to log files.
-#  This function is called after
-#+ execute the main code or after
-#+ get an error.
-#  No test required.
-#
-#  -param $? Exit code
-_finally_http_api() {
-    local _code=$?
-    (
-        if [ -d ws ]; then
-            rm -f ws/.*.json.tmp &
-        fi
-        if [ -d output ]; then
-            find . -name "*.format" -delete
-            find . -type d -empty -delete
-        fi
-        _hd "$_shttp_log_file"
-    ) &
-    if [ $_shttp_status = 0 ]; then
-        exit 0
-    elif [ $_code != 0 ]; then
-        exit $_code
-    else
-        exit 1
-    fi
-}
-
-#  Show assertion results if
-#+ assetion count is greater
-#+ than '0'.
-#  No test required.
-#
-#  -param $1 Execution type
-_show_assertion_results() {
-    local _type=${1:-}
-    local _assertions=0
-    local _failures=0
-    local _output=""
-    case "$_shttp_execution_type" in
-        REQUEST)
-            _assertions=$_shttp_assertions
-            _failures=$_shttp_failures
-            _output="$_shttp_output"
-        ;;
-        FLOW)
-            _assertions=$_shttp_assertions_flow
-            _failures=$_shttp_failures_flow
-            _output="$_shttp_output_flow"
-        ;;
-    esac
-    if [ "$_shttp_execution_type" = "$_type" ]; then
-        if (( _assertions > 0 )); then
-            if [ -f "$_output.failed" ]; then
-                info "Created $_output.failed"
-                while read -r _line; do
-                    info ">>> $_line"
-                done < "$_output.failed"
-            fi
-            if [ $_failures = 0 ]; then
-                info "[PASSED] - [$_assertions] of [$_assertions] assertions passed"
-            else
-                warning "[FAILED] - [$_failures] of [$_assertions] assertions failed"
-            fi
-        fi
-    fi
-}
-
 #  Takes an snapshot of the
 #+ execution and notify it.
-#  No test required.
 #
 #  -param $1 Execution type
 _notify_execution() {
@@ -2187,6 +2106,55 @@ _notify_execution() {
     fi
 }
 
+#  Mask secret values of
+#+ specified content file.
+#
+#  -param $* File
+_hd() { local _file=${1:-} ; if [ -a "ws/.vlt" ]; then while read -r _h; do
+    _h=$( echo "$_h" | cut -d '!' -f 2 | base64 --decode )
+    _h=${_h//\//\\/} ; sed -i -- "s/$_h/*****/g" "$_file"
+    done < "ws/.vlt" ; fi ; }
+
+#  Show assertion results if
+#+ assetion count is greater
+#+ than '0'.
+#  No test required.
+#
+#  -param $1 Execution type
+_assertion_results_log() {
+    local _type=${1:-}
+    local _assertions=0
+    local _failures=0
+    local _output=""
+    case "$_shttp_execution_type" in
+        REQUEST)
+            _assertions=$_shttp_assertions
+            _failures=$_shttp_failures
+            _output="$_shttp_output"
+        ;;
+        FLOW)
+            _assertions=$_shttp_assertions_flow
+            _failures=$_shttp_failures_flow
+            _output="$_shttp_output_flow"
+        ;;
+    esac
+    if [ "$_shttp_execution_type" = "$_type" ]; then
+        if (( _assertions > 0 )); then
+            if [ -f "$_output.failed" ]; then
+                info "Created $_output.failed"
+                while read -r _line; do
+                    info ">>> $_line"
+                done < "$_output.failed"
+            fi
+            if [ $_failures = 0 ]; then
+                info "[PASSED] - [$_assertions] of [$_assertions] assertions passed"
+            else
+                warning "[FAILED] - [$_failures] of [$_assertions] assertions failed"
+            fi
+        fi
+    fi
+}
+
 #  Log a message about flow
 #+ processing into
 #+ '_shttp_output_flow.trace'.
@@ -2195,15 +2163,6 @@ _notify_execution() {
 #  -param $* Log message
 _flow_log() {
     echo "$( date '+%Y-%m-%d %T.%N' ) [FLOW]   $*" | tee -a "$_shttp_output_flow.trace" > /dev/null
-}
-
-#  Log a step flow into
-#+ '_shttp_output_flow.steps'.
-#  No test required.
-#
-#  -param $* Command step
-_step_log() {
-    echo "$*" | tee -a "$_shttp_output_flow.steps" > /dev/null
 }
 
 #  Log a message about assertion
@@ -2226,6 +2185,36 @@ _failed_log() {
 #  -param $* Log message
 _notify_log() {
     echo "$*" | tee -a "$_shttp_output.notif" > /dev/null
+}
+
+#  Cleanup all temp JSON files from
+#+ workspace and hide private
+#+ data to log files.
+#  This function is called after
+#+ execute the main code or after
+#+ get an error.
+#  No test required.
+#
+#  -param $? Exit code
+_finally_http_api() {
+    local _code=$?
+    (
+        if [ -d ws ]; then
+            rm -f ws/.*.json.tmp &
+        fi
+        if [ -d output ]; then
+            find . -name "*.format" -delete
+            find . -type d -empty -delete
+        fi
+        _hd "$_shttp_log_file"
+    ) &
+    if [ $_shttp_status = 0 ]; then
+        exit 0
+    elif [ $_code != 0 ]; then
+        exit $_code
+    else
+        exit 1
+    fi
 }
 
 #  Execute finally function and
@@ -2324,7 +2313,6 @@ _register_opt() {
 
 #  Add help lines to
 #+ '_shttp_help_content'.
-#  No test required.
 #
 #  -param $* Help content
 _help_content() {
@@ -2850,7 +2838,6 @@ fi
 # ---------- Help content
 
 #  Show the 'cURL' command.
-#  No test required.
 _show_curl() {
     _execute_if_exist before_api
     $_shttp_command
@@ -2877,7 +2864,6 @@ if expr "$*" : ".*--curl" > /dev/null; then
 fi
 
 #  Show the help content.
-#  No test required.
 _show_help_content() {
     echo "${_shttp_help_content[*]}"
 }

@@ -636,3 +636,29 @@ assertTrue "Append content file does not work" "$_length -ge 55"
 _append_content_file "$_content_file" 0 '110s' 'Lorem ipsum'
 _length=$( stat -c%s "$_content_file" )
 assertTrue "Append content file does not work" "$_length -ge 110"
+
+
+#  -test Notify execution
+
+#  shellcheck disable=SC2034
+_shttp_execution_type="REQUEST"
+
+proceed_notif() {
+    #  shellcheck disable=SC2034
+    _notification_level=${1:-}
+    #  shellcheck disable=SC2034
+    _notification_message=${2:-}
+}
+
+_notify_execution get_test "REQUEST"
+
+assertTrue "Notification execution does not work" "-n \"_notification_level\""
+assertTrue "Notification execution does not work" "-n \"_notification_message\""
+
+
+#  -test Mask secret values
+echo "53c137" | base64 | tee -a ws/.vlt > /dev/null
+echo "53c137" > "ws/unsafe.txt"
+_hd "ws/unsafe.txt"
+_hidden=$( < "ws/unsafe.txt" )
+assertEquals "Value not hidden" "*****" "$_hidden"

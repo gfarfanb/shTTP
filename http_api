@@ -1787,6 +1787,7 @@ _append_auth() {
 #
 #  -return cURL command as string
 _build_curl() {
+    local _url="$_shttp_url"
     local _curl=(
         "curl -X $_shttp_method -s -v \\"
         "-o \"$_shttp_output.output\" \\"
@@ -1799,9 +1800,11 @@ _build_curl() {
     fi
     _length=${#_shttp_query_params[@]}
     if (( _length > 0 )); then
+        _url+="?"
         for _param in "${_shttp_query_params[@]}"; do
-            _curl+=( "-d \"$_param\" \\" )
+            _url+="$_param&"
         done
+        _url=${_url::-1}
     fi
     _length=${#_shttp_form[@]}
     if (( _length > 0 )); then
@@ -1821,7 +1824,8 @@ _build_curl() {
     fi
     _curl_format
     _curl+=( "-w \"@$_shttp_output.format\" \\" )
-    _curl+=( "$_shttp_url > \"$_shttp_output.trace\" 2>&1" )
+    _curl+=( "$_url \\" )
+    _curl+=( "> \"$_shttp_output.trace\" 2>&1" )
     echo "${_curl[*]}"
 }
 

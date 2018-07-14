@@ -293,7 +293,7 @@ _response_trace=(
     ""
     "HTTP/1.1 200 OK"
     "Server: AnyHost.com"
-    "Vary: Accept"
+    "Accept: *"
     ""
     "http_code: 200"
 )

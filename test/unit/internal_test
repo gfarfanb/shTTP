@@ -530,12 +530,12 @@ _expected=(
     "curl -X POST -s -v \\"
     "-o \"output/result.output\" \\"
     "-H \"Defined-Header: test/value\" \\"
-    "-d \"param=value\" \\"
     "-F \"key=value\" \\"
     "--basic \\"
     "-u user:password \\"
     "-w \"@output/result.format\" \\"
-    "https://any.host/any/endpoint > \"output/result.trace\" 2>&1"
+    "https://any.host/any/endpoint?param=value \\"
+    "> \"output/result.trace\" 2>&1"
 )
 _curl=$( _build_curl "ws/body_file.json.temp" )
 

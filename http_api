@@ -106,7 +106,7 @@ fi
 #+ https://github.com/stedolan/jq
 readonly _jq_version=$( jq --version )
 if [ -z "$_jq_version" ]; then
-    fatal "'jq' is not installed yet"
+    warning "'jq' is not installed yet, JSON processing will not work"
 fi
 
 #  Output directory for trace and

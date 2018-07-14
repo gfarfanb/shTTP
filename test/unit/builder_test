@@ -24,6 +24,13 @@ assertEquals "Set domain does not work" "0.0.0.0:0000" "$_shttp_domain"
 _reset_req_vars
 
 
+#  -test Set port
+port "0000"
+#  shellcheck disable=SC2154
+assertEquals "Set port does not work" "0000" "$_shttp_port"
+_reset_req_vars
+
+
 #  -test Set endpoint
 basePath "api/path"
 #  shellcheck disable=SC2154

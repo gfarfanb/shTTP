@@ -1317,7 +1317,7 @@ _execute() {
         _set_method "$_command"
         _request "$_command"
         _execute_if_exist after_api
-        _editor_command
+        _execute_editor_command
         #  Log request end
         if [ "$_shttp_execution_type" = "FLOW" ]; then
             info "$_shttp_flow_index: [$_shttp_current_flow] >>> $_req_idx: Done request [$_command]"
@@ -1976,13 +1976,18 @@ _save_history() {
 #+ results into file
 #+ editor and then process
 #+ it manually.
-#  Execution takes two steps:
-#    1. Variables resolution
+#  Execution takes the following
+#+ steps:
+#    1. Replace OUTPUT text for
+#+      'shttp_output.output'
+#+      value.
+#    2. Variables resolution
 #+      if any exist in the
 #+      original definition.
-#    2. Command execution.
-_editor_command() {
+#    3. Command execution.
+_execute_editor_command() {
     if [ -n "$_shttp_editor_command" ]; then
+        _shttp_editor_command=${_shttp_editor_command//OUTPUT/$_shttp_output.output}
         eval "_shttp_editor_command=\"$_shttp_editor_command\""
         info "Start [$_shttp_editor_command]"
         eval "$_shttp_editor_command"
@@ -2487,11 +2492,11 @@ fi
 #+ is assigned to '_shttp_editor_command'.
 #
 #  -param $1 Option
-_open_editor() {
+_set_editor() {
     local _opt=${1:-}
     editor "$( get editorCommand )"
 }
-_register_opt --open _open_editor REQUEST
+_register_opt --open _set_editor REQUEST
 if expr "$*" : ".*--open" > /dev/null; then
     _look_for_params --open "$@"
 fi

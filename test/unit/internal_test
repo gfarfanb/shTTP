@@ -613,11 +613,19 @@ put program "\"jq\""
 #  shellcheck disable=SC2016
 editor '_command_version="$( $( get program ) --version )"'
 
-_editor_command
+_execute_editor_command
 
 #  shellcheck disable=SC2154
 assertTrue "Open editor command does not work" "-n \"$_command_version\""
+_reset_req_vars
 
+output 'location/execution'
+editor '_command_output="OUTPUT"'
+
+_execute_editor_command
+
+#  shellcheck disable=SC2154
+assertEquals "Open editor command does not work" "location/execution.output" "$_command_output"
 _reset_req_vars
 
 

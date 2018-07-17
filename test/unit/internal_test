@@ -620,7 +620,7 @@ assertTrue "Open editor command does not work" "-n \"$_command_version\""
 _reset_req_vars
 
 output 'location/execution'
-editor '_command_output="OUTPUT"'
+editor '_command_output=":OUTPUT"'
 
 _execute_editor_command
 

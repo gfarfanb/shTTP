@@ -132,6 +132,7 @@ if ! [ -f "ws/config.json" ]; then
     echo '{
         "protocol": null,
         "domain": null,
+        "port": null,
         "basePath": null,
         "endpoint": null,
         "method": null,
@@ -143,7 +144,7 @@ if ! [ -f "ws/config.json" ]; then
         "authMode": null,
         "authCredential": null,
         "editorCommand": null
-    }' > "ws/config.json"
+}' > "ws/config.json"
 fi
 
 #  Default credentials JSON file
@@ -1978,7 +1979,7 @@ _save_history() {
 #+ it manually.
 #  Execution takes the following
 #+ steps:
-#    1. Replace OUTPUT text for
+#    1. Replace ':OUTPUT' text for
 #+      'shttp_output.output'
 #+      value.
 #    2. Variables resolution
@@ -1987,7 +1988,7 @@ _save_history() {
 #    3. Command execution.
 _execute_editor_command() {
     if [ -n "$_shttp_editor_command" ]; then
-        _shttp_editor_command=${_shttp_editor_command//OUTPUT/$_shttp_output.output}
+        _shttp_editor_command=${_shttp_editor_command//:OUTPUT/$_shttp_output.output}
         eval "_shttp_editor_command=\"$_shttp_editor_command\""
         info "Start [$_shttp_editor_command]"
         eval "$_shttp_editor_command"

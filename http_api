@@ -1988,7 +1988,9 @@ _save_history() {
 #    3. Command execution.
 _execute_editor_command() {
     if [ -n "$_shttp_editor_command" ]; then
-        _shttp_editor_command=${_shttp_editor_command//:OUTPUT/$_shttp_output.output}
+        if [ -s "$_shttp_output.output" ]; then
+            _shttp_editor_command=${_shttp_editor_command//:OUTPUT/$_shttp_output.output}
+        fi
         eval "_shttp_editor_command=\"$_shttp_editor_command\""
         info "Start [$_shttp_editor_command]"
         eval "$_shttp_editor_command"

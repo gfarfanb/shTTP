@@ -608,6 +608,10 @@ _shttp_output_flow=""
 
 
 #  -test Open editor command
+
+#  shellcheck disable=SC2034
+_shttp_open_editor=1
+
 put program "\"jq\""
 
 #  shellcheck disable=SC2016
@@ -618,6 +622,9 @@ _execute_editor_command
 #  shellcheck disable=SC2154
 assertTrue "Open editor command does not work" "-n \"$_command_version\""
 _reset_req_vars
+
+#  shellcheck disable=SC2034
+_shttp_open_editor=1
 
 echo 'ws/execution' > 'ws/execution.output'
 output 'ws/execution'

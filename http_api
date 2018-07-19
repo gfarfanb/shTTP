@@ -760,6 +760,12 @@ _shttp_request_times=0
 #+ of the request.
 _shttp_editor_command=""
 
+#  Open editor command flag.
+#+ Allowed values:
+#    1: true
+#    0: false
+_shttp_open_editor=0
+
 #  Request execution date with
 #+ the following format:
 #+ yymmdd.hhmmss.000000000
@@ -963,6 +969,19 @@ body() {
         _shttp_body="ws/.body.$( date '+%s.%N' ).json.tmp"
     fi
     _append_content_file "$_shttp_body" "$@"
+}
+
+#  Setter for '_shttp_body' file.
+#+ A request body file is directly
+#+ defined by this function.
+#
+#  -param $1 Body filename
+bodyFile() {
+    local _body_file=${1:-}
+    if [ -n "$_body_file" ]; then
+        _shttp_body="ws/.body.$( date '+%s.%N' ).json.tmp"
+        cp "$_body_file" "$_shttp_body"
+    fi
 }
 
 #  Setter for '_shttp_form'.
@@ -1363,6 +1382,7 @@ _reset_req_vars() {
     _shttp_auth_credential=""
     _shttp_auth_mode=""
     _shttp_editor_command=""
+    _shttp_open_editor=0
     _shttp_mock_enabled=0
     _shttp_mock_output=""
     _shttp_mock_trace=""
@@ -1987,7 +2007,7 @@ _save_history() {
 #+      original definition.
 #    3. Command execution.
 _execute_editor_command() {
-    if [ -n "$_shttp_editor_command" ]; then
+    if [ -n "$_shttp_editor_command" ] && [ "$_shttp_open_editor" = "1" ]; then
         if [ -s "$_shttp_output.output" ]; then
             _shttp_editor_command=${_shttp_editor_command//:OUTPUT/$_shttp_output.output}
         fi
@@ -2490,16 +2510,15 @@ if expr "$*" : ".*--times\s" > /dev/null; then
     _look_for_params --times "$@"
 fi
 
-#  Get saved editor command from
-#+ 'ws/config[.<env>].json and the value
-#+ is assigned to '_shttp_editor_command'.
+#  Set open editor flag to
+#+ true: 1.
 #
 #  -param $1 Option
-_set_editor() {
+_set_open_flag() {
     local _opt=${1:-}
-    editor "$( get editorCommand )"
+    _shttp_open_editor=1
 }
-_register_opt --open _set_editor REQUEST
+_register_opt --open _set_open_flag REQUEST
 if expr "$*" : ".*--open" > /dev/null; then
     _look_for_params --open "$@"
 fi

@@ -103,6 +103,16 @@ assertTrue "Set body does not work" "$_length -ge 110"
 _reset_req_vars
 
 
+#  -test Set body file
+_shttp_body=""
+echo "{}" > ws/request_body.json
+bodyFile ws/request_body.json
+
+assertTrue "Body file not found" "-f \"$_shttp_body\""
+assertTrue "Body file is empty" "-s \"$_shttp_body\""
+_reset_req_vars
+
+
 #  -test Set form
 form "key=value" "name=test"
 #  shellcheck disable=SC2154

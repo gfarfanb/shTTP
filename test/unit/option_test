@@ -282,11 +282,11 @@ _shttp_request_times=0
 
 
 #  -test Open editor option
-put editorCommand "\"echo \\\"opening... results.json\\\"\""
-_set_editor --open
+_shttp_open_editor=0
+_set_open_flag --open
 #  shellcheck disable=SC2154
-assertEquals "'_shttp_editor_command' not assigned" \
-    "echo \\\"opening... results.json\\\"" "$_shttp_editor_command"
+assertEquals "Open editor command not assigned" 1 "$_shttp_open_editor"
+_shttp_open_editor=0
 
 
 #  -test Enable request mock

@@ -1845,7 +1845,7 @@ _build_curl() {
     fi
     _curl_format
     _curl+=( "-w \"@$_shttp_output.format\" \\" )
-    _curl+=( "$_url \\" )
+    _curl+=( "\"$_url\" \\" )
     _curl+=( "> \"$_shttp_output.trace\" 2>&1" )
     echo "${_curl[*]}"
 }

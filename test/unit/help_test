@@ -14,7 +14,7 @@ _curl_expected="curl -X GET -s -v \\
 -o \"output/curl.tmp.output\" \\
 -H \"Content-Type: application/json\" \\
 -w \"@output/curl.tmp.format\" \\
-http://127.0.0.1:5555/info \\
+\"http://127.0.0.1:5555/info\" \\
 > \"output/curl.tmp.trace\" 2>&1"
 
 _curl_command=$( _show_curl )

@@ -534,7 +534,7 @@ _expected=(
     "--basic \\"
     "-u user:password \\"
     "-w \"@output/result.format\" \\"
-    "https://any.host/any/endpoint?param=value \\"
+    "\"https://any.host/any/endpoint?param=value\" \\"
     "> \"output/result.trace\" 2>&1"
 )
 _curl=$( _build_curl "ws/body_file.json.temp" )

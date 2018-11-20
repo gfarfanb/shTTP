@@ -8,8 +8,8 @@ branches:
 
 install:
   - curl --version
-  - jq --version
-  - shellcheck --version
+  - sudo apt-get install jq
+  - sudo apt-get install shellcheck
   - sudo apt-get install nginx
 
 script:

@@ -51,6 +51,9 @@ _shttp_help_content=(
     " Manual options:"
     "   --help:                        Display this help message"
     ""
+    " Environment variables:"
+    "   SAVED_LOGS:                    'true' for saved logs on '/tmp/_shttp_basename.yyyy-mm-dd.log'"
+    "                                    otherwise logs only will print by 'echo' function"
     " Add-on options: "
 )
 
@@ -59,6 +62,9 @@ readonly _shttp_basename=$( basename "$0" )
 
 
 # ---------- Logging functions
+
+SAVED_LOGS=${SAVED_LOGS:-'false'}
+if [ "$SAVED_LOGS" == 'true' ]; then
 
 #  Log filename.
 readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' ).log"
@@ -75,7 +81,7 @@ info() { echo "$( date '+%Y-%m-%d %T.%N' ) INFO      $*" | tee -a "$_shttp_log_f
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-warning() { echo "$( date '+%Y-%m-%d %T.%N' ) WARNING   $*" | tee -a "$_shttp_log_file" >&2 ; }
+warn() { echo "$( date '+%Y-%m-%d %T.%N' ) WARNING   $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 #  Log a message with the ERROR level.
 #  No test required.
@@ -92,6 +98,15 @@ error() { echo "$( date '+%Y-%m-%d %T.%N' ) ERROR     $*" | tee -a "$_shttp_log_
 #  shellcheck disable=SC2086
 fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
 
+else
+
+info() { echo "`date '+%Y-%m-%d %T.%N'` [INFO]    $*" ; }
+warn() { echo "`date '+%Y-%m-%d %T.%N'` [WARNING] $*" ; }
+error() { echo "`date '+%Y-%m-%d %T.%N'` [ERROR]   $*" ; }
+fatal() { echo "`date '+%Y-%m-%d %T.%N'` [FATAL]   $*" ; }
+
+fi
+
 
 # ---------- Initialization
 
@@ -106,7 +121,7 @@ fi
 #+ https://github.com/stedolan/jq
 readonly _jq_version=$( jq --version )
 if [ -z "$_jq_version" ]; then
-    warning "'jq' is not installed yet, JSON processing will not work"
+    warn "'jq' is not installed yet, JSON processing will not work"
 fi
 
 #  Output directory for trace and
@@ -1591,7 +1606,8 @@ _request() {
     _execute_if_exist "before_${_command}"
     _append_content_type
     _append_auth
-    _curl=$( _build_curl )
+    _build_curl _request_build_curl_return
+    _curl="$_request_build_curl_return"
     if (( _shttp_mock_enabled == 1 )); then
         if [ -f "$_shttp_mock_output" ]; then
             mv "$_shttp_mock_output" "$_shttp_output.output"
@@ -1808,6 +1824,7 @@ _append_auth() {
 #
 #  -return cURL command as string
 _build_curl() {
+    local _build_curl_return_var=${1:-}
     local _url="$_shttp_url"
     local _curl=(
         "curl -X $_shttp_method -s -v \\"
@@ -1847,7 +1864,11 @@ _build_curl() {
     _curl+=( "-w \"@$_shttp_output.format\" \\" )
     _curl+=( "\"$_url\" \\" )
     _curl+=( "> \"$_shttp_output.trace\" 2>&1" )
-    echo "${_curl[*]}"
+    if [ -n "$_build_curl_return_var" ]; then
+        eval "$_build_curl_return_var=\"${_curl[*]}\""
+    else
+        echo "${_curl[*]}"
+    fi
 }
 
 #  Create the file format
@@ -2199,7 +2220,7 @@ _assertion_results_log() {
             if [ $_failures = 0 ]; then
                 info "[PASSED] - [$_assertions] of [$_assertions] assertions passed"
             else
-                warning "[FAILED] - [$_failures] of [$_assertions] assertions failed"
+                warn "[FAILED] - [$_failures] of [$_assertions] assertions failed"
             fi
         fi
     fi
@@ -2900,6 +2921,7 @@ fi
 
 #  Show the 'cURL' command.
 _show_curl() {
+    local _show_curl_return_var=${1:-}
     _execute_if_exist before_api
     $_shttp_command
     _set_method "$_shttp_command"
@@ -2909,7 +2931,12 @@ _show_curl() {
     _append_content_type
     _append_auth
     _shttp_output="output/curl.tmp"
-    _build_curl
+    _build_curl _show_curl_build_curl_return
+    if [ -n "$_show_curl_return_var" ]; then
+        eval "$_show_curl_return_var=\"$_show_curl_build_curl_return\""
+    else
+        echo "$_show_curl_build_curl_return"
+    fi
 }
 if expr "$*" : ".*--curl" > /dev/null; then
     _shttp_command=${1:-}
@@ -2919,7 +2946,8 @@ if expr "$*" : ".*--curl" > /dev/null; then
     if [ -z "$_shttp_command" ]; then
         info "No command to execute"
     else
-        _show_curl
+        _show_curl _http_api_show_curl_return
+        echo "$_http_api_show_curl_return"
     fi
     _exit
 fi

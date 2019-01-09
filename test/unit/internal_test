@@ -18,8 +18,8 @@ assertEquals "'whatever' is key" 0 "$_is_key"
 _has_info=$( _has_func info )
 assertEquals "'info' function not found" 1 "$_has_info"
 
-_has_warning=$( _has_func warning )
-assertEquals "'warning' function not found" 1 "$_has_warning"
+_has_warn=$( _has_func warn )
+assertEquals "'warn' function not found" 1 "$_has_warn"
 
 _has_error=$( _has_func error )
 assertEquals "'error' function not found" 1 "$_has_error"
@@ -537,7 +537,10 @@ _expected=(
     "\"https://any.host/any/endpoint?param=value\" \\"
     "> \"output/result.trace\" 2>&1"
 )
-_curl=$( _build_curl "ws/body_file.json.temp" )
+
+_build_curl _internal_test_build_curl_return
+# _curl=$(  "ws/body_file.json.temp" )
+_curl="$_internal_test_build_curl_return"
 
 assertEquals "'cURL' command bad" "${_expected[*]}" "$_curl"
 

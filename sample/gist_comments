@@ -78,7 +78,7 @@ after_get_only_def() {
 }
 
 after_api() {
-    warning "Flow discard execution of this function"
+    warn "Flow discard execution of this function"
 }
 
 before_flow() {

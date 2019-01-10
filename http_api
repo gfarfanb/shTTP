@@ -2915,7 +2915,8 @@ fi
 
 #  Show the 'cURL' command.
 _show_curl() {
-    local _show_curl_return=${1:-}
+    local _return_var=${1:-}
+    local _curl_value=""
     _execute_if_exist before_api
     $_shttp_command
     _set_method "$_shttp_command"
@@ -2925,11 +2926,11 @@ _show_curl() {
     _append_content_type
     _append_auth
     _shttp_output="output/curl.tmp"
-    if [ -n "$_show_curl_return" ]; then
-        local _curl_value=$( _build_curl )
-        eval "$_show_curl_return=\"$_curl_value\""
+    _curl_value=$( _build_curl )
+    if [ -n "$_return_var" ]; then
+        eval "$_return_var=\"$_curl_value\""
     else
-        echo $( _build_curl )
+        echo $_curl_value
     fi
 }
 if expr "$*" : ".*--curl" > /dev/null; then

@@ -2271,7 +2271,9 @@ _finally_http_api() {
             find . -name "*.format" -delete
             find . -type d -empty -delete
         fi
-        _hd "$_shttp_log_file"
+        if [ "$SAVED_LOGS" == "true" ]; then
+            _hd "$_shttp_log_file"
+        fi
     ) &
     if [ $_shttp_status = 0 ]; then
         exit 0
@@ -2928,9 +2930,9 @@ _show_curl() {
     _shttp_output="output/curl.tmp"
     _curl_value=$( _build_curl )
     if [ -n "$_return_var" ]; then
-        eval "$_return_var=\"$_curl_value\""
+        eval "$_return_var='$_curl_value'"
     else
-        echo $_curl_value
+        echo "$_curl_value"
     fi
 }
 if expr "$*" : ".*--curl" > /dev/null; then

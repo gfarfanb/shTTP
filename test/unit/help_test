@@ -18,7 +18,6 @@ _curl_expected="curl -X GET -s -v \\
 > \"output/curl.tmp.trace\" 2>&1"
 
 _show_curl _curl_command
-echo "Obtained $_curl_command"
 
 assertEquals "'cURL' command does not match" "$_curl_expected" "$_curl_command"
 

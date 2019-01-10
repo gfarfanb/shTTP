@@ -5,23 +5,33 @@
 
 #  -test Show cURL command
 
-get_curl_command() {
+post_curl_command() {
     url "http://127.0.0.1:5555/info"
+    body '{"name":"test"}'
 }
 
-_shttp_command="get_curl_command"
-_curl_expected="curl -X GET -s -v \\
--o \"output/curl.tmp.output\" \\
+_shttp_command="post_curl_command"
+_curl_command=""
+
+_curl_expected_file="curl -X POST -s -v \\
 -H \"Content-Type: application/json\" \\
--w \"@output/curl.tmp.format\" \\
-\"http://127.0.0.1:5555/info\" \\
-> \"output/curl.tmp.trace\" 2>&1"
+--data-binary \"@output/curl.tmp.body\" \\
+\"http://127.0.0.1:5555/info\""
+
+_show_curl --curl -f _curl_command
+
+assertEquals "'cURL' command does not match" "$_curl_expected_file" "$_curl_command"
+
+_curl_expected_body="curl -X POST -s -v \\
+-H \"Content-Type: application/json\" \\
+--data {name:test} \\
+\"http://127.0.0.1:5555/info\""
+
+_show_curl --curl -c _curl_command
+
+assertEquals "'cURL' command does not match" "$_curl_expected_body" "$_curl_command"
 
 _curl_command=""
-_show_curl _curl_command
-
-assertEquals "'cURL' command does not match" "$_curl_expected" "$_curl_command"
-
 #  shellcheck disable=SC2034
 _shttp_command=""
 

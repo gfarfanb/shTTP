@@ -26,9 +26,21 @@ _shttp_help_content=(
     "   --add <key-name> <value>:      Add new key-value to 'ws/config[.<env>].json'"
     "   --remove <key-name>:           Remove the key-value from 'ws/config[.<env>].json'"
     "   --keys:                        Display all keys from 'ws/config[.<env>].json' file"
-    "   --part <part> <value>:         Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'"
+    "   --part <part> <value> <sec>:   Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'"
+    "                                    Part:"
+    "                                      -u: username alias"
+    "                                      -p: password alias"
+    "                                      -k: key alias"
+    "                                      -s: secret alias"
+    "                                      -t: token alias"
+    "                                    Sec:"
+    "                                      PRIVATE: private mode"
+    "                                      PUBLIC: public mode"
     "   --creds:                       Display all credentials ids from 'ws/credentials[.<env>].json'"
     "   --cred-keys <credential>:      Display all keys from 'ws/credentials[.<env>].json' file for a specific credential"
+    "   --curl <body-opt>              Display the related cURL command for the input <command>, the body options are:"
+    "                                    -f: show the body as filename only"
+    "                                    -c: show the body as content"
     "   --clean:                       Clean up all output files 'output/*'"
     ""
     " Request options:"
@@ -63,8 +75,8 @@ readonly _shttp_basename=$( basename "$0" )
 
 # ---------- Logging functions
 
-SAVED_LOGS=${SAVED_LOGS:-'false'}
-if [ "$SAVED_LOGS" == 'true' ]; then
+SAVED_LOGS=${SAVED_LOGS:-"false"}
+if [ "$SAVED_LOGS" == "true" ]; then
 
 #  Log filename.
 readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' ).log"
@@ -1606,7 +1618,7 @@ _request() {
     _execute_if_exist "before_${_command}"
     _append_content_type
     _append_auth
-    _curl=$( _build_curl )
+    _curl=$( _build_curl BODY_FILE EXECUTABLE )
     if (( _shttp_mock_enabled == 1 )); then
         if [ -f "$_shttp_mock_output" ]; then
             mv "$_shttp_mock_output" "$_shttp_output.output"
@@ -1821,14 +1833,24 @@ _append_auth() {
 #+       <_shttp_curl_opts[1..n]> \
 #+       <_shttp_url> > "<_shttp_output>.trace" 2>&1'
 #
+#  -param $1 Append body flag
+#            BODY_FILE for add body as filename
+#            BODY_CONTENT for add body as content
+#  -param $2 Print command option
+#            EXECUTABLE as internal command
+#            PRINTABLE as legible command
 #  -return cURL command as string
 _build_curl() {
+    local _body_opt=${1:-"BODY_FILE"}
+    local _cmd_opt=${2:-"EXECUTABLE"}
     local _url="$_shttp_url"
     local _curl_src=(
         "curl -X $_shttp_method -s -v \\"
-        "-o \"$_shttp_output.output\" \\"
     )
     local _length=${#_shttp_headers[@]}
+    if [ "$_cmd_opt" == "EXECUTABLE" ]; then
+        _curl_src+=( "-o \"$_shttp_output.output\" \\" )
+    fi
     if (( _length > 0 )); then
         for _header in "${_shttp_headers[@]}"; do
             _curl_src+=( "-H \"$_header\" \\" )
@@ -1850,7 +1872,11 @@ _build_curl() {
     fi
     if [ -f "$_shttp_body" ]; then
         mv "$_shttp_body" "$_shttp_output.body"
-        _curl_src+=( "--data-binary \"@$_shttp_output.body\" \\" )
+        if [ "$_body_opt" == "BODY_CONTENT" ]; then
+            _curl_src+=( "--data '$( cat $_shttp_output.body )' \\" )
+        else
+            _curl_src+=( "--data-binary \"@$_shttp_output.body\" \\" )
+        fi
     fi
     _length=${#_shttp_curl_opts[@]}
     if (( _length > 0 )); then
@@ -1859,9 +1885,13 @@ _build_curl() {
         done
     fi
     _curl_format
-    _curl_src+=( "-w \"@$_shttp_output.format\" \\" )
-    _curl_src+=( "\"$_url\" \\" )
-    _curl_src+=( "> \"$_shttp_output.trace\" 2>&1" )
+    if [ "$_cmd_opt" == "EXECUTABLE" ]; then
+        _curl_src+=( "-w \"@$_shttp_output.format\" \\" )
+        _curl_src+=( "\"$_url\" \\" )
+        _curl_src+=( "> \"$_shttp_output.trace\" 2>&1" )
+    else
+        _curl_src+=( "\"$_url\"" )
+    fi
     echo "${_curl_src[*]}"
 }
 
@@ -2701,8 +2731,7 @@ fi
 #  -param $1 Option
 #  -param $2 Name of the entry
 #  -param $3 Value of the entry
-#  -param $4 Secure type:
-#+           [PRIVATE | PUBLIC]
+#  -param $4 Secure type
 _add_config() {
     local _opt=${1:-}
     local _name=${2:-}
@@ -2913,12 +2942,28 @@ else
 fi
 
 
-# ---------- Help content
+# ---------- cURL content
 
 #  Show the 'cURL' command.
+#
+#  -param $1 Option
+#  -param $2 Body option
+#  -param $3 Return variable
+#  -return cURL command
 _show_curl() {
-    local _return_var=${1:-}
+    local _opt=${1:-}
+    local _part=${2:-}
+    local _return_var=${3:-}
+    local _body_opt=""
     local _curl_value=""
+    case "$_part" in
+        -f)
+            _body_opt="BODY_FILE"
+        ;;
+        *)
+            _body_opt="BODY_CONTENT"
+        ;;
+    esac
     _execute_if_exist before_api
     $_shttp_command
     _set_method "$_shttp_command"
@@ -2928,13 +2973,14 @@ _show_curl() {
     _append_content_type
     _append_auth
     _shttp_output="output/curl.tmp"
-    _curl_value=$( _build_curl )
+    _curl_value=$( _build_curl $_body_opt PRINTABLE )
     if [ -n "$_return_var" ]; then
         eval "$_return_var='$_curl_value'"
     else
         echo "$_curl_value"
     fi
 }
+_register_opt --curl _show_curl MANAGE
 if expr "$*" : ".*--curl" > /dev/null; then
     _shttp_command=${1:-}
     if [[ "$_shttp_command" == "--"* ]]; then
@@ -2943,12 +2989,13 @@ if expr "$*" : ".*--curl" > /dev/null; then
     if [ -z "$_shttp_command" ]; then
         info "No command to execute"
     else
-    _curl_print=""
-        _show_curl _curl_print
-        echo "$_curl_print"
+        _look_for_params --curl "$@"
     fi
     _exit
 fi
+
+
+# ---------- Help content
 
 #  Show the help content.
 _show_help_content() {

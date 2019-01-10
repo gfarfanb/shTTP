@@ -17,6 +17,7 @@ _curl_expected="curl -X GET -s -v \\
 \"http://127.0.0.1:5555/info\" \\
 > \"output/curl.tmp.trace\" 2>&1"
 
+_curl_command=""
 _show_curl _curl_command
 
 assertEquals "'cURL' command does not match" "$_curl_expected" "$_curl_command"

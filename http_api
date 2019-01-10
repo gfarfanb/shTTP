@@ -100,10 +100,10 @@ fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" | tee -a "$_shttp_log_
 
 else
 
-info() { echo "`date '+%Y-%m-%d %T.%N'` [INFO]    $*" ; }
-warn() { echo "`date '+%Y-%m-%d %T.%N'` [WARNING] $*" ; }
-error() { echo "`date '+%Y-%m-%d %T.%N'` [ERROR]   $*" ; }
-fatal() { echo "`date '+%Y-%m-%d %T.%N'` [FATAL]   $*" ; }
+info() { echo "$( date '+%Y-%m-%d %T.%N' ) INFO      $*" ; }
+warn() { echo "$( date '+%Y-%m-%d %T.%N' ) WARNING   $*" ; }
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) ERROR     $*" ; }
+fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" ; exit 1 ; }
 
 fi
 
@@ -2943,7 +2943,9 @@ if expr "$*" : ".*--curl" > /dev/null; then
     if [ -z "$_shttp_command" ]; then
         info "No command to execute"
     else
-        _show_curl
+    _curl_print=""
+        _show_curl _curl_print
+        echo "$_curl_print"
     fi
     _exit
 fi

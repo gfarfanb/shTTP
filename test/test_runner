@@ -68,10 +68,10 @@ fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" | tee -a "$_test_log_f
 
 else
 
-info() { echo "`date '+%Y-%m-%d %T.%N'` [INFO]    $*" ; }
-warn() { echo "`date '+%Y-%m-%d %T.%N'` [WARNING] $*" ; }
-error() { echo "`date '+%Y-%m-%d %T.%N'` [ERROR]   $*" ; }
-fatal() { echo "`date '+%Y-%m-%d %T.%N'` [FATAL]   $*" ; }
+info() { echo "$( date '+%Y-%m-%d %T.%N' ) INFO      $*" ; }
+warn() { echo "$( date '+%Y-%m-%d %T.%N' ) WARNING   $*" ; }
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) ERROR     $*" ; }
+fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" ; exit 1 ; }
 
 fi
 

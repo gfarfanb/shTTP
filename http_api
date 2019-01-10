@@ -1606,8 +1606,7 @@ _request() {
     _execute_if_exist "before_${_command}"
     _append_content_type
     _append_auth
-    _build_curl _request_build_curl_return
-    _curl="$_request_build_curl_return"
+    _curl=$( _build_curl )
     if (( _shttp_mock_enabled == 1 )); then
         if [ -f "$_shttp_mock_output" ]; then
             mv "$_shttp_mock_output" "$_shttp_output.output"
@@ -1824,16 +1823,15 @@ _append_auth() {
 #
 #  -return cURL command as string
 _build_curl() {
-    local _build_curl_return_var=${1:-}
     local _url="$_shttp_url"
-    local _curl=(
+    local _curl_src=(
         "curl -X $_shttp_method -s -v \\"
         "-o \"$_shttp_output.output\" \\"
     )
     local _length=${#_shttp_headers[@]}
     if (( _length > 0 )); then
         for _header in "${_shttp_headers[@]}"; do
-            _curl+=( "-H \"$_header\" \\" )
+            _curl_src+=( "-H \"$_header\" \\" )
         done
     fi
     _length=${#_shttp_query_params[@]}
@@ -1847,28 +1845,24 @@ _build_curl() {
     _length=${#_shttp_form[@]}
     if (( _length > 0 )); then
         for _form in "${_shttp_form[@]}"; do
-            _curl+=( "-F \"$_form\" \\" )
+            _curl_src+=( "-F \"$_form\" \\" )
         done
     fi
     if [ -f "$_shttp_body" ]; then
         mv "$_shttp_body" "$_shttp_output.body"
-        _curl+=( "--data-binary \"@$_shttp_output.body\" \\" )
+        _curl_src+=( "--data-binary \"@$_shttp_output.body\" \\" )
     fi
     _length=${#_shttp_curl_opts[@]}
     if (( _length > 0 )); then
         for _opt in "${_shttp_curl_opts[@]}"; do
-            _curl+=( "$_opt \\" )
+            _curl_src+=( "$_opt \\" )
         done
     fi
     _curl_format
-    _curl+=( "-w \"@$_shttp_output.format\" \\" )
-    _curl+=( "\"$_url\" \\" )
-    _curl+=( "> \"$_shttp_output.trace\" 2>&1" )
-    if [ -n "$_build_curl_return_var" ]; then
-        eval "$_build_curl_return_var=\"${_curl[*]}\""
-    else
-        echo "${_curl[*]}"
-    fi
+    _curl_src+=( "-w \"@$_shttp_output.format\" \\" )
+    _curl_src+=( "\"$_url\" \\" )
+    _curl_src+=( "> \"$_shttp_output.trace\" 2>&1" )
+    echo "${_curl_src[*]}"
 }
 
 #  Create the file format
@@ -2921,7 +2915,7 @@ fi
 
 #  Show the 'cURL' command.
 _show_curl() {
-    local _show_curl_return_var=${1:-}
+    local _show_curl_return=${1:-}
     _execute_if_exist before_api
     $_shttp_command
     _set_method "$_shttp_command"
@@ -2931,11 +2925,11 @@ _show_curl() {
     _append_content_type
     _append_auth
     _shttp_output="output/curl.tmp"
-    _build_curl _show_curl_build_curl_return
-    if [ -n "$_show_curl_return_var" ]; then
-        eval "$_show_curl_return_var=\"$_show_curl_build_curl_return\""
+    if [ -n "$_show_curl_return" ]; then
+        local _curl_value=$( _build_curl )
+        eval "$_show_curl_return=\"$_curl_value\""
     else
-        echo "$_show_curl_build_curl_return"
+        echo $( _build_curl )
     fi
 }
 if expr "$*" : ".*--curl" > /dev/null; then
@@ -2946,8 +2940,7 @@ if expr "$*" : ".*--curl" > /dev/null; then
     if [ -z "$_shttp_command" ]; then
         info "No command to execute"
     else
-        _show_curl _http_api_show_curl_return
-        echo "$_http_api_show_curl_return"
+        _show_curl
     fi
     _exit
 fi

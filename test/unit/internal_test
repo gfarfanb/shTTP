@@ -538,9 +538,7 @@ _expected=(
     "> \"output/result.trace\" 2>&1"
 )
 
-_build_curl _internal_test_build_curl_return
-# _curl=$(  "ws/body_file.json.temp" )
-_curl="$_internal_test_build_curl_return"
+_curl=$( _build_curl )
 
 assertEquals "'cURL' command bad" "${_expected[*]}" "$_curl"
 

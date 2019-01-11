@@ -33,7 +33,7 @@ _create_chart_url() {
 }
 #  Documentation for help content
 _help_content \
-    "   --chart <api> <command>        Generates URL for 'Image Charts'" \
+    "   --chart <api> <command>           Generates URL for 'Image Charts'" \
     "          <width> <height>:"
 #  New option is added
 _register_opt --chart _create_chart_url

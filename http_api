@@ -14,58 +14,63 @@ _shttp_help_content=(
     "                                [--help] [<add-on-options>]"
     ""
     " Manage options:"
-    "   --list:                        Display the <command> list (all functions defined into main script)"
-    "   --envs:                        Display all environments based on configuration files"
-    "   --copy <env-from> <env-to>:    Copy the environment configuration and credentials files. Must exist the 'from'"
-    "                                    configuration files. If already exist the 'to' files those will be replaced."
-    "                                    If is required to copy from 'default' environment, the first parameters must"
-    "                                    contain 'default'"
-    "   --del <env>:                   Remove the selected environment: configuration and credentials files. If is"
-    "                                    required to remove 'default' environment, the parameter must contain 'default'"
-    "   --get <key-name>:              Display the value for key from 'ws/config[.<env>].json'"
-    "   --add <key-name> <value>:      Add new key-value to 'ws/config[.<env>].json'"
-    "   --remove <key-name>:           Remove the key-value from 'ws/config[.<env>].json'"
-    "   --keys:                        Display all keys from 'ws/config[.<env>].json' file"
-    "   --part <part> <value> <sec>:   Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'"
-    "                                    Part:"
-    "                                      -u: username alias"
-    "                                      -p: password alias"
-    "                                      -k: key alias"
-    "                                      -s: secret alias"
-    "                                      -t: token alias"
-    "                                    Sec:"
-    "                                      PRIVATE: private mode"
-    "                                      PUBLIC: public mode"
-    "   --creds:                       Display all credentials ids from 'ws/credentials[.<env>].json'"
-    "   --cred-keys <credential>:      Display all keys from 'ws/credentials[.<env>].json' file for a specific credential"
-    "   --curl <body-opt>              Display the related cURL command for the input <command>, the body options are:"
-    "                                    -f: show the body as filename only"
-    "                                    -c: show the body as content"
-    "   --clean:                       Clean up all output files 'output/*'"
+    "   --list:                           Display the <command> list (all functions defined into main script)"
+    "   --envs:                           Display all environments based on configuration files"
+    "   --copy <env-from> <env-to>:       Copy the environment configuration and credentials files. Must exist the 'from'"
+    "                                       configuration files. If already exist the 'to' files those will be replaced."
+    "                                       If is required to copy from 'default' environment, the first parameters must"
+    "                                       contain 'default'"
+    "   --del <env>:                      Remove the selected environment: configuration and credentials files. If is"
+    "                                       required to remove 'default' environment, the parameter must contain 'default'"
+    "   --get <key-name>:                 Display the value for key from 'ws/config[.<env>].json'"
+    "   --add <key-name> <value> <sec>:   Add new key-value to 'ws/config[.<env>].json'"
+    "                                       <sec>:"
+    "                                         -h: hidden mode, in 'ws/.vlt'"
+    "                                         -s: public mode, in 'ws/config[.<env>].json'"
+    "   --remove <key-name>:              Remove the key-value from 'ws/config[.<env>].json'"
+    "   --keys:                           Display all keys from 'ws/config[.<env>].json' file"
+    "   --part <part> <value> <sec>:      Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'"
+    "                                       <part>:"
+    "                                         -u: username alias"
+    "                                         -p: password alias"
+    "                                         -k: key alias"
+    "                                         -s: secret alias"
+    "                                         -t: token alias"
+    "                                         -i: pin alias"
+    "                                       <sec>:"
+    "                                         -h: hidden mode, in 'ws/.vlt'"
+    "                                         -s: public mode, in 'ws/credentials[.<env>].json'"
+    "   --creds:                          Display all credentials ids from 'ws/credentials[.<env>].json'"
+    "   --cred-keys <credential>:         Display all keys from 'ws/credentials[.<env>].json' file for a specific credential"
+    "   --curl <body-opt>                 Display the related cURL command for the input <command>"
+    "                                       <body-opt>:"
+    "                                         -f: show the body as filename only"
+    "                                         -c: show the body as content"
+    "   --clean:                          Clean up all output files 'output/*'"
     ""
     " Request options:"
-    "   --env <env>:                   Set the environment for script by changing configuration and credentials files:"
-    "                                    'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
-    "   --cred <credential>:           Set the credential for script by updating '_shttp_auth_credential"
-    "   --set <key-name> <value>:      Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
-    "   --local <port>:                Set variables to local execution:"
-    "                                    _shttp_protocol: http"
-    "                                    _shttp_domain: localhost:<port> (default 8080)"
-    "   --port <port>:                 set value to port variable"
-    "   --auth-basic <credential>:     Set 'BASIC' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-header <credential>:    Set 'HEADER' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-qtoken <credential>:    Set 'QTOKEN' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-qkeysec <credential>:   Set 'QKEYSEC' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-skip <credential>:      Set 'SKIP' mode to '_shttp_auth_mode' and assign the credential"
-    "   --times <value>:               Set the number of executions required for the request into '_shttp_request_times'"
-    "   --open:                        Set '_shttp_editor_command' with value defined on 'editorCommand'"
-    "                                    from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
+    "   --env <env>:                      Set the environment for script by changing configuration and credentials files:"
+    "                                       'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
+    "   --cred <credential>:              Set the credential for script by updating '_shttp_auth_credential"
+    "   --set <key-name> <value>:         Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
+    "   --local <port>:                   Set variables to local execution:"
+    "                                       _shttp_protocol: http"
+    "                                       _shttp_domain: localhost:<port> (default 8080)"
+    "   --port <port>:                    Set value to port variable"
+    "   --auth-basic <credential>:        Set 'BASIC' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-header <credential>:       Set 'HEADER' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-qtoken <credential>:       Set 'QTOKEN' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-qkeysec <credential>:      Set 'QKEYSEC' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-skip <credential>:         Set 'SKIP' mode to '_shttp_auth_mode' and assign the credential"
+    "   --times <value>:                  Set the number of executions required for the request into '_shttp_request_times'"
+    "   --open:                           Set '_shttp_editor_command' with value defined on 'editorCommand'"
+    "                                       from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
     " Manual options:"
-    "   --help:                        Display this help message"
+    "   --help:                           Display this help message"
     ""
     " Environment variables:"
-    "   SAVED_LOGS:                    'true' for saved logs on '/tmp/_shttp_basename.yyyy-mm-dd.log'"
-    "                                    otherwise logs only will print by 'echo' function"
+    "   SAVED_LOGS:                       'true' for saved logs on '/tmp/_shttp_basename.yyyy-mm-dd.log'"
+    "                                       otherwise logs only will print by 'echo' function"
     " Add-on options: "
 )
 
@@ -309,8 +314,7 @@ update() {
 #
 #  -param $1 Name of the entry or 'jq' for value
 #  -param $2 Value of the entry or 'jq' for value
-#  -param $3 Secure type:
-#+           [PRIVATE | PUBLIC]
+#  -param $3 Secure type: [PRIVATE | PUBLIC]
 put() {
     local _name=${1:-}
     local _val=${2:-}
@@ -2732,11 +2736,21 @@ fi
 #  -param $2 Name of the entry
 #  -param $3 Value of the entry
 #  -param $4 Secure type
+#            -h: hidden mode
+#            -s: public mode
 _add_config() {
     local _opt=${1:-}
     local _name=${2:-}
     local _val=${3:-}
-    local _sec_type=${4:-"PUBLIC"}
+    local _sec_type=${4:-}
+    case "$_sec_type" in
+        -h)
+            _sec_type="PRIVATE"
+        ;;
+        *)
+            _sec_type="PUBLIC"
+        ;;
+    esac
     put "$_name" "$_val" "$_sec_type"
 }
 _register_opt --add _add_config MANAGE
@@ -2808,14 +2822,21 @@ fi
 #
 #  -param $1 Option
 #  -param $2 Part name or value
+#            -u: username
+#            -p: password
+#            -k: key
+#            -s: secret
+#            -t: token
+#            -i: pin
 #  -param $3 Part value
 #  -param $4 Secure type:
-#+           [PRIVATE | PUBLIC]
+#            -h: hidden mode
+#            -s: public mode
 _add_part() {
     local _opt=${1:-}
     local _part=${2:-}
     local _val=${3:-}
-    local _sec_type=${4:-"PRIVATE"}
+    local _sec_type=${4:-}
     case "$_part" in
         -u)
             _part="username"
@@ -2831,6 +2852,17 @@ _add_part() {
         ;;
         -t)
             _part="token"
+        ;;
+        -i)
+            _part="pin"
+        ;;
+    esac
+    case "$_sec_type" in
+        -s)
+            _sec_type="PUBLIC"
+        ;;
+        *)
+            _sec_type="PRIVATE"
         ;;
     esac
     putPart "$_part" "$_val" "$_sec_type"

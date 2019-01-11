@@ -4,7 +4,8 @@
 
 
 #  Documentation for help content
-_help_content "   --auth-manual <credential>:    Set 'MANUAL' mode to '_shttp_auth_mode' and assign the credential"
+_help_content \
+    "   --auth-manual <credential>:       Set 'MANUAL' mode to '_shttp_auth_mode' and assign the credential"
 #  New option is added
 _register_opt --auth-manual _set_auth_mode REQUEST
 if expr "$*" : ".*--auth-manual" > /dev/null; then

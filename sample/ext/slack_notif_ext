@@ -12,7 +12,8 @@ _set_slack_enabled() {
     _slack_enabled=1
 }
 #  Documentation for help content
-_help_content "   --slack:                       Enables Slack notifications"
+_help_content \
+    "   --slack:                          Enables Slack notifications"
 #  New option is added
 _register_opt --slack _set_slack_enabled REQUEST
 if expr "$*" : ".*--slack" > /dev/null; then

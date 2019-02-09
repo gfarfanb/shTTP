@@ -64,3 +64,17 @@ for _i in "${_values[@]}"; do
 done
 
 assertEquals "Boolean not found" 1 "$_found"
+
+
+#  -test Number random
+_number=$( num_rnd 1 )
+assertEquals "Invalid integer [$_number]" 1 ${#_number}
+
+_number=$( num_rnd 1 1 )
+assertEquals "Invalid float [$_number]" 3 "${#_number}"
+
+_number=$( num_rnd 1 1 1 )
+assertEquals "Invalid negative float [$_number]" 4 "${#_number}"
+
+_number=$( num_rnd 1 1 2 )
+assertTrue "Invalid random sign float [$_number]" "\"${#_number}\" -gt \"2\""

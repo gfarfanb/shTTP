@@ -239,7 +239,7 @@ str_rnd() {
     echo "$_val"
 }
 
-#  Join the elements of the
+#  Joins the elements of the
 #+ array in a single string.
 #
 #  -param $1 Delimiter
@@ -251,7 +251,7 @@ arr_join() {
     echo "$*"
 }
 
-#  Get a random value from
+#  Gets a random value from
 #+ an array.
 #
 #  -param $* Elements
@@ -262,12 +262,39 @@ arr_rnd() {
     echo "${_arr[$((0 + RANDOM % _length))]}"
 }
 
-#  Get a random boolean.
+#  Gets a random boolean.
 #
 #  -return true or false
 bool_rnd() {
     local _values=( true false )
     echo "${_values[$((0 + RANDOM % 2))]}"
+}
+
+#  Generates a random number.
+#
+#  -param $1 Max digits
+#  -param $2 Max decimals
+#  -param $3 Negatives flag
+#            0: only positives
+#            1: only negatives
+#            otherwise: positives and
+#+           negatives
+#  -return Random number
+num_rnd() {
+    local _digits=${1:-1}
+    local _decimals=${2:-0}
+    local _negatives=${3:-0}
+    local _sign=""
+    case "$_negatives" in
+        0) ;;
+        1) _sign="-" ;;
+        *) (( $((0 + RANDOM % 2)) == 1 )) && _sign="-" ;;
+    esac
+    if (( _decimals > 0 )); then
+        echo "$_sign${RANDOM:0:$_digits}.${RANDOM:0:$_decimals}"
+    else
+        echo "$_sign${RANDOM:0:$_digits}"
+    fi
 }
 
 

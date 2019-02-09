@@ -298,6 +298,17 @@ num_rnd() {
 }
 
 
+num_add() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] + .[1]" ; }
+
+num_subtract() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] - .[1]" ; }
+
+num_multiply() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] * .[1]" ; }
+
+num_divide() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] / .[1]" ; }
+
+num_modulo() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] % .[1]" ; }
+
+
 # ---------- Public functions
 
 #  Request flow step. Simulate

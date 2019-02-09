@@ -257,9 +257,9 @@ arr_join() {
 #  -param $* Elements
 #  -return Random value
 arr_rnd() {
-    local _arr=( $* )
+    local _arr=( $@ )
     local _length=${#_arr[@]}
-    echo "${_arr[$((0 + RANDOM % $_length))]}"
+    echo "${_arr[$((0 + RANDOM % _length))]}"
 }
 
 

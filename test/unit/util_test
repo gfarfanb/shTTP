@@ -40,7 +40,7 @@ assertEquals "Joining does not work" "127.0.0.1" "$_localhost"
 
 #  -test Array random
 _array=( 1 2 3 4 5 )
-_picked=$( arr_rnd ${_array[@]} )
+_picked=$( arr_rnd "${_array[@]}" )
 _found=0
 for _i in "${_array[@]}"; do
     if [ "$_i" = "$_picked" ]; then

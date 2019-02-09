@@ -215,7 +215,7 @@ echo '{ }' > "ws/.override.json.tmp"
 #
 #  -param $1 String input
 #  -return Reversed string
-_rev() {
+str_rev() {
     local _input=${1:-}
     local _rev=""
     for (( _input_idx=${#_input}-1; _input_idx>=0; _input_idx-- )); do
@@ -230,7 +230,7 @@ _rev() {
 #  -param $1 Required string
 #+           length
 #  -return Random string
-_str() {
+str_rnd() {
     local _length=${1:-10}
     local _val=""
     _val=$( < /dev/urandom tr -dc 'a-zA-Z0-9' \
@@ -244,10 +244,22 @@ _str() {
 #
 #  -param $1 Delimiter
 #  -param $* Elements
-_join_by() {
+#  -return Single string
+arr_join() {
     local IFS="$1"
     shift
     echo "$*"
+}
+
+#  Get a random value from
+#+ an array.
+#
+#  -param $* Elements
+#  -return Random value
+arr_rnd() {
+    local _arr=( $* )
+    local _length=${#_arr[@]}
+    echo "${_arr[$((0 + RANDOM % $_length))]}"
 }
 
 
@@ -323,9 +335,9 @@ put() {
     if [ -z "$_val" ]; then
         _jq="$_name"
         _name=${_name//[0-9^\[\]]/}
-        _name=$( _rev "$_name" )
+        _name=$( str_rev "$_name" )
         _name=$( echo "$_name" | cut -d '.' -f 1 )
-        _name=$( _rev "$_name" )
+        _name=$( str_rev "$_name" )
     elif [[ "$_val" = \.* ]]; then
         _jq="$_val"
     fi

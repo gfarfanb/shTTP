@@ -42,7 +42,7 @@ expr "$*" : ".*--help" > /dev/null \
 #
 #  -param $1 Delimiter
 #  -param $* Elements
-_join_by(){ local IFS="$1"; shift; echo "$*"; }
+arr_join(){ local IFS="$1"; shift; echo "$*"; }
 
 #  Get last tagged version
 readonly _current_version=$( git describe --abbrev=0 --tags )
@@ -55,7 +55,7 @@ fi
 #  Get version parts (only numbers)
 _version_parts=( $( echo "$_current_version" | grep -o '[0-9]*' ) )
 #  Save last version
-readonly _last_version="v$( _join_by '.' "${_version_parts[@]}" )"
+readonly _last_version="v$( arr_join '.' "${_version_parts[@]}" )"
 
 #  Check increase mode option
 readonly _opt=${1:-}
@@ -78,7 +78,7 @@ esac
 #  Increase to new version
 _version_parts[$_position]=$(( _version_parts[_position]+1 ))
 #  Save new version
-readonly _new_version="v$( _join_by '.' "${_version_parts[@]}" )"
+readonly _new_version="v$( arr_join '.' "${_version_parts[@]}" )"
 
 #  Check label option
 readonly _label_opt=${2:-}

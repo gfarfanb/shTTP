@@ -9,12 +9,12 @@ before_api() {
         "Content-Type: application/vnd.github.$( get apiVersion ).full+json"
 }
 
-#  ./gist_comment get_all
+#  ./gist_comments get_all
 get_all() {
     :
 }
 
-#  ./gist_comment get_comment
+#  ./gist_comments get_comment
 get_comment() {
     endpoint "/$( get commentId )"
 }
@@ -24,7 +24,7 @@ before_post_comment() {
     credential sample
 }
 
-#  ./gist_comment post_comment
+#  ./gist_comments post_comment
 post_comment() {
     body '{ "body": "shTTP-samples comment" }'
 }
@@ -35,7 +35,7 @@ after_post_comment() {
     put commentId '.id'
 }
 
-#  ./gist_comment patch_comment
+#  ./gist_comments patch_comment
 patch_comment() {
     authMode HEADER
     credential sample
@@ -52,7 +52,7 @@ after_patch_comment() {
     areEquals "Unexpected status" "200" "$( getStatus )"
 }
 
-#  ./gist_comment patch_comment --auth-header sample
+#  ./gist_comments patch_comment --auth-header sample
 delete_comment() {
     endpoint "/$( get commentId )"
 }
@@ -62,7 +62,7 @@ after_delete_comment() {
     remove commentId
 }
 
-#  ./gist_comment only_def
+#  ./gist_comments only_def
 get_only_def() {
     endpoint "/not_implemented_yet/$( get commentId )"
     mockEnabled
@@ -89,7 +89,7 @@ before_flow_comment() {
     mainOpts --auth-header sample
 }
 
-#  ./gist_comment flow_comment
+#  ./gist_comments flow_comment
 flow_comment() {
     step post_comment
     step patch_comment --auth-header sample

@@ -13,8 +13,8 @@ get_auths() {
 
 before_put_auth() {
     local _fingerprint=""
-    _fingerprint=$( _str 25 )
-    _fingerprint=$( _rev "$_fingerprint" )
+    _fingerprint=$( str_rnd 25 )
+    _fingerprint=$( str_rev "$_fingerprint" )
     put fingerprint "\"$_fingerprint\"" PRIVATE
 }
 

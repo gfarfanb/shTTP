@@ -24,7 +24,7 @@ _create_chart_url() {
     local _url="https://image-charts.com/chart?"
     _url+="chs=${_width}x${_height}"
     _url+="&cht=bvs"
-    _url+="&chd=t:$( _join_by ',' "${_failures[@]}" )|$( _join_by ',' "${_assertions[@]}" )"
+    _url+="&chd=t:$( arr_join ',' "${_failures[@]}" )|$( _join_by ',' "${_assertions[@]}" )"
     _url+="&chg=20,50"
     _url+="&chdl=Failures|Assertions"
     _url+="&chxt=x,y"

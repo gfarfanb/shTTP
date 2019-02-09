@@ -3,9 +3,9 @@
 #  -author Giovanni Farfán B.
 
 
-#  -test Reverse util
+#  -test Reverse string
 _rev_input="reverse"
-_rev_input=$( _rev "$_rev_input" )
+_rev_input=$( str_rev "$_rev_input" )
 
 assertEquals "Reverse is not working" "esrever" "$_rev_input"
 
@@ -14,7 +14,7 @@ assertEquals "Reverse is not working" "esrever" "$_rev_input"
 _generated_strings=()
 
 for (( _i=1; _i<=100; _i++ )); do
-    _random_string=$( _str 10 )
+    _random_string=$( str_rnd 10 )
     _generated_length=${#_generated_strings[@]}
     _found=0
     if (( _generated_length > 0 )); then
@@ -32,7 +32,21 @@ done
 assertEquals "Random repeated values found" 100 "${#_generated_strings[@]}"
 
 
-#  -test Join by
+#  -test Array join
 _elements_parts=( "127" "0" "0" "1" )
-_localhost=$( _join_by '.' "${_elements_parts[@]}" )
+_localhost=$( arr_join '.' "${_elements_parts[@]}" )
 assertEquals "Joining does not work" "127.0.0.1" "$_localhost"
+
+
+#  -test Array random
+_array=( 1 2 3 4 5 )
+_picked=$( arr_rnd ${_array[@]} )
+_found=0
+for _i in "${_array[@]}"; do
+    if [ "$_i" = "$_picked" ]; then
+        _found=1
+        break;
+    fi
+done
+
+assertEquals "Array element not found" 1 "$_found"

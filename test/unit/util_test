@@ -50,3 +50,17 @@ for _i in "${_array[@]}"; do
 done
 
 assertEquals "Array element not found" 1 "$_found"
+
+
+#  -test Boolean random
+_values=( true false )
+_picked=$( bool_rnd )
+_found=0
+for _i in "${_values[@]}"; do
+    if [ "$_i" = "$_picked" ]; then
+        _found=1
+        break;
+    fi
+done
+
+assertEquals "Boolean not found" 1 "$_found"

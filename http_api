@@ -262,6 +262,14 @@ arr_rnd() {
     echo "${_arr[$((0 + RANDOM % _length))]}"
 }
 
+#  Get a random boolean.
+#
+#  -return true or false
+bool_rnd() {
+    local _values=( true false )
+    echo "${_values[$((0 + RANDOM % 2))]}"
+}
+
 
 # ---------- Public functions
 

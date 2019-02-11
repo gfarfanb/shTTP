@@ -297,15 +297,39 @@ num_rnd() {
     fi
 }
 
-
+#  Addition arithmetic operation.
+#
+#  -param Number A
+#  -param Number B
+#  -return Addition result
 num_add() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] + .[1]" ; }
 
+#  Subtraction arithmetic operation.
+#
+#  -param Minuend
+#  -param Subtrahend
+#  -return Difference result
 num_subtract() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] - .[1]" ; }
 
+#  Multiplication arithmetic operation.
+#
+#  -param Multiplicand
+#  -param Multiplier
+#  -return Multiplication result
 num_multiply() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] * .[1]" ; }
 
+#  Division arithmetic operation.
+#
+#  -param Dividend
+#  -param Divisor
+#  -return Division result
 num_divide() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] / .[1]" ; }
 
+#  Modulo operation.
+# 
+#  -param Dividend
+#  -param Divisor
+#  -return Reminder of division
 num_modulo() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] % .[1]" ; }
 
 

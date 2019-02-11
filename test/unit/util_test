@@ -78,3 +78,43 @@ assertEquals "Invalid negative float [$_number]" 4 "${#_number}"
 
 _number=$( num_rnd 1 1 2 )
 assertTrue "Invalid random sign float [$_number]" "\"${#_number}\" -gt \"2\""
+
+
+#  -test Number add
+_result=$( num_add 5 5 )
+assertEquals "Invalid add result [$_result]" 10 "$_result"
+
+_result=$( num_add 5.1234567890 4.876543211 )
+assertEquals "Invalid add result [$_result]" 10 "$_result"
+
+
+#  -test Number subtract
+_result=$( num_subtract 8 3 )
+assertEquals "Invalid subtract result [$_result]" 5 "$_result"
+
+_result=$( num_subtract 8.1234567890 3.1234567890 )
+assertEquals "Invalid subtract result [$_result]" 5 "$_result"
+
+
+#  -test Number multiply
+_result=$( num_multiply 5 5 )
+assertEquals "Invalid multiply result [$_result]" 25 "$_result"
+
+_result=$( num_multiply 10000 0.0025 )
+assertEquals "Invalid multiply result [$_result]" 25 "$_result"
+
+
+#  -test Number divide
+_result=$( num_divide 25 5 )
+assertEquals "Invalid divide result [$_result]" 5 "$_result"
+
+_result=$( num_divide 0.0025 25 )
+assertEquals "Invalid divide result [$_result]" 0.0001 "$_result"
+
+
+#  -test Number module
+_result=$( num_modulo 25 5 )
+assertEquals "Invalid module result [$_result]" 0 "$_result"
+
+_result=$( num_modulo 25.12345 9.12345 )
+assertNotEquals "Invalid module result [$_result]" 0 "$_result"

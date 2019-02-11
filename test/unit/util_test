@@ -118,3 +118,72 @@ assertEquals "Invalid module result [$_result]" 0 "$_result"
 
 _result=$( num_modulo 25.12345 9.12345 )
 assertNotEquals "Invalid module result [$_result]" 0 "$_result"
+
+
+#  -test Now in milliseconds
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_now=$( now_ms )
+assertTrue "Invalid milliseconds timestamp" "$_timestamp -lt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_timestamp=$( num_add "$_timestamp" 5000 )
+_now=$( now_ms '+5s' )
+assertTrue "Invalid milliseconds timestamp [+seconds]" "$_timestamp -lt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_now=$( now_ms '-5s' )
+assertTrue "Invalid milliseconds timestamp [-seconds]" "$_timestamp -gt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_timestamp=$( num_add "$_timestamp" 300000 )
+_now=$( now_ms '+5m' )
+assertTrue "Invalid milliseconds timestamp [+minutes]" "$_timestamp -lt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_now=$( now_ms '-5m' )
+assertTrue "Invalid milliseconds timestamp [-minutes]" "$_timestamp -gt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_timestamp=$( num_add "$_timestamp" 18000000 )
+_now=$( now_ms '+5h' )
+assertTrue "Invalid milliseconds timestamp [+hours]" "$_timestamp -lt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_now=$( now_ms '-5h' )
+assertTrue "Invalid milliseconds timestamp [-hours]" "$_timestamp -gt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_timestamp=$( num_add "$_timestamp" 432000000 )
+_now=$( now_ms '+5D' )
+assertTrue "Invalid milliseconds timestamp [+days]" "$_timestamp -lt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_now=$( now_ms '-5D' )
+assertTrue "Invalid milliseconds timestamp [-days]" "$_timestamp -gt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_timestamp=$( num_add "$_timestamp" 3024000000 )
+_now=$( now_ms '+5W' )
+assertTrue "Invalid milliseconds timestamp [+weeks]" "$_timestamp -lt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_now=$( now_ms '-5W' )
+assertTrue "Invalid milliseconds timestamp [-weeks]" "$_timestamp -gt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_timestamp=$( num_add "$_timestamp" 13149000000 )
+_now=$( now_ms '+5M' )
+assertTrue "Invalid milliseconds timestamp [+months]" "$_timestamp -lt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_now=$( now_ms '-5M' )
+assertTrue "Invalid milliseconds timestamp [-months]" "$_timestamp -gt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_timestamp=$( num_add "$_timestamp" 157788000000 )
+_now=$( now_ms '+5Y' )
+assertTrue "Invalid milliseconds timestamp [+years]" "$_timestamp -lt $_now"
+
+_timestamp=$( date '+%s%N' | cut -b1-13 )
+_now=$( now_ms '-5Y' )
+assertTrue "Invalid milliseconds timestamp [-years]" "$_timestamp -gt $_now"

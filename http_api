@@ -332,6 +332,48 @@ num_divide() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] / .[1]" ; }
 #  -return Reminder of division
 num_modulo() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] % .[1]" ; }
 
+#  Gets a now timestamp in milliseconds.
+#+ It is possible the timestamp by using
+#+ terms tags, e.g.: +5d (adds 5 days)
+#
+#  -param Addition/Subtraction term '[+|-]<num>[s|m|h|D|W|M|Y]':
+#         s: seconds
+#         m: minutes
+#         h: hours
+#         D: days
+#         W: weeks
+#         M: months
+#         Y: years
+#  -return Milliseconds timestamp
+now_ms() {
+    local _term=${1:-"0s"}
+    local _is_subtract=0
+    local _extra=0
+    local _now=0
+    if [[ "$_term" == "-*" ]]; then
+        _term=${_term:1:${#_term}-1}
+        _is_subtract=1
+    elif [[ "$_term" == "+*" ]]; then
+        _term=${_term:1:${#_term}-1}
+    fi
+    case "$_term" in
+        *s) _extra=$( num_multiply "${_term::-1}" 1000 );;
+        *m) _extra=$( num_multiply "${_term::-1}" 60000 );;
+        *h) _extra=$( num_multiply "${_term::-1}" 3600000 );;
+        *D) _extra=$( num_multiply "${_term::-1}" 86400000 );;
+        *W) _extra=$( num_multiply "${_term::-1}" 604800000 );;
+        *M) _extra=$( num_multiply "${_term::-1}" 2629800000 );;
+        *Y) _extra=$( num_multiply "${_term::-1}" 31557600000 );;
+    esac
+    _now=$( date '+%s%N' | cut -b1-13 )
+    if (( _is_subtract == 0 )); then
+        _now=$( num_add "$_now" "$_extra" )
+    else
+        _now=$( num_subtract "$_now" "$_extra" )
+    fi
+    echo "$_now"
+}
+
 
 # ---------- Public functions
 

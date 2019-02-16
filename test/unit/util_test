@@ -38,6 +38,24 @@ _localhost=$( arr_join '.' "${_elements_parts[@]}" )
 assertEquals "Joining does not work" "127.0.0.1" "$_localhost"
 
 
+#  -test Array like
+_elements_parts=( 
+    "Content-Type: application/json"
+    "Authentication: 12345"
+    "Cookie: 12345"
+    "Accept: application/json" 
+)
+
+_element_found=$( arr_like "Content-Type" "${_elements_parts[@]}" )
+assertEquals "Array element not found" 1 "$_element_found"
+
+_element_found=$( arr_like "Content_Type" "${_elements_parts[@]}" )
+assertEquals "Array element found" 0 "$_element_found"
+
+_element_found=$( arr_like "content-type" "${_elements_parts[@]}" )
+assertEquals "Array element not found" 1 "$_element_found"
+
+
 #  -test Array random
 _array=( 1 2 3 4 5 )
 _picked=$( arr_rnd "${_array[@]}" )

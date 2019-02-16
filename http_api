@@ -251,6 +251,26 @@ arr_join() {
     echo "$*"
 }
 
+#  Return 1 if the argument string is
+#+ contained in the array. The evaluation
+#+ is by the pattern: '*string*'.
+#  The evaluation ignores case sensitivity.
+#
+#  -param $1 String
+#  -param $* Elements
+#  -return 1 if string exists
+#+         otherwise 0
+arr_like() {
+    local _string="$1"
+    shift
+    local _arr=( $@ )
+    local _found=0
+    shopt -s nocasematch
+    case "${_arr[@]}" in *"$_string"*) _found=1 ;;  esac
+    shopt -u nocasematch
+    echo "$_found"
+}
+
 #  Gets a random value from
 #+ an array.
 #

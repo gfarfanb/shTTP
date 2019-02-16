@@ -526,21 +526,19 @@ queryParams "param=value"
 form "key=value"
 curlOpts "--basic" "-u user:password"
 
-_expected=(
-    "curl -X POST -s -v \\"
-    "-o \"output/result.output\" \\"
-    "-H \"Defined-Header: test/value\" \\"
-    "-F \"key=value\" \\"
-    "--basic \\"
-    "-u user:password \\"
-    "-w \"@output/result.format\" \\"
-    "\"https://any.host/any/endpoint?param=value\" \\"
-    "> \"output/result.trace\" 2>&1"
-)
+_expected="curl -X POST -s -v"
+_expected+=" -o \"output/result.output\""
+_expected+=" -H \"Defined-Header: test/value\""
+_expected+=" -F \"key=value\""
+_expected+=" --basic"
+_expected+=" -u user:password"
+_expected+=" -w \"@output/result.format\""
+_expected+=" \"https://any.host/any/endpoint?param=value\""
+_expected+=" > \"output/result.trace\" 2>&1"
 
 _curl=$( _build_curl )
 
-assertEquals "'cURL' command bad" "${_expected[*]}" "$_curl"
+assertEquals "'cURL' command bad" "$_expected" "$_curl"
 
 _reset_req_vars
 

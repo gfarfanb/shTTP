@@ -246,9 +246,7 @@ str_rnd() {
 #  -param $* Elements
 #  -return Single string
 arr_join() {
-    local IFS="$1"
-    shift
-    echo "$*"
+    local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"
 }
 
 #  Return 1 if the argument string is
@@ -1985,55 +1983,49 @@ _build_curl() {
     local _body_opt=${1:-"BODY_FILE"}
     local _cmd_opt=${2:-"EXECUTABLE"}
     local _url="$_shttp_url"
-    local _curl_src=(
-        "curl -X $_shttp_method -s -v \\"
-    )
+    local _curl_src="curl -X $_shttp_method -s -v"
     local _length=${#_shttp_headers[@]}
     if [ "$_cmd_opt" == "EXECUTABLE" ]; then
-        _curl_src+=( "-o \"$_shttp_output.output\" \\" )
+        _curl_src+=" -o \"$_shttp_output.output\""
     fi
     if (( _length > 0 )); then
-        for _header in "${_shttp_headers[@]}"; do
-            _curl_src+=( "-H \"$_header\" \\" )
-        done
+        _curl_src+=" -H \""
+        _curl_src+=$( arr_join "\" -H \"" "${_shttp_headers[@]}" ) 
+        _curl_src+="\""
     fi
     _length=${#_shttp_query_params[@]}
     if (( _length > 0 )); then
         _url+="?"
-        for _param in "${_shttp_query_params[@]}"; do
-            _url+="$_param&"
-        done
-        _url=${_url::-1}
+        _url+=$( arr_join "&" "${_shttp_query_params[@]}" )
     fi
     _length=${#_shttp_form[@]}
     if (( _length > 0 )); then
-        for _form in "${_shttp_form[@]}"; do
-            _curl_src+=( "-F \"$_form\" \\" )
-        done
+        _curl_src+=" -F \""
+        _curl_src+=$( arr_join "\" -F \"" "${_shttp_form[@]}" ) 
+        _curl_src+="\""
     fi
     if [ -f "$_shttp_body" ]; then
         mv "$_shttp_body" "$_shttp_output.body"
         if [ "$_body_opt" == "BODY_CONTENT" ]; then
-            _curl_src+=( "--data '$( cat $_shttp_output.body )' \\" )
+            _curl_src+=" --data '$( cat $_shttp_output.body )'"
         else
-            _curl_src+=( "--data-binary \"@$_shttp_output.body\" \\" )
+            _curl_src+=" --data-binary \"@$_shttp_output.body\""
         fi
     fi
     _length=${#_shttp_curl_opts[@]}
     if (( _length > 0 )); then
-        for _opt in "${_shttp_curl_opts[@]}"; do
-            _curl_src+=( "$_opt \\" )
-        done
+        _curl_src+=" "
+        _curl_src+=$( arr_join " " "${_shttp_curl_opts[@]}" )
     fi
     _curl_format
     if [ "$_cmd_opt" == "EXECUTABLE" ]; then
-        _curl_src+=( "-w \"@$_shttp_output.format\" \\" )
-        _curl_src+=( "\"$_url\" \\" )
-        _curl_src+=( "> \"$_shttp_output.trace\" 2>&1" )
+        _curl_src+=" -w \"@$_shttp_output.format\""
+        _curl_src+=" \"$_url\""
+        _curl_src+=" > \"$_shttp_output.trace\" 2>&1"
     else
-        _curl_src+=( "\"$_url\"" )
+        _curl_src+=" \"$_url\""
     fi
-    echo "${_curl_src[*]}"
+    echo "$_curl_src"
 }
 
 #  Create the file format

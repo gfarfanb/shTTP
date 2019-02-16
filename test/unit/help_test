@@ -13,19 +13,19 @@ post_curl_command() {
 _shttp_command="post_curl_command"
 _curl_command=""
 
-_curl_expected_file="curl -X POST -s -v \\
--H \"Content-Type: application/json\" \\
---data-binary \"@output/curl.tmp.body\" \\
-\"http://127.0.0.1:5555/info\""
+_curl_expected_file="curl -X POST -s -v"
+_curl_expected_file+=" -H \"Content-Type: application/json\""
+_curl_expected_file+=" --data-binary \"@output/curl.tmp.body\""
+_curl_expected_file+=" \"http://127.0.0.1:5555/info\""
 
 _show_curl --curl -f _curl_command
 
 assertEquals "'cURL' command does not match" "$_curl_expected_file" "$_curl_command"
 
-_curl_expected_body="curl -X POST -s -v \\
--H \"Content-Type: application/json\" \\
---data {name:test} \\
-\"http://127.0.0.1:5555/info\""
+_curl_expected_body="curl -X POST -s -v"
+_curl_expected_body+=" -H \"Content-Type: application/json\""
+_curl_expected_body+=" --data {name:test}"
+_curl_expected_body+=" \"http://127.0.0.1:5555/info\""
 
 _show_curl --curl -c _curl_command
 

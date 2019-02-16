@@ -1121,10 +1121,13 @@ method() {
 #  -param $@ Request headers
 headers() {
     if (( $# > 0 )); then
-        for _header in "$@"; do
-            _shttp_headers+=( "$_header" )
-            info "Set [Header] with [$_header]"
-        done
+        local _length=${#_shttp_headers[@]}
+        if (( _length > 0 )); then
+            _shttp_headers=( "${_shttp_headers[@]}" "$@" )
+        else
+            _shttp_headers=( "$@" )
+        fi
+        info "Set [Headers] with [$*]"
     fi
 }
 
@@ -1162,10 +1165,13 @@ bodyFile() {
 #  -param $@ Request form
 form() {
     if (( $# > 0 )); then
-        for _form in "$@"; do
-            _shttp_form+=( "$_form" )
-            info "Set [Form] with [$_form]"
-        done
+        local _length=${#_shttp_form[@]}
+        if (( _length > 0 )); then
+            _shttp_form=( "${_shttp_form[@]}" "$@" )
+        else
+            _shttp_form=( "$@" )
+        fi
+        info "Set [Form] with [$*]"
     fi
 }
 
@@ -1174,10 +1180,13 @@ form() {
 #  -param $@ Request query parameters
 queryParams() {
     if (( $# > 0 )); then
-        for _param in "$@"; do
-            _shttp_query_params+=( "$_param" )
-            info "Set [Query-Param] with [$_param]"
-        done
+        local _length=${#_shttp_query_params[@]}
+        if (( _length > 0 )); then
+            _shttp_query_params=( "${_shttp_query_params[@]}" "$@" )
+        else
+            _shttp_query_params=( "$@" )
+        fi
+        info "Set [Query-Params] with [$*]"
     fi
 }
 
@@ -1186,10 +1195,13 @@ queryParams() {
 #  -param $@ Additional cURL options
 curlOpts() {
     if (( $# > 0 )); then
-        for _opt in "$@"; do
-            _shttp_curl_opts+=( "$_opt" )
-            info "Set [cURL-opt] with [$_opt]"
-        done
+        local _length=${#_shttp_curl_opts[@]}
+        if (( _length > 0 )); then
+            _shttp_curl_opts=( "${_shttp_curl_opts[@]}" "$@" )
+        else
+            _shttp_curl_opts=( "$@" )
+        fi
+        info "Set [cURL-opts] with [$*]"
     fi
 }
 
@@ -1630,14 +1642,18 @@ _default_config() {
         _length=$( jq  '.headers | length' "$_shttp_env" )
         if (( _length > 0)); then
             _vals=( $( jq ".headers | .[]" "$_shttp_env" ) )
-            for _i in "${_vals[@]}"; do headers "$_i" ; done
+            local _config_headers=()
+            for _i in "${_vals[@]}"; do _config_headers+=( "$_i" ) ; done
+            headers "${_config_headers[@]}"
         fi
     fi
     if ! [ -f "$_shttp_body" ]; then
         _length=$( jq  '.body | length' "$_shttp_env" )
         if (( _length > 0)); then
             _vals=( $( jq ".body | .[]" "$_shttp_env" ) )
-            for _i in "${_vals[@]}"; do body "$_i" ; done
+            local _config_body=()
+            for _i in "${_vals[@]}"; do _config_body+=( "$_i" ) ; done
+            body "${_config_body[@]}"
         fi
     fi
     _length=${#_shttp_form[@]}
@@ -1645,7 +1661,9 @@ _default_config() {
         _length=$( jq  '.form | length' "$_shttp_env" )
         if (( _length > 0)); then
             _vals=( $( jq ".form | .[]" "$_shttp_env" ) )
-            for _i in "${_vals[@]}"; do form "$_i" ; done
+            local _config_form=()
+            for _i in "${_vals[@]}"; do _config_form+=( "$_i" ) ; done
+            form "${_config_form[@]}"
         fi
     fi
     _length=${#_shttp_query_params[@]}
@@ -1653,7 +1671,9 @@ _default_config() {
         _length=$( jq  '.queryParams | length' "$_shttp_env" )
         if (( _length > 0)); then
             _vals=( $( jq ".queryParams | .[]" "$_shttp_env" ) )
-            for _i in "${_vals[@]}"; do queryParams "$_i" ; done
+            local _config_params=()
+            for _i in "${_vals[@]}"; do _config_params+=( "$_i" ) ; done
+            queryParams "${_config_params[@]}"
         fi
     fi
     _length=${#_shttp_curl_opts[@]}
@@ -1661,7 +1681,9 @@ _default_config() {
         _length=$( jq  '.curlOpts | length' "$_shttp_env" )
         if (( _length > 0)); then
             _vals=( $( jq ".curlOpts | .[]" "$_shttp_env" ) )
-            for _i in "${_vals[@]}"; do curlOpts "$_i" ; done
+            local _config_opts=()
+            for _i in "${_vals[@]}"; do _config_opts+=( "$_i" ) ; done
+            curlOpts "${_config_opts[@]}"
         fi
     fi
 }
@@ -2244,7 +2266,7 @@ _append_content_file() {
             for (( _i=1; _i<=_repeat; _i++ )); do
                 for _part in "$@"; do
                     printf "%s" "$_part" | tee -a "$_file" > /dev/null
-                    _size=$(( _size+${#_part}  ))
+                    _size=$(( _size+${#_part} ))
                 done
             done
         elif (( _max_size > 0 )); then
@@ -3057,19 +3079,8 @@ fi
 _clean_output_files() {
     local _opt=${1:-}
     if [ -d output ]; then
-        declare -a _selected=(
-            $( find "output" -name "*" -type f )
-        )
-         local _length=${#_selected[@]}
-        if (( _length > 0 )); then
-            for _file in "${_selected[@]}"; do
-                info "Removed [$_file] output"
-            done
-            rm -rf output/*
-            info "Cleaning completed"
-        else
-            info "Output directory is empty"
-        fi
+        find "output" -name "*" -type f -delete -printf 'Removing [%f] from output\n'
+        info "Cleaning completed"
     fi
 }
 _register_opt --clean _clean_output_files MANAGE

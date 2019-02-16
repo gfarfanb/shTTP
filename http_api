@@ -1852,19 +1852,12 @@ _set_method() {
 _append_if_missing_header() {
     local _name=${1:-}
     local _val=${2:-}
-    shopt -s nocasematch
     local _found=0
     local _length=${#_shttp_headers[@]}
     if (( _length > 0 )); then
-        for _header in "${_shttp_headers[@]}"; do
-            if [[ "$_header" == "$_name:"* ]]; then
-                _found=1
-                break
-            fi
-        done
+        _found=$( arr_like "$_name" "${_shttp_headers[@]}" )
     fi
-    shopt -u nocasematch
-    if [ $_found = 0 ]; then
+    if [ "$_found" = "0" ]; then
         headers "$_name: $_val"
     fi
 }

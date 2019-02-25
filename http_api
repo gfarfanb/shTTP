@@ -1116,18 +1116,39 @@ method() {
     esac
 }
 
-#  Setter for '_shttp_headers'.
+#  Setter for '_shttp_headers'. If the header
+#+ starts with '!' so the header is considered
+#+ as unique value and header with that flag
+#+ will be remained.
 #
 #  -param $@ Request headers
 headers() {
     if (( $# > 0 )); then
-        local _length=${#_shttp_headers[@]}
-        if (( _length > 0 )); then
-            _shttp_headers=( "${_shttp_headers[@]}" "$@" )
-        else
-            _shttp_headers=( "$@" )
-        fi
-        info "Set [Headers] with [$*]"
+        for _header in "$@"; do
+            if [[ "$_header" == "!"* ]]; then
+                local _length=${#_shttp_headers[@]}
+                local _header_name="${_header:1:${#_header}-1}"
+                if (( _length > 0 )); then
+                    local _index=-1
+                    for _i in ${!_shttp_headers[@]}
+                         if [[ "${_shttp_headers[$_i]}" == "$_header_name"* ]]; then
+                            _index=$_i
+                            break
+                         fi
+                    done
+                    if (( _index > -1 )); then
+                        _shttp_headers[$_index]="$_header"
+                    else
+                        _shttp_headers+=( "$_header" )
+                    fi
+                else
+                    _shttp_headers+=( "$_header" )
+                fi
+            else
+                _shttp_headers+=( "$_header" )
+            fi
+            info "Set [Headers] with [$_header]"
+        done
     fi
 }
 

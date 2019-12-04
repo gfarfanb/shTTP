@@ -9,5 +9,5 @@ Simple HTTP API development environment by command line.
 
 ## License
 
-Copyright © 2018, [Giovanni Farfán B](https://github.com/gfarfanb). Released under the 
+Copyright © 2018-2019, [Giovanni Farfán B](https://github.com/gfarfanb). Released under the 
 [MIT License](https://opensource.org/licenses/MIT).

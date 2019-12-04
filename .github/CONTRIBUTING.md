@@ -30,7 +30,7 @@ Windows > This PC > Properties > Advanced system settings > Environment Variable
 ```
 ```
 # Whatever location that makes sense
-JQ_HOME=C:\dist\jq-1.5
+JQ_HOME=C:\dist\jq-[version]
 Path=%Pah%; %JQ_HOME%
 ```
 > In order to use `jq` as command, is preferably to rename the executable `jq-[win64 | win32].exe`
@@ -38,7 +38,7 @@ Path=%Pah%; %JQ_HOME%
 
 * Check installation `jq --version`, output must be similar to:
 ```bash
-jq-1.5
+jq-[version]
 ```
 
 #### Ubuntu approach
@@ -52,7 +52,7 @@ sudo apt-get install jq
 
 * Check installation `jq --version`, output must be similar to:
 ```bash
-jq-1.5-1-a5b5cbe
+jq-1.x-x-xxxxxxx
 ```
 
 * Preferably install [ShellCheck](https://github.com/koalaman/shellcheck)
@@ -70,21 +70,54 @@ sudo apt-get install nginx
 ```
 
 
+### Docker approach
+```
+docker image build -t shttp:[version] .
+```
+
+```
+docker image ls
+docker run -it -d --name shttp-test-[optional-count] shttp:[version]
+```
+
+```
+docker run -it -d -P --name shttp-test-[optional-count] -v [/local/shTTP/path]:/usr/src/shTTP shttp:[version]
+```
+
+```
+docker ps -a
+docker exec -it [container-id] bash
+```
+
+```
+docker stop [container-id]
+docker rm [container-id]
+```
+
+```
+docker image rm [image-id]
+```
+
+
+### Useful links
+* [Configure Sublime to convert to Unix-like file endings on saving](https://stackoverflow.com/questions/39680585/how-do-configure-sublime-to-always-convert-to-unix-line-endings-on-save)
+
+
 ## Script plugin
 
 Export execution permissions to script file:
 ```bash
-git update-index --add --chmod=+x ./script_file.sh
+git update-index --add --chmod=+x [script_file]
 ```
 
 From source apply execution permissions:
 ```
-sudo chmod +x ./script_file.sh
+sudo chmod +x [script_file]
 ```
 
 Avoid errors because Windows-style '\r' line ending by:
 ```
-sed -i 's/\r$//' ./script_file.sh
+sed -i 's/\r$//' [script_file]
 ```
 
 Internal functions convention:

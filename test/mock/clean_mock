@@ -34,4 +34,3 @@ if [ -d ${_nginx_share}shttp_mock ] \
 else
     printf "\r%*s\r%s\n" "$(tput cols)" "[ OK ] " "setup_mock: Mock services correctly set-down";
 fi
-

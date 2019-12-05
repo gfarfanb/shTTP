@@ -3,7 +3,7 @@
 #  This is imported by 'test_runner'.
 #  Functions '_fail' and '_inc_asserts'
 #+ are visible because 'test_runner'.
-#  -author Giovanni Farfán B.
+#  -author Giovanni Farfan B.
 
 
 #  Fails the test immediately.

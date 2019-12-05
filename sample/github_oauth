@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-#  -author Giovanni Farfán B.
+#  -author Giovanni Farfan B.
 
 before_api() {
     basePath "/authorizations"

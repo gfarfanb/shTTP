@@ -1,6 +1,6 @@
 FROM ubuntu:xenial
 
-WORKDIR /usr/src/shTTP
+WORKDIR /usr/src/app
 
 RUN apt-get update
 RUN apt-get install jq -y

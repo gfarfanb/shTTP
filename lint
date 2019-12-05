@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 #  Run 'shellcheck' for project.
 #  https://github.com/koalaman/shellcheck
-#  -author Giovanni Farfán B.
+#  -author Giovanni Farfan B.
 set -euo pipefail
 IFS=$'\n\t'
 

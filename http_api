@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #  Simple HTTP API development environment.
-#  -author Giovanni Farfán B.
+#  -author Giovanni Farfan B.
 set -euo pipefail
 IFS=$'\n\t'
 

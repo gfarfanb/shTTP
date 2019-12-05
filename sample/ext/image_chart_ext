@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 #  Generates URL for 'Image Charts'.
 #  https://www.image-charts.com/
-#  -author Giovanni Farfán B.
+#  -author Giovanni Farfan B.
 
 #  Create and get 'Image Charts'
 #+ url.

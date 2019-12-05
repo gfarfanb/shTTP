@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #  Mock service cleaner.
-#  -author Giovanni Farfán B.
+#  -author Giovanni Farfan B.
 set -euo pipefail
 IFS=$'\n\t'
 

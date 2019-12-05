@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #  Tests for 'http_api' internal functions.
-#  -author Giovanni Farfán B.
+#  -author Giovanni Farfan B.
 
 
 #  -test Is key function

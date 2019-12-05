@@ -71,31 +71,21 @@ sudo apt-get install nginx
 
 
 ### Docker approach
+Pull [shTTP Docker image](https://hub.docker.com/repository/docker/gfarfanb/shttp):
 ```
-docker image build -t shttp:[version] .
-```
-
-```
+docker pull gfarfanb/shttp:[version]
 docker image ls
-docker run -it -d --name shttp-test-[optional-count] shttp:[version]
 ```
 
+Run container with downloaded image:
 ```
-docker run -it -d -P --name shttp-test-[optional-count] -v [/local/shTTP/path]:/usr/src/shTTP shttp:[version]
+docker run -it -d -P --name [custom-container-name] -v [/local/shTTP/path]:/usr/src/app gfarfanb/shttp:[version]
 ```
 
+Now you have access to enter to the container:
 ```
 docker ps -a
 docker exec -it [container-id] bash
-```
-
-```
-docker stop [container-id]
-docker rm [container-id]
-```
-
-```
-docker image rm [image-id]
 ```
 
 

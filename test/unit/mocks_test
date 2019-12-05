@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #  Tests for 'http_api' mock functions.
-#  -author Giovanni Farfán B.
+#  -author Giovanni Farfan B.
 
 
 #  -test Enable mock mode

@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 #  Global after tests.
 #  This is imported by 'test_runner'.
-#  -author Giovanni Farfán B.
+#  -author Giovanni Farfan B.
 
 
 #  Clean-up generated directories

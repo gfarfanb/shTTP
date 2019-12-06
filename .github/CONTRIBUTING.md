@@ -82,10 +82,16 @@ Run container with downloaded image:
 docker run -it -d -P --name [custom-container-name] -v [/local/shTTP/path]:/usr/src/app gfarfanb/shttp:[version]
 ```
 
-Now you have access to enter to the container:
+Now you have access to enter the container:
 ```
 docker ps -a
 docker exec -it [container-id] bash
+```
+
+Execute Lint and Tests:
+```
+./lint
+./runtests
 ```
 
 

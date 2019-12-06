@@ -205,3 +205,58 @@ assertTrue "Invalid milliseconds timestamp [+years]" "$_timestamp -lt $_now"
 _timestamp=$( date '+%s%N' | cut -b1-13 )
 _now=$( now_ms '-5Y' )
 assertTrue "Invalid milliseconds timestamp [-years]" "$_timestamp -gt $_now"
+
+
+#  -test Remove map entry
+_test_map_array=(
+    "Content-Type: application/json"
+    "Content-Type: application/json"
+    "Cookie: jh234jh2kj23h234k23h23423#qwe"
+)
+remove_map "Content-Type" "_test_map_array"
+_length=${#_test_map_array[@]}
+
+assertEquals "Entries in the map were not removed" "1" "$_length"
+
+
+_test_map_array=()
+remove_map "Content-Type" "_test_map_array"
+_length=${#_test_map_array[@]}
+
+assertEquals "Error with empty map" "0" "$_length"
+
+
+#  -test Put map entry
+_test_map_array=(
+    "Content-Type: application/xml"
+)
+put_map "Content-Type" ": application/json" "_test_map_array"
+_content="${_test_map_array[@]}"
+
+assertEquals "Initial entry is not found in the map" "Content-Type: application/json" "$_content"
+
+
+_test_map_array=(
+    "Content-Type: application/xml"
+    "Content-Type: application/txt"
+)
+put_map "Content-Type" ": application/json" "_test_map_array"
+_content="${_test_map_array[@]}"
+
+assertEquals "Map not updated" "Content-Type: application/json" "$_content"
+
+
+_test_map_array=(
+    "Content-Type: application/xml"
+)
+put_map "Cookie" ": jh234jh2kj23h234k23h23423#qwe" "_test_map_array"
+_length=${#_test_map_array[@]}
+
+assertEquals "New entry is not found in the map" "2" "$_length"
+
+
+_test_map_array=()
+put_map "Content-Type" ": application/json" "_test_map_array"
+_length=${#_test_map_array[@]}
+
+assertEquals "Map is empty after put operation" "1" "$_length"

@@ -29,7 +29,8 @@ _shttp_help_content=(
     "                                         -s: public mode, in 'ws/config[.<env>].json'"
     "   --remove <key-name>:              Remove the key-value from 'ws/config[.<env>].json'"
     "   --keys:                           Display all keys from 'ws/config[.<env>].json' file"
-    "   --part <part> <value> <sec>:      Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'"
+    "   --part <part> <value> <sec>:      Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'. Credential"
+    "                                       option is required ('--cred') to be defined."
     "                                       <part>:"
     "                                         -u: username alias"
     "                                         -p: password alias"
@@ -390,6 +391,45 @@ now_ms() {
         _now=$( num_subtract "$_now" "$_extra" )
     fi
     echo "$_now"
+}
+
+#  Remove an array element by key (start-with
+#+ of the value). The original array is passed
+#+ by the name of the array, so the function
+#+ must be able to evaluate that name as a variable.
+#
+#  -param Key (start-with) of the map (case sensitive)
+#  -param Name of the array variable
+remove_map() {
+    local _key="$1"
+    local _map_name="$2"
+    eval "local _map_length=\${#$_map_name[@]}"
+    if (( _map_length > 0 )); then
+        eval "local _map_src=( \${$_map_name[@]} )"
+        eval "$_map_name=()"
+        for i in "${!_map_src[@]}"; do
+            if ! [[ "${_map_src[$i]}" == "${_key}"* ]]; then
+                eval "$_map_name+=( \"\${_map_src[\$i]}\" )"
+            fi
+        done
+    fi
+}
+
+#  Put an array element by key-value. The original array
+#+ is passed by the name of the array, so the function
+#+ must be able to evaluate that name as a variable. There
+#+ is no separator for key-value because a concatenated
+#+ string ('key'+'value') is saved as an array element.
+#
+#  -param Key (start-with) of the map
+#  -param Value (string part) of the map
+#  -param Name of the array variable
+put_map() {
+    local _key="$1"
+    local _value="$2"
+    local _map_name="$3"
+    remove_map "$_key" "$_map_name"
+    eval "$_map_name+=( \"$_key$_value\" )"
 }
 
 

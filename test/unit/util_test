@@ -231,6 +231,7 @@ _test_map_array=(
     "Content-Type: application/xml"
 )
 put_map "Content-Type" ": application/json" "_test_map_array"
+#  shellcheck disable=SC2124
 _content="${_test_map_array[@]}"
 
 assertEquals "Initial entry is not found in the map" "Content-Type: application/json" "$_content"
@@ -241,6 +242,7 @@ _test_map_array=(
     "Content-Type: application/txt"
 )
 put_map "Content-Type" ": application/json" "_test_map_array"
+#  shellcheck disable=SC2124
 _content="${_test_map_array[@]}"
 
 assertEquals "Map not updated" "Content-Type: application/json" "$_content"

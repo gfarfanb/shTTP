@@ -162,22 +162,7 @@ fi
 
 #  Default configuration JSON file
 if ! [ -f "ws/config.json" ]; then
-    echo '{
-        "protocol": null,
-        "domain": null,
-        "port": null,
-        "basePath": null,
-        "endpoint": null,
-        "method": null,
-        "headers": [],
-        "body": [],
-        "form": [],
-        "queryParams": [],
-        "curlOpts": [],
-        "authMode": null,
-        "authCredential": null,
-        "editorCommand": null
-}' > "ws/config.json"
+    echo '{ "editorCommand": null }' > "ws/config.json"
 fi
 
 #  Default credentials JSON file
@@ -401,12 +386,16 @@ now_ms() {
 #  -param Key (start-with) of the map (case sensitive)
 #  -param Name of the array variable
 remove_map() {
-    local _key="$1"
-    local _map_name="$2"
+    local _key=${1:-}
+    local _map_name=${2:-}
+    #  shellcheck disable=SC1087
     eval "local _map_length=\${#$_map_name[@]}"
+    #  shellcheck disable=SC2154
     if (( _map_length > 0 )); then
+        #  shellcheck disable=SC1087
         eval "local _map_src=( \${$_map_name[@]} )"
         eval "$_map_name=()"
+        #  shellcheck disable=SC2154
         for i in "${!_map_src[@]}"; do
             if ! [[ "${_map_src[$i]}" == "${_key}"* ]]; then
                 eval "$_map_name+=( \"\${_map_src[\$i]}\" )"
@@ -425,10 +414,11 @@ remove_map() {
 #  -param Value (string part) of the map
 #  -param Name of the array variable
 put_map() {
-    local _key="$1"
-    local _value="$2"
-    local _map_name="$3"
+    local _key=${1:-}
+    local _value=${2:-}
+    local _map_name=${3:-}
     remove_map "$_key" "$_map_name"
+    #  shellcheck disable=SC1087
     eval "$_map_name+=( \"$_key$_value\" )"
 }
 
@@ -1161,35 +1151,26 @@ method() {
 #+ as unique value and header with that flag
 #+ will be remained.
 #
-#  -param $@ Request headers
-headers() {
-    if (( $# > 0 )); then
-        for _header in "$@"; do
-            if [[ "$_header" == "!"* ]]; then
-                local _length=${#_shttp_headers[@]}
-                local _header_name="${_header:1:${#_header}-1}"
-                if (( _length > 0 )); then
-                    local _index=-1
-                    for _i in "${!_shttp_headers[@]}"; do
-                         if [[ "${_shttp_headers[$_i]}" == "$_header_name"* ]]; then
-                            _index=$_i
-                            break
-                         fi
-                    done
-                    if (( _index > -1 )); then
-                        _shttp_headers[$_index]="$_header"
-                    else
-                        _shttp_headers+=( "$_header" )
-                    fi
-                else
-                    _shttp_headers+=( "$_header" )
-                fi
-            else
-                _shttp_headers+=( "$_header" )
-            fi
-            info "Set [Headers] with [$_header]"
-        done
+#  -param $1 Header name
+#  -param $2 Header value
+hd() {
+    local _name=${1:-}
+    local _value=${2:-}
+    if [[ "$_name" == "!"* ]]; then
+        _name="${_name:1}"
+        put_map "$_name" ": $_value" "_shttp_headers"
+    else
+        _shttp_headers+=( "$_name: $_value" )
     fi
+    info "Set [Headers] with [$_name: $_value]"
+}
+
+#  Alias for 'hd' function.
+#
+#  -param $1 Header name
+#  -param $2 Header value
+header() {
+    hd "$@"
 }
 
 #  Setter for '_shttp_body' file.
@@ -1223,32 +1204,32 @@ bodyFile() {
 
 #  Setter for '_shttp_form'.
 #
-#  -param $@ Request form
+#  -param $1 Form field name
+#  -param $2 Form fiel value
 form() {
-    if (( $# > 0 )); then
-        local _length=${#_shttp_form[@]}
-        if (( _length > 0 )); then
-            _shttp_form=( "${_shttp_form[@]}" "$@" )
-        else
-            _shttp_form=( "$@" )
-        fi
-        info "Set [Form] with [$*]"
-    fi
+    local _name=${1:-}
+    local _value=${2:-}
+    put_map "$_name" "=$_value" "_shttp_form"
+    info "Set [Form] with [$_name=$_value]"
 }
 
 #  Setter for '_shttp_query_params'.
 #
-#  -param $@ Request query parameters
-queryParams() {
-    if (( $# > 0 )); then
-        local _length=${#_shttp_query_params[@]}
-        if (( _length > 0 )); then
-            _shttp_query_params=( "${_shttp_query_params[@]}" "$@" )
-        else
-            _shttp_query_params=( "$@" )
-        fi
-        info "Set [Query-Params] with [$*]"
-    fi
+#  -param $1 Query parameter name
+#  -param $2 Query parameter value
+qp() {
+    local _name=${1:-}
+    local _value=${2:-}
+    put_map "$_name" "=$_value" "_shttp_query_params"
+    info "Set [Query-Params] with [$_name=$_value]"
+}
+
+#  Alias for 'qp' function.
+#
+#  -param $1 Query parameter name
+#  -param $2 Query parameter value
+queryParam() {
+    qp "$@"
 }
 
 #  Setter for '_shttp_curl_opts'.
@@ -1635,121 +1616,6 @@ _reset_req_vars() {
 }
 
 #  Put default values to empty
-#+ variables. The default
-#+ not null values are taken
-#+ from 'ws/config[.<env>].json'.
-#    1. '_shttp_protocol': 'get protocol'
-#    2. '_shttp_domain': 'get domain'
-#    3. '_shttp_port': 'get port'
-#    4. '_shttp_base_path': 'get basePath'
-#    5. '_shttp_endpoint': 'get endpoint'
-#    6. '_shttp_method': 'get method'
-#    7. '_shttp_auth_mode': 'get authMode'
-#    8. '_shttp_auth_credential': 'get authCredential'
-#    9. '_shttp_editor_command': 'get editorCommand'
-#    10. '_shttp_headers': (for each in)
-#+       'get headers'
-#    11. '_shttp_body': (for each in)
-#+       'get body'
-#    12. '_shttp_form': (for each in)
-#+       'get form'
-#    13. '_shttp_query_params': (for each in)
-#+        'get queryParams'
-#    14. '_shttp_curl_opts': (for each in)
-#+       'get curlOpts'
-_default_config() {
-    local _name=""
-    local _val=""
-    local _vals=()
-    local _length=0
-    if [ -z "$_shttp_protocol" ]; then
-        _val=$( get protocol )
-        if [ "$_val" != "null" ]; then protocol "$_val" ; fi
-    fi
-    if [ -z "$_shttp_domain" ]; then
-        _val=$( get domain )
-        if [ "$_val" != "null" ]; then domain "$_val" ; fi
-    fi
-    if [ -z "$_shttp_port" ]; then
-        _val=$( get port )
-        if [ "$_val" != "null" ]; then port "$_val" ; fi
-    fi
-    if [ -z "$_shttp_base_path" ]; then
-        _val=$( get basePath )
-        if [ "$_val" != "null" ]; then basePath "$_val" ; fi
-    fi
-    if [ -z "$_shttp_endpoint" ]; then
-        _val=$( get endpoint )
-        if [ "$_val" != "null" ]; then endpoint "$_val" ; fi
-    fi
-    if [ -z "$_shttp_method" ]; then
-        _val=$( get method )
-        if [ "$_val" != "null" ]; then method "$_val" ; fi
-    fi
-    if [ -z "$_shttp_auth_mode" ]; then
-        _val=$( get authMode )
-        if [ "$_val" != "null" ]; then authMode "$_val" ; fi
-    fi
-    if [ -z "$_shttp_auth_credential" ]; then
-        _val=$( get authCredential )
-       if [ "$_val" != "null" ]; then credential "$_val" ; fi
-    fi
-    if [ -z "$_shttp_editor_command" ]; then
-        _val=$( get editorCommand )
-        if [ "$_val" != "null" ]; then editor "$_val" ; fi
-    fi
-    _length=${#_shttp_headers[@]}
-    if (( _length == 0 )); then
-        _length=$( jq  '.headers | length' "$_shttp_env" )
-        if (( _length > 0)); then
-            _vals=( $( jq ".headers | .[]" "$_shttp_env" ) )
-            local _config_headers=()
-            for _i in "${_vals[@]}"; do _config_headers+=( "$_i" ) ; done
-            headers "${_config_headers[@]}"
-        fi
-    fi
-    if ! [ -f "$_shttp_body" ]; then
-        _length=$( jq  '.body | length' "$_shttp_env" )
-        if (( _length > 0)); then
-            _vals=( $( jq ".body | .[]" "$_shttp_env" ) )
-            local _config_body=()
-            for _i in "${_vals[@]}"; do _config_body+=( "$_i" ) ; done
-            body "${_config_body[@]}"
-        fi
-    fi
-    _length=${#_shttp_form[@]}
-    if (( _length == 0 )); then
-        _length=$( jq  '.form | length' "$_shttp_env" )
-        if (( _length > 0)); then
-            _vals=( $( jq ".form | .[]" "$_shttp_env" ) )
-            local _config_form=()
-            for _i in "${_vals[@]}"; do _config_form+=( "$_i" ) ; done
-            form "${_config_form[@]}"
-        fi
-    fi
-    _length=${#_shttp_query_params[@]}
-    if (( _length == 0 )); then
-        _length=$( jq  '.queryParams | length' "$_shttp_env" )
-        if (( _length > 0)); then
-            _vals=( $( jq ".queryParams | .[]" "$_shttp_env" ) )
-            local _config_params=()
-            for _i in "${_vals[@]}"; do _config_params+=( "$_i" ) ; done
-            queryParams "${_config_params[@]}"
-        fi
-    fi
-    _length=${#_shttp_curl_opts[@]}
-    if (( _length == 0 )); then
-        _length=$( jq  '.curlOpts | length' "$_shttp_env" )
-        if (( _length > 0)); then
-            _vals=( $( jq ".curlOpts | .[]" "$_shttp_env" ) )
-            local _config_opts=()
-            for _i in "${_vals[@]}"; do _config_opts+=( "$_i" ) ; done
-            curlOpts "${_config_opts[@]}"
-        fi
-    fi
-}
-
-#  Put default values to empty
 #+ variables.
 #    1. '_shttp_protocol': 'https'
 #    2. '_shttp_url':
@@ -1824,28 +1690,25 @@ _output_dir() {
 #  This lifecycle function is called
 #+ for request execution:
 #    1. Set default request variables
-#+      using 'ws/config[.<env>].json'
-#    2. Set default request variables
-#    3. Execute 'before_<command>' function
+#    2. Execute 'before_<command>' function
 #+      if it is declared
-#    4. Append default 'Content-Type' to
+#    3. Append default 'Content-Type' to
 #+      headers
-#    5. Append authentication to request.
-#    6. Build 'cURL' command
-#    7. Execute 'cURL' command
-#    8. Clean and append details into
+#    4. Append authentication to request.
+#    5. Build 'cURL' command
+#    6. Execute 'cURL' command
+#    7. Clean and append details into
 #+      '_shttp_output.trace' file
-#    9. Execute 'after_<command>' function
+#    8. Execute 'after_<command>' function
 #+      if it is declared
 #
 #  -param $1 Request command
 _request() {
     local _command=${1:-}
     local _curl=""
-    _default_config
     _default_vars "$_command"
     _execute_if_exist "before_${_command}"
-    _append_content_type
+    _append_default_content_type
     _append_auth
     _curl=$( _build_curl BODY_FILE EXECUTABLE )
     if (( _shttp_mock_enabled == 1 )); then
@@ -1939,7 +1802,7 @@ _append_if_missing_header() {
         _found=$( arr_like "$_name" "${_shttp_headers[@]}" )
     fi
     if [ "$_found" = "0" ]; then
-        headers "$_name: $_val"
+        hd "$_name" "$_val"
     fi
 }
 
@@ -1948,7 +1811,7 @@ _append_if_missing_header() {
 #+ 'Content-Type' will be
 #+ 'multipart/form' otherwise will be
 #+ 'application/json'.
-_append_content_type() {
+_append_default_content_type() {
     local _length=${#_shttp_form[@]}
     if (( _length > 0 )); then
         local _val="multipart/form-data"
@@ -2018,7 +1881,7 @@ _append_auth() {
             _token=$( getPart token )
             _token_param=$( getPart tokenParam "access_token" )
             eval "_token=\"$_token\""
-            queryParams "$_token_param=$_token"
+            qp "$_token_param" "$_token"
         ;;
         QKEYSEC)
             _key=$( getPart key )
@@ -2027,7 +1890,8 @@ _append_auth() {
             _secret_param=$( getPart secretParam "secret" )
             eval "_key=\"$_key\""
             eval "_secret=\"$_secret\""
-            queryParams "$_key_param=$_key" "$_secret_param=$_secret"
+            qp "$_key_param" "$_key"
+            qp "$_secret_param" "$_secret"
         ;;
         SKIP)
             :
@@ -3200,10 +3064,9 @@ _show_curl() {
     _execute_if_exist before_api
     $_shttp_command
     _set_method "$_shttp_command"
-    _default_config
     _default_vars "$_shttp_command"
     _execute_if_exist "before_${_shttp_command}"
-    _append_content_type
+    _append_default_content_type
     _append_auth
     _shttp_output="output/curl.tmp"
     _curl_value=$( _build_curl $_body_opt PRINTABLE )

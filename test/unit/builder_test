@@ -78,10 +78,36 @@ _reset_req_vars
 
 
 #  -test Set headers
-headers "Header-1: test/1" "Header-2: test/2" "Header-3: test/3"
+hd "Alias-H-1" "alias/1"
+hd "Alias-H-2" "alias/2"
+hd "Alias-H-3" "alias/3"
+#  shellcheck disable=SC2154
+_length=${#_shttp_headers[@]}
+assertEquals "Set headers by alias does not work" 3 "$_length"
+_reset_req_vars
+
+header "Header-1" "test/1"
+header "Header-2" "test/2"
+header "Header-3" "test/3"
 #  shellcheck disable=SC2154
 _length=${#_shttp_headers[@]}
 assertEquals "Set headers does not work" 3 "$_length"
+_reset_req_vars
+
+hd "Content-Type" "content/1"
+hd "Content-Type" "content/2"
+hd "Content-Type" "content/3"
+#  shellcheck disable=SC2154
+_length=${#_shttp_headers[@]}
+assertEquals "Set repeated headers does not work" 3 "$_length"
+_reset_req_vars
+
+hd "Content-Type" "content/1"
+hd "Content-Type" "content/2"
+hd "!Content-Type" "content/definitive"
+#  shellcheck disable=SC2154
+_length=${#_shttp_headers[@]}
+assertEquals "Set unique headers does not work" 1 "$_length"
 _reset_req_vars
 
 
@@ -114,7 +140,8 @@ _reset_req_vars
 
 
 #  -test Set form
-form "key=value" "name=test"
+form "key" "value"
+form "name" "test"
 #  shellcheck disable=SC2154
 _length=${#_shttp_form[@]}
 assertEquals "Set form does not work" 2 "$_length"
@@ -122,7 +149,15 @@ _reset_req_vars
 
 
 #  -test Set query parameters
-queryParams "key=value" "name=test"
+qp "key" "value"
+qp "name" "test"
+#  shellcheck disable=SC2154
+_length=${#_shttp_query_params[@]}
+assertEquals "Set query parameters by alias does not work" 2 "$_length"
+_reset_req_vars
+
+queryParam "key" "value"
+queryParam "name" "test"
 #  shellcheck disable=SC2154
 _length=${#_shttp_query_params[@]}
 assertEquals "Set query parameters does not work" 2 "$_length"

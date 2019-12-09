@@ -179,75 +179,6 @@ assertTrue "'_shttp_editor_command' is not empty" "-z \"$_shttp_editor_command\"
 assertTrue "'_shttp_output' is not empty" "-z \"$_shttp_output\""
 
 
-#  -test Default values from config
-update "ws/config.json" '. + {
-        "protocol": "any-protocol",
-    	"domain": "any-domain",
-    	"basePath": "any-base-path",
-    	"endpoint": "any-endpoint",
-    	"method": "GET",
-    	"headers": [
-    	    "Any-Header: test/value"
-    	 ],
-    	"body": [
-    	    "any-body-part"
-    	],
-    	"form": [
-    	    "key=value"
-    	],
-    	"queryParams": [
-    	    "param=value"
-    	],
-    	"curlOpts": [
-    	    "--basic"
-    	],
-    	"authMode": "HEADER",
-    	"authCredential": "test.user",
-    	"editorCommand": "echo opening"
-    }'
-_default_config
-
-assertEquals "'_shttp_protocol' not in config" "any-protocol" "$_shttp_protocol"
-assertEquals "'_shttp_domain' not in config" "any-domain" "$_shttp_domain"
-assertEquals "'_shttp_method' not in config" "GET" "$_shttp_method"
-assertEquals "'_shttp_base_path' not in config" "any-base-path" "$_shttp_base_path"
-assertEquals "'_shttp_endpoint' not in config" "any-endpoint" "$_shttp_endpoint"
-
-_length=${#_shttp_headers[@]}
-assertEquals "'_shttp_headers' not in config" 1 "$_length"
-
-_length=$( stat -c%s "$_shttp_body" )
-assertTrue "'_shttp_body' not in config" "$_length -ge 13"
-
-_length=${#_shttp_form[@]}
-assertEquals "'_shttp_form' not in config" 1 "$_length"
-
-_length=${#_shttp_query_params[@]}
-assertEquals "'_shttp_query_params' not in config" 1 "$_length"
-
-_length=${#_shttp_curl_opts[@]}
-assertEquals "'_shttp_curl_opts' not in config" 1 "$_length"
-
-assertEquals "'_shttp_auth_mode' not in config" "HEADER" "$_shttp_auth_mode"
-assertEquals "'_shttp_auth_credential' not in config" "test.user" "$_shttp_auth_credential"
-assertEquals "'_shttp_editor_command' not in config" "echo opening" "$_shttp_editor_command"
-
-_reset_req_vars
-remove protocol
-remove domain
-remove basePath
-remove endpoint
-remove method
-remove headers
-remove body
-remove form
-remove queryParams
-remove curlOpts
-remove authMode
-remove authCredential
-remove editorCommand
-
-
 #  -test Default values to request variables
 _default_vars
 
@@ -365,7 +296,7 @@ done
 
 assertEquals "'Missing-Header' does not exist" 1 "$_found"
 
-headers "Present-Header: test/value"
+header "Present-Header" "test/value"
 
 _append_if_missing_header "Present-Header" "test/value.new"
 
@@ -382,8 +313,8 @@ assertEquals "'Present-Header' change its value" 0 "$_found"
 _reset_req_vars
 
 
-#  -test Append Content-Type
-_append_content_type
+#  -test Append default Content-Type
+_append_default_content_type
 
 _found=0
 for _header in "${_shttp_headers[@]}"; do
@@ -398,7 +329,7 @@ assertEquals "'application/json' is not present" 1 "$_found"
 _reset_req_vars
 form "key=value"
 
-_append_content_type
+_append_default_content_type
 
 _found=0
 for _header in "${_shttp_headers[@]}"; do
@@ -521,9 +452,9 @@ _reset_req_vars
 url "https://any.host/any/endpoint"
 method "POST"
 output "output/result"
-headers "Defined-Header: test/value"
-queryParams "param=value"
-form "key=value"
+header "Defined-Header" "test/value"
+queryParam "param" "value"
+form "key" "value"
 curlOpts "--basic" "-u user:password"
 
 _expected="curl -X POST -s -v"

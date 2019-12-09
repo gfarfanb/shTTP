@@ -2,11 +2,11 @@
 #  -author Giovanni Farfan B.
 
 before_api() {
+    domain "api.github.com"
     basePath "/gists/$( get gistId )/comments"
-    headers \
-        "User-Agent: $( get appName )" \
-        "Accept: application/vnd.github.$( get apiVersion ).full+json" \
-        "Content-Type: application/vnd.github.$( get apiVersion ).full+json"
+    hd "User-Agent" "$( get appName )"
+    hd "Accept" "application/vnd.github.$( get apiVersion ).full+json"
+    hd "Content-Type" "application/vnd.github.$( get apiVersion ).full+json"
 }
 
 #  ./gist_comments get_all

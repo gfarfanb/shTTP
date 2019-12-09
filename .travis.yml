@@ -1,23 +1,18 @@
-sudo: required
-
 language: bash
+
+services:
+  - docker
 
 branches:
   only:
     - master
 
-install:
-  - echo $BASH_VERSION
-  - sudo apt-get update
-  - sudo apt-get install jq
-  - jq --version
-  - sudo apt-get install curl
-  - curl --version
-  - sudo apt-get install shellcheck
-  - shellcheck --version
-  - sudo apt-get install nginx
-  - nginx -v
+before_install:
+- docker pull gfarfanb/shttp:1.0.0
+- docker run -d -P -v $HOME:/usr/src/app gfarfanb/shttp:1.0.0 /bin/sh
+- docker ps -a
+- docker run gfarfanb/shttp:1.0.0 /bin/sh -c "cd /usr/src/app; ./lint; ./runtests"
 
 script:
   - ./lint
-  - sudo ./runtests
+  - ./runtests

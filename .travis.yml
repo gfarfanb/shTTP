@@ -7,10 +7,16 @@ branches:
     - master
 
 install:
-  - curl --version
+  - echo $BASH_VERSION
+  - sudo apt-get update
   - sudo apt-get install jq
+  - jq --version
+  - sudo apt-get install curl
+  - curl --version
   - sudo apt-get install shellcheck
+  - shellcheck --version
   - sudo apt-get install nginx
+  - nginx -v
 
 script:
   - ./lint

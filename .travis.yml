@@ -9,9 +9,9 @@ branches:
 
 before_install:
 - docker pull gfarfanb/shttp:1.0.0
-- docker run -d -P -v $HOME:/usr/src/app gfarfanb/shttp:1.0.0 /bin/sh
+- docker run -d -P -v $HOME/gfarfanb/shTTP:/usr/src/app gfarfanb/shttp:1.0.0 /bin/bash
 - docker ps -a
-- docker run gfarfanb/shttp:1.0.0 /bin/sh -c "cd /usr/src/app; ./lint; ./runtests"
+- docker run gfarfanb/shttp:1.0.0 /bin/bash -c "cd /usr/src/app; ./lint; ./runtests"
 
 script:
   - ./lint

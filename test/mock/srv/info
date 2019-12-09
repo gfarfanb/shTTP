@@ -2,5 +2,6 @@
     "name": "shTTP",
     "pronounced": "shell-ttp",
     "description": "Simple HTTP API development environment by command line.",
-    "author": "gfarfanb"
+    "author": "gfarfanb",
+    "language": "bash"
 }

@@ -207,6 +207,126 @@ _now=$( now_ms '-5Y' )
 assertTrue "Invalid milliseconds timestamp [-years]" "$_timestamp -gt $_now"
 
 
+#  -test Less than (<)
+_result=$( lt 25 5 )
+assertEquals "Invalid less-than-1 result [$_result]" false "$_result"
+
+_result=$( lt 0.0025 25 )
+assertEquals "Invalid less-than-2 result [$_result]" true "$_result"
+
+_result=$( lt .025 0.025 )
+assertEquals "Invalid less-than-3 result [$_result]" false "$_result"
+
+_result=$( lt_str "opq" "efg" )
+assertEquals "Invalid less-than-4 result [$_result]" false "$_result"
+
+_result=$( lt_str "abc" "xyz" )
+assertEquals "Invalid less-than-5 result [$_result]" true "$_result"
+
+_result=$( lt_str "shttp" "shttp" )
+assertEquals "Invalid less-than-6 result [$_result]" false "$_result"
+
+
+#  -test Less than or equal to (<=)
+_result=$( lte 25 5 )
+assertEquals "Invalid less-than-or-equals-to-1 result [$_result]" false "$_result"
+
+_result=$( lte 0.0025 25 )
+assertEquals "Invalid less-than-or-equals-to-2 result [$_result]" true "$_result"
+
+_result=$( lte .025 0.025 )
+assertEquals "Invalid less-than-or-equals-to-3 result [$_result]" true "$_result"
+
+_result=$( lte_str "opq" "efg" )
+assertEquals "Invalid less-than-or-equals-to-4 result [$_result]" false "$_result"
+
+_result=$( lte_str "abc" "xyz" )
+assertEquals "Invalid less-than-or-equals-to-5 result [$_result]" true "$_result"
+
+_result=$( lte_str "shttp" "shttp" )
+assertEquals "Invalid less-than-or-equals-to-6 result [$_result]" true "$_result"
+
+
+#  -test Greater than (>)
+_result=$( gt 25 5 )
+assertEquals "Invalid greater-than-1 result [$_result]" true "$_result"
+
+_result=$( gt 0.0025 25 )
+assertEquals "Invalid greater-than-2 result [$_result]" false "$_result"
+
+_result=$( gt .025 0.025 )
+assertEquals "Invalid greater-than-3 result [$_result]" false "$_result"
+
+_result=$( gt_str "opq" "efg" )
+assertEquals "Invalid greater-than-4 result [$_result]" true "$_result"
+
+_result=$( gt_str "abc" "xyz" )
+assertEquals "Invalid greater-than-5 result [$_result]" false "$_result"
+
+_result=$( gt_str "shttp" "shttp" )
+assertEquals "Invalid greater-than-6 result [$_result]" false "$_result"
+
+
+#  -test Greater than or equal to (>=)
+_result=$( gte 25 5 )
+assertEquals "Invalid greater-than-or-equals-to-1 result [$_result]" true "$_result"
+
+_result=$( gte 0.0025 25 )
+assertEquals "Invalid greater-than-or-equals-to-2 result [$_result]" false "$_result"
+
+_result=$( gte .025 0.025 )
+assertEquals "Invalid greater-than-or-equals-to-3 result [$_result]" true "$_result"
+
+_result=$( gte_str "opq" "efg" )
+assertEquals "Invalid greater-than-or-equals-to-4 result [$_result]" true "$_result"
+
+_result=$( gte_str "abc" "xyz" )
+assertEquals "Invalid greater-than-or-equals-to-5 result [$_result]" false "$_result"
+
+_result=$( gte_str "shttp" "shttp" )
+assertEquals "Invalid greater-than-or-equals-to-6 result [$_result]" true "$_result"
+
+
+#  -test Equal to (==)
+_result=$( eq 25 5 )
+assertEquals "Invalid equals-to-1 result [$_result]" false "$_result"
+
+_result=$( eq 0.0025 25 )
+assertEquals "Invalid equals-to-2 result [$_result]" false "$_result"
+
+_result=$( eq .025 0.025 )
+assertEquals "Invalid equals-to-3 result [$_result]" true "$_result"
+
+_result=$( eq_str "opq" "efg" )
+assertEquals "Invalid equals-to-4 result [$_result]" false "$_result"
+
+_result=$( eq_str "abc" "xyz" )
+assertEquals "Invalid equals-to-5 result [$_result]" false "$_result"
+
+_result=$( eq_str "shttp" "shttp" )
+assertEquals "Invalid equals-to-6 result [$_result]" true "$_result"
+
+
+#  -test Not equal (!=)
+_result=$( neq 25 5 )
+assertEquals "Invalid not-equals-to-1 result [$_result]" true "$_result"
+
+_result=$( neq 0.0025 25 )
+assertEquals "Invalid not-equals-to-2 result [$_result]" true "$_result"
+
+_result=$( neq .025 0.025 )
+assertEquals "Invalid not-equals-to-3 result [$_result]" false "$_result"
+
+_result=$( neq_str "opq" "efg" )
+assertEquals "Invalid not-equals-to-4 result [$_result]" true "$_result"
+
+_result=$( neq_str "abc" "xyz" )
+assertEquals "Invalid not-equals-to-5 result [$_result]" true "$_result"
+
+_result=$( neq_str "shttp" "shttp" )
+assertEquals "Invalid not-equals-to-6 result [$_result]" false "$_result"
+
+
 #  -test Remove map entry
 _test_map_array=(
     "Content-Type: application/json"

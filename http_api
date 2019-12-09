@@ -378,6 +378,102 @@ now_ms() {
     echo "$_now"
 }
 
+#  Less than (<) operator.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is less than B
+#+         otherwise false
+lt() { echo "[${1:-}, ${2:-}]" | jq ".[0] < .[1]" ; }
+
+#  Less than (<) operator for strings.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is less than B
+#+         otherwise false
+lt_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] < .[1]" ; }
+
+#  Less than or equals to (<=) operator.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is less than or equals to B
+#+         otherwise false
+lte() { echo "[${1:-}, ${2:-}]" | jq ".[0] <= .[1]" ; }
+
+#  Less than or equals to (<=) operator for strings.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is less than or equals to B
+#+         otherwise false
+lte_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] <= .[1]" ; }
+
+#  Greater than (>) operator.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is greater than B
+#+         otherwise false
+gt() { echo "[${1:-}, ${2:-}]" | jq ".[0] > .[1]" ; }
+
+#  Greater than (>) operator for strings.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is greater than B
+#+         otherwise false
+gt_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] > .[1]" ; }
+
+#  Greater than or equals to (>=) operator.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is greater than or equals to B
+#+         otherwise false
+gte() { echo "[${1:-}, ${2:-}]" | jq ".[0] >= .[1]" ; }
+
+#  Greater than or equals to (>=) operator for strings.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is greater than or equals to B
+#+         otherwise false
+gte_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] >= .[1]" ; }
+
+#  Equals to (==) operator.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is equals to B
+#+         otherwise false
+eq() { echo "[${1:-}, ${2:-}]" | jq ".[0] == .[1]" ; }
+
+#  Equals to (==) operator for strings.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is equals to B
+#+         otherwise false
+eq_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] == .[1]" ; }
+
+#  Not equals to (!=) operator.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is not equals to B
+#+         otherwise false
+neq() { echo "[${1:-}, ${2:-}]" | jq ".[0] != .[1]" ; }
+
+#  Not equals to (!=) operator for strings.
+# 
+#  -param Value A
+#  -param Value B
+#  -return true if A is not equals to B
+#+         otherwise false
+neq_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] != .[1]" ; }
+
 #  Remove an array element by key (start-with
 #+ of the value). The original array is passed
 #+ by the name of the array, so the function

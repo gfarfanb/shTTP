@@ -1,6 +1,7 @@
 #! /usr/bin/env bash
 #  Mock service cleaner.
 #  -author Giovanni Farfan B.
+#  -server Nginx
 set -euo pipefail
 IFS=$'\n\t'
 

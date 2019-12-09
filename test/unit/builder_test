@@ -148,6 +148,35 @@ assertEquals "Set form does not work" 2 "$_length"
 _reset_req_vars
 
 
+#  -test Set form file field
+output 'output/form-file-field-1'
+formFile file '{' '"key": "value"' ',' '"name": "test"' '}'
+#  shellcheck disable=SC2154
+_length=$( stat -c%s "$_shttp_output.form.field.file" )
+assertTrue "Set form-file-field-1 does not work" "$_length -ge 31"
+_reset_req_vars
+
+output 'output/form-file-field-2'
+formFile file 0 '5t' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_output.form.field.file" )
+assertTrue "Set form-file-field-2 does not work" "$_length -ge 55"
+_reset_req_vars
+
+output 'output/form-file-field-3'
+formFile file 0 '110s' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_output.form.field.file" )
+assertTrue "Set form-file-field-3 does not work" "$_length -ge 110"
+_reset_req_vars
+
+output 'output/form-file-field-4'
+formFile "key" "value"
+formFile "name" "test"
+#  shellcheck disable=SC2154
+_length=${#_shttp_form_files[@]}
+assertEquals "Set form-file-field-4 does not work" 2 "$_length"
+_reset_req_vars
+
+
 #  -test Set query parameters
 qp "key" "value"
 qp "name" "test"

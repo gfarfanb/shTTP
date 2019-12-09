@@ -1016,6 +1016,13 @@ _shttp_body=""
 #+ otherwise will be 'application/json'.
 _shttp_form=()
 
+#  Request key-value filename fields
+#+ for data form. If it is specified
+#+ default 'Content-Type' header
+#+ will be 'multipart/form-data'
+#+ otherwise will be 'application/json'.
+_shttp_form_files=()
+
 #  Request key-value entries for
 #+ Query Parameters.
 _shttp_query_params=()
@@ -1307,6 +1314,29 @@ form() {
     local _value=${2:-}
     put_map "$_name" "=$_value" "_shttp_form"
     info "Set [Form] with [$_name=$_value]"
+}
+
+#  Setter for '_shttp_form_files'
+#+ and a form file field. Every
+#+ field is added with the following
+#+ form:
+#    [name]=@'_shttp_output'.form.field.[name]
+#
+#  -param $1 Form field name
+#  -param $2 Offset value
+#  -param $3 Repeat option:
+#+           '[0-9]+t' for times
+#+           '[0-9]+s' for size
+#+           in bytes
+#  -param $@ Request body parts
+#  -see _append_content_file
+formFile() {
+    local _name=${1:-}
+    shift
+    local _filename="$_shttp_output.form.field.$_name"
+    put_map "$_name" "=@$_filename" "_shttp_form_files"
+    _append_content_file "$_filename" "$@"
+    info "Set [Form-File] with [$_name] [$_filename]"
 }
 
 #  Setter for '_shttp_query_params'.
@@ -1696,6 +1726,7 @@ _reset_req_vars() {
     _shttp_headers=()
     _shttp_body=""
     _shttp_form=()
+    _shttp_form_files=()
     _shttp_query_params=()
     _shttp_curl_opts=()
     _shttp_output=""
@@ -1903,13 +1934,14 @@ _append_if_missing_header() {
 }
 
 #  Set value to 'Content-Type' header.
-#  If '_shttp_form' has at least one value
-#+ 'Content-Type' will be
+#  If '_shttp_form' or '_shttp_form_files' has
+#+ at least one value 'Content-Type' will be
 #+ 'multipart/form' otherwise will be
 #+ 'application/json'.
 _append_default_content_type() {
     local _length=${#_shttp_form[@]}
-    if (( _length > 0 )); then
+    local _length_files=${#_shttp_form_files[@]}
+    if (( _length > 0 )) || (( _length_files > 0 )); then
         local _val="multipart/form-data"
     else
         local _val="application/json"
@@ -2011,6 +2043,7 @@ _append_auth() {
 #+       -H "<_shttp_headers[1..n]>" \
 #+       -d "<_shttp_query_params[1..n]>" \
 #+       -F "<_shttp_form[1..n]>" \
+#+       -F "<_shttp_form_files[1..n]>" \
 #+       --data-binary "@<:_shttp_body>" \
 #+       <_shttp_curl_opts[1..n]> \
 #+       <_shttp_url> > "<_shttp_output>.trace" 2>&1'
@@ -2045,6 +2078,12 @@ _build_curl() {
     if (( _length > 0 )); then
         _curl_src+=" -F \""
         _curl_src+=$( arr_join "\" -F \"" "${_shttp_form[@]}" ) 
+        _curl_src+="\""
+    fi
+    _length=${#_shttp_form_files[@]}
+    if (( _length > 0 )); then
+        _curl_src+=" -F \""
+        _curl_src+=$( arr_join "\" -F \"" "${_shttp_form_files[@]}" ) 
         _curl_src+="\""
     fi
     if [ -f "$_shttp_body" ]; then

@@ -325,10 +325,9 @@ for _header in "${_shttp_headers[@]}"; do
 done
 
 assertEquals "'application/json' is not present" 1 "$_found"
-
 _reset_req_vars
-form "key=value"
 
+form "key" "value"
 _append_default_content_type
 
 _found=0
@@ -339,8 +338,23 @@ for _header in "${_shttp_headers[@]}"; do
     fi
 done
 
-assertEquals "'multipart/form-data' is not present" 1 "$_found"
+assertEquals "'multipart/form-data' is not present using fields" 1 "$_found"
+_reset_req_vars
 
+
+output 'output/form-file-field'
+formFile "key" "value.file.content"
+_append_default_content_type
+
+_found=0
+for _header in "${_shttp_headers[@]}"; do
+    if [ "$_header" = "Content-Type: multipart/form-data" ]; then
+        _found=1
+        break
+    fi
+done
+
+assertEquals "'multipart/form-data' is not present using file fields" 1 "$_found"
 _reset_req_vars
 
 
@@ -455,12 +469,14 @@ output "output/result"
 header "Defined-Header" "test/value"
 queryParam "param" "value"
 form "key" "value"
+formFile "file" "value.content"
 curlOpts "--basic" "-u user:password"
 
 _expected="curl -X POST -s -v"
 _expected+=" -o \"output/result.output\""
 _expected+=" -H \"Defined-Header: test/value\""
 _expected+=" -F \"key=value\""
+_expected+=" -F \"file=@output/result.form.field.file\""
 _expected+=" --basic"
 _expected+=" -u user:password"
 _expected+=" -w \"@output/result.format\""

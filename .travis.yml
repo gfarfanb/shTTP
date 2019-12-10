@@ -7,11 +7,16 @@ branches:
   only:
     - master
 
-before_install:
-- docker pull gfarfanb/shttp:1.0.0
-- docker run -d --name shttp -P -v $HOME/gfarfanb/shTTP:/usr/src/app gfarfanb/shttp:1.0.0 /bin/bash
-- docker ps -a
+install:
+  - docker pull gfarfanb/shttp:1.0.0
+  - docker run -d --name shttp -P -v $HOME/gfarfanb/shTTP:/usr/src/app gfarfanb/shttp:1.0.0 /bin/bash
+
+before-script:
+  - docker ps -a
 
 script:
   - docker exec shttp ./lint
   - docker exec shttp ./runtests
+
+after_script:
+  - docker rm -f shttp

@@ -248,6 +248,14 @@ _output_value=$( getOutput id )
 assertEquals "Output 'id' not found" "5s43u-323we" "$_output_value"
 
 
+#  -test Get JSON setting
+update "ws/settings.json" '. + {
+        "name": "not-empty"
+    }'
+_setting_value=$( getSetting name )
+assertEquals "Setting 'name' not found" "not-empty" "$_setting_value"
+
+
 #  -test Get Header
 _response_trace=(
     "GET /applications"

@@ -283,10 +283,15 @@ _shttp_request_times=0
 
 #  -test Open editor option
 _shttp_open_editor=0
-_set_open_flag --open
+update "ws/settings.json" '. + {
+        "editorCommand": "not-empty"
+    }'
+_set_open_values --open
 #  shellcheck disable=SC2154
-assertEquals "Open editor command not assigned" 1 "$_shttp_open_editor"
+assertEquals "Open editor flag not assigned" 1 "$_shttp_open_editor"
+assertEquals "Open editor command not assigned" "not-empty" "$_shttp_editor_command"
 _shttp_open_editor=0
+_shttp_editor_command=""
 
 
 #  -test Enable request mock

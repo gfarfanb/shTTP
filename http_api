@@ -65,7 +65,7 @@ _shttp_help_content=(
     "   --auth-skip <credential>:         Set 'SKIP' mode to '_shttp_auth_mode' and assign the credential"
     "   --times <value>:                  Set the number of executions required for the request into '_shttp_request_times'"
     "   --open:                           Set '_shttp_editor_command' with value defined on 'editorCommand'"
-    "                                       from 'ws/config[.<env>].json'. This causes to execute '_shttp_editor_command'"
+    "                                       from 'ws/settings.json'. This causes to execute '_shttp_editor_command'"
     " Manual options:"
     "   --help:                           Display this help message"
     ""
@@ -162,7 +162,12 @@ fi
 
 #  Default configuration JSON file
 if ! [ -f "ws/config.json" ]; then
-    echo '{ "editorCommand": null }' > "ws/config.json"
+    echo '{ }' > "ws/config.json"
+fi
+
+#  Default settings JSON file
+if ! [ -f "ws/settings.json" ]; then
+    echo '{ "editorCommand": null }' > "ws/settings.json"
 fi
 
 #  Default credentials JSON file
@@ -771,6 +776,24 @@ getOutput() {
     _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
     if [ "$_val" = "null" ]; then
         _val="$_default"
+    fi
+    echo "$_val"
+}
+
+#  Get a setting value from
+#+ 'ws/settings.json'.
+#
+#  -param $1 Name of the entry or 'jq'
+#+           query (without '.' at the
+#+           beginning of the query)
+#  -return Setting value
+getSetting() {
+    local _name=${1:-}
+    local _val=""
+    _val=$( < "ws/settings.json" jq ".$_name | tostring" )
+    _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
+    if [ "$_val" = "null" ]; then
+        _val=""
     fi
     echo "$_val"
 }
@@ -2772,15 +2795,16 @@ if expr "$*" : ".*--times\s" > /dev/null; then
     _look_for_params --times "$@"
 fi
 
-#  Set open editor flag to
+#  Set open editor values to
 #+ true: 1.
 #
 #  -param $1 Option
-_set_open_flag() {
+_set_open_values() {
     local _opt=${1:-}
     _shttp_open_editor=1
+    _shttp_editor_command=$( getSetting editorCommand )
 }
-_register_opt --open _set_open_flag REQUEST
+_register_opt --open _set_open_values REQUEST
 if expr "$*" : ".*--open" > /dev/null; then
     _look_for_params --open "$@"
 fi

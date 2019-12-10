@@ -88,12 +88,6 @@ docker ps -a
 docker exec -it [container-id] bash
 ```
 
-Execute Lint and Tests:
-```
-./lint
-./runtests
-```
-
 
 ### Useful links
 * [Configure Sublime to convert to Unix-like file endings on saving](https://stackoverflow.com/questions/39680585/how-do-configure-sublime-to-always-convert-to-unix-line-endings-on-save)
@@ -135,6 +129,19 @@ Conventions:
     1. Spaces
     1. Identifiers: -param, -return, -test, -beforeTests, -afterTests, -author
     1. Identation
+
+Execute Lint and Tests:
+```
+# Execute linter
+cd shTTP/ && ./lint
+
+# Execute all tests
+cd shTTP/ && ./runtests
+
+# Execute a test suite
+cd shTTP/test/ && ./test_runner unit/[test-suite-name*]
+```
+> *test-suite-name*: Name of the script file without prefix **_test** e.g. `builder_test` => `builder`
 
 
 ## How can I contribute in a different way?

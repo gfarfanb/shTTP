@@ -49,10 +49,16 @@ _before_flow_call_var="Not executed yet"
 _after_flow_call_var="Not executed yet"
 _after_every_flow_var="Not executed yet"
 _flow_execution_count=0
+_step_times_count=0
 
 get_repo_flow() {
     url "http://127.0.0.1:5555/info"
     _flow_execution_count=$(( _flow_execution_count+1 ))
+}
+
+get_repo_flow_times() {
+    url "http://127.0.0.1:5555/info"
+    _step_times_count=$(( _step_times_count+1 ))
 }
 
 before_flow() {
@@ -68,6 +74,7 @@ flow_get_repo() {
     step get_repo_flow --auth-basic user
     step get_repo_flow
     step get_repo_flow --set a 5
+    step get_repo_flow_times --times 5
 }
 
 after_flow_get_repo() {
@@ -85,6 +92,8 @@ assertEquals "'before_flow_get_repo' not executed" "Executed" "$_before_flow_cal
 assertEquals "'flow_get_repo' not executed" 4 "$_flow_execution_count"
 assertEquals "'after_flow_get_repo' not executed" "Executed" "$_after_flow_call_var"
 assertEquals "'after_flow' not executed" "Executed" "$_after_every_flow_var"
+
+assertEquals "'get_repo_flow_times' not executed the required times" 5 "$_step_times_count"
 
 
 #  -test Request lifecycle

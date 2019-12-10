@@ -35,6 +35,10 @@ after_post_comment() {
     put commentId '.id'
 }
 
+get_comments() {
+    :
+}
+
 #  ./gist_comments patch_comment
 patch_comment() {
     authMode HEADER
@@ -92,7 +96,9 @@ before_flow_comment() {
 #  ./gist_comments flow_comment
 flow_comment() {
     step post_comment
+    step get_comment
     step patch_comment --auth-header sample
+    step get_comment
     step delete_comment --auth-header sample
     step get_only_def
 }

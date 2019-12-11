@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-#  Tests for 'http_api' util functions.
+#  Tests for 'shttp' util functions.
 #  -author Giovanni Farfan B.
 
 

@@ -61,7 +61,7 @@ sudo apt-get install shellcheck
 ```
 Usage:
 ```
-shellcheck http_api
+shellcheck shttp
 ```
 
 * Service mock nginx:

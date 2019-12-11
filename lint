@@ -5,7 +5,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-shellcheck http_api
+shellcheck shttp
 shellcheck lint
 shellcheck runtests
 shellcheck mkexec

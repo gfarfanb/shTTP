@@ -5,7 +5,7 @@
 
 
 #  Clean-up generated directories
-#+ because 'http_api'
+#+ because 'shttp'
 rm -rf output
 rm -rf hist
 rm -rf ws

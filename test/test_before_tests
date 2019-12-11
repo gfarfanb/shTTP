@@ -10,10 +10,10 @@
     ./setup_mock
 )
 
-#  Mark as skip 'http_api' main code.
+#  Mark as skip 'shttp' main code.
 #  shellcheck disable=SC2034
 SKIP_HTTP_API=true
 
-#  Import 'http_api'
+#  Import 'shttp'
 #  shellcheck disable=SC1091
-. ../http_api
+. ../shttp

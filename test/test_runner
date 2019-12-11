@@ -131,8 +131,13 @@ _inc_asserts() {
 #  Print the failed test message and
 #+ increase the '_test_runner_failures' count.
 _fail() {
-    failed ">>>   $*"
+    failed ">>>   No. $(( _test_runner_assertions+1 )) - $*"
     _test_runner_failures=$(( _test_runner_failures+1 ))
+}
+
+#  Print the passed test message.
+_passed() {
+    info ">>>   [OK] No. $(( _test_runner_assertions+1 )) - $*"
 }
 
 #  Print the test results and execute

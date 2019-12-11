@@ -9,14 +9,14 @@ branches:
 
 install:
   - docker pull gfarfanb/shttp:1.0.0
-  - docker run -it -d --name shttp -P -v $TRAVIS_BUILD_DIR:/usr/src/app gfarfanb/shttp:1.0.0 /bin/bash
+  - docker run -it -d --name shttp-test-env -P -v $TRAVIS_BUILD_DIR:/usr/src/app gfarfanb/shttp:1.0.0
 
 before-script:
   - docker ps -a
 
 script:
-  - docker exec shttp ./lint
-  - docker exec shttp ./runtests
+  - docker exec shttp-test-env ./lint
+  - docker exec shttp-test-env ./runtests
 
 after_script:
-  - docker rm -f shttp
+  - docker rm -f shttp-test-env

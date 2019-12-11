@@ -29,6 +29,8 @@ assertTrue() {
     eval "if ! [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
         _fail "[ $_condition ]: $_message"
+    else
+        _passed "[assertTrue] condition: [ $_condition ] related_error_msg: \"$_message\""
     fi
     _inc_asserts
 }
@@ -46,6 +48,8 @@ assertFalse() {
     eval "if [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
         _fail "! [ $_condition ]: $_message"
+    else
+        _passed "[assertFalse] condition: [ $_condition ] related_error_msg: \"$_message\""
     fi
     _inc_asserts
 }
@@ -62,6 +66,8 @@ assertEquals() {
     local _actual=${3:-}
     if [ "$_expected" != "$_actual" ]; then
         _fail "[ $_expected = $_actual ]: $_message"
+    else
+        _passed "[assertEquals] condition: [ $_expected = $_actual ] related_error_msg: \"$_message\""
     fi
     _inc_asserts
 }
@@ -78,6 +84,8 @@ assertNotEquals() {
     local _actual=${3:-}
     if [ "$_expected" = "$_actual" ]; then
         _fail "[ $_expected != $_actual ]: $_message"
+    else
+        _passed "[assertNotEquals] condition: [ $_expected != $_actual ] related_error_msg: \"$_message\""
     fi
     _inc_asserts
 }
@@ -94,6 +102,8 @@ assertLike() {
     local _actual=${3:-}
     if ! [[ "$_actual" =~ $_expected ]]; then
         _fail "[[ $_actual =~ $_expected ]]: $_message"
+    else
+        _passed "[assertLike] condition: [[ $_actual =~ $_expected ]] related_error_msg: \"$_message\""
     fi
     _inc_asserts
 }
@@ -110,6 +120,8 @@ assertNotLike() {
     local _actual=${3:-}
     if [[ "$_actual" =~ $_expected ]]; then
         _fail "! [[ $_actual =~ $_expected ]]: $_message"
+    else
+        _passed "[assertNotLike] condition: ! [[ $_actual =~ $_expected ]] related_error_msg: \"$_message\""
     fi
     _inc_asserts
 }
@@ -124,6 +136,8 @@ assertIsNull() {
     local _actual=${2:-}
     if [ "$_actual" != "null" ]; then
         _fail "[ $_actual = null ]: $_message"
+    else
+        _passed "[assertIsNull] condition: [ $_actual = null ] related_error_msg: \"$_message\""
     fi
     _inc_asserts
 }
@@ -138,6 +152,8 @@ assertNonNull() {
     local _actual=${2:-}
     if [ "$_actual" = "null" ]; then
         _fail "[ $_actual != null ]: $_message"
+    else
+        _passed "[assertNonNull] condition: [ $_actual != null ] related_error_msg: \"$_message\""
     fi
     _inc_asserts
 }

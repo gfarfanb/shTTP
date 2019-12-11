@@ -1313,9 +1313,13 @@ header() {
 #
 #  -param $1 Offset value
 #  -param $2 Repeat option:
-#+           '[0-9]+t' for times
-#+           '[0-9]+s' for size
+#            '[0-9]+t' 't' for times
+#            '[0-9]+tn' 't' for times
+#+           and new lines
+#            '[0-9]+s' 's' for size
 #+           in bytes
+#            '[0-9]+sn' 'sn' for size
+#+           in bytes and new lines
 #  -param $@ Request body parts
 #  -see _append_content_file
 body() {
@@ -1358,9 +1362,13 @@ form() {
 #  -param $1 Form field name
 #  -param $2 Offset value
 #  -param $3 Repeat option:
-#+           '[0-9]+t' for times
-#+           '[0-9]+s' for size
+#            '[0-9]+t' 't' for times
+#            '[0-9]+tn' 't' for times
+#+           and new lines
+#            '[0-9]+s' 's' for size
 #+           in bytes
+#            '[0-9]+sn' 'sn' for size
+#+           in bytes and new lines
 #  -param $@ Request body parts
 #  -see _append_content_file
 formFilePart() {
@@ -1512,9 +1520,13 @@ mockEnabled() {
 #
 #  -param $1 Offset value
 #  -param $2 Repeat option:
-#+           '[0-9]+t' for times
-#+           '[0-9]+s' for size
+#            '[0-9]+t' 't' for times
+#            '[0-9]+tn' 't' for times
+#+           and new lines
+#            '[0-9]+s' 's' for size
 #+           in bytes
+#            '[0-9]+sn' 'sn' for size
+#+           in bytes and new lines
 #  -param $@ Mock output parts
 #  -see _append_content_file
 mockOutput() {
@@ -2337,10 +2349,12 @@ _execute_editor_command() {
 #+           append mode ('n' for
 #+           new lines every append):
 #            '[0-9]+t' 't' for times
-#            '[0-9]+tn' 't' for times and new lines
+#            '[0-9]+tn' 't' for times
+#+           and new lines
 #            '[0-9]+s' 's' for size
-#            '[0-9]+sn' 'sn' for size and new lines
 #+           in bytes
+#            '[0-9]+sn' 'sn' for size
+#+           in bytes and new lines
 #  -param $@ Content parts
 _append_content_file() {
     local _file=${1:-}

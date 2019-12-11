@@ -13,17 +13,27 @@ _shttp_mock_enabled=0
 mockOutput '{' '"key": "value"' ',' '"name": "test"' '}'
 #  shellcheck disable=SC2154
 _length=$( stat -c%s "$_shttp_mock_output" )
-assertTrue "Set mock output does not work" "$_length -ge 31"
+assertTrue "Set mock output does not work" "$_length -eq 31"
 _shttp_mock_output=""
 
 mockOutput 0 '5t' 'Lorem ipsum'
 _length=$( stat -c%s "$_shttp_mock_output" )
-assertTrue "Set mock output does not work" "$_length -ge 55"
+assertTrue "Set mock output does not work [times]" "$_length -eq 55"
+_shttp_mock_output=""
+
+mockOutput 0 '5tn' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_mock_output" )
+assertTrue "Set mock output does not work [times+new_lines]" "$_length -eq 60"
 _shttp_mock_output=""
 
 mockOutput 0 '110s' 'Lorem ipsum'
 _length=$( stat -c%s "$_shttp_mock_output" )
-assertTrue "Set mock output does not work" "$_length -ge 110"
+assertTrue "Set mock output does not work [size]" "$_length -eq 110"
+_shttp_mock_output=""
+
+mockOutput 0 '110sn' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_mock_output" )
+assertTrue "Set mock output does not work [size+new_lines]" "$_length -eq 120"
 _shttp_mock_output=""
 
 
@@ -53,7 +63,7 @@ _shttp_execution_type="REQUEST"
 get_mock() {
     url "http://127.0.0.1:5555/info"
     mockEnabled
-    mockOutput '{"name": "mock"}'
+    mockOutput '{ "name": "mock" }'
     mockStatus 200
     mockHeaders 'Mock-Token: 212k3123i12w1k23'
 }

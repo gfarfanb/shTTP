@@ -3,5 +3,6 @@
     "pronounced": "shell-ttp",
     "description": "Simple HTTP API development environment by command line.",
     "author": "gfarfanb",
-    "language": "bash"
+    "language": "bash",
+    "mock": "true"
 }

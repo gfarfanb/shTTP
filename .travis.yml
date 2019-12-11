@@ -9,7 +9,7 @@ branches:
 
 install:
   - docker pull gfarfanb/shttp:1.0.0
-  - docker run -it -d --name shttp -P -v $HOME/gfarfanb/shTTP:/usr/src/app gfarfanb/shttp:1.0.0 /bin/bash
+  - docker run -it -d --name shttp -P -v $TRAVIS_BUILD_DIR:/usr/src/app gfarfanb/shttp:1.0.0 /bin/bash
 
 before-script:
   - docker ps -a

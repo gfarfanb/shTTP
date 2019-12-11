@@ -64,7 +64,7 @@ after_get_mock() {
     _mock_header=$( getHeader 'Mock-Token' )
 }
 
-_execute get_mock
+_execute get_mock 1 REQUEST
 
 assertEquals "Mock name does not match" "mock" "$_mock_name"
 assertEquals "Mock HTTP status does not match" 200 "$_mock_status"

@@ -117,7 +117,7 @@ after_api() {
     put '.name'
 }
 
-_execute get_repo_lifecycle
+_execute get_repo_lifecycle 1 REQUEST
 
 _info_name=$( get name )
 
@@ -127,6 +127,15 @@ assertEquals "'after_api' not executed" "Executed" "$_after_api_var"
 
 _execution_count=0
 
+
+_callback_custom_opt_counter=0
+_shttp_input_params="--opt"
+_register_opt --opt _callback_custom_opt REQUEST
+
+_callback_custom_opt() {
+    _callback_custom_opt_counter=$(( _callback_custom_opt_counter+1 ))
+}
+
 get_repo_times() {
     url "http://127.0.0.1:5555/info"
     _execution_count=$(( _execution_count+1 ))
@@ -134,11 +143,16 @@ get_repo_times() {
     assertEquals "Incorrect index execution" "$_shttp_request_index" "$_execution_count"
 }
 
-_execute get_repo_times 5
+_execute get_repo_times 5 REQUEST
 
 assertEquals "Incorrect number of executions" 5 "$_execution_count"
 #  shellcheck disable=SC2154
 assertEquals "Request index was not reset" 0 "$_shttp_request_index"
+assertEquals "Option callback not was called expected times" 4 "$_callback_custom_opt_counter"
+
+_shttp_input_params=""
+_shttp_request_opts=()
+unset _shttp_registered_opts["--opt"]
 
 
 #  -test Initialize request variables
@@ -352,7 +366,7 @@ _reset_req_vars
 
 
 output 'output/form-file-field'
-formFile "key" "value.file.content"
+formFilePart "key" "value.file.content"
 _append_default_content_type
 
 _found=0
@@ -478,7 +492,7 @@ output "output/result"
 header "Defined-Header" "test/value"
 queryParam "param" "value"
 form "key" "value"
-formFile "file" "value.content"
+formFilePart "file" "value.content"
 curlOpts "--basic" "-u user:password"
 
 _expected="curl -X POST -s -v"
@@ -594,19 +608,30 @@ _reset_req_vars
 
 #  -test Append content to file
 _content_file="ws/.content.$( date '+%s.%N' ).json.tmp"
-
 _append_content_file "$_content_file" '{' '"key": "value"' ',' '"name": "test"' '}'
 #  shellcheck disable=SC2154
 _length=$( stat -c%s "$_content_file" )
-assertTrue "Append content file does not work" "$_length -ge 31"
+assertTrue "Append content file does not work" "$_length -eq 31"
 
+_content_file="ws/.content.$( date '+%s.%N' ).json.tmp"
 _append_content_file "$_content_file" 0 '5t' 'Lorem ipsum'
 _length=$( stat -c%s "$_content_file" )
-assertTrue "Append content file does not work" "$_length -ge 55"
+assertTrue "Append content file does not work [times]" "$_length -eq 55"
 
+_content_file="ws/.content.$( date '+%s.%N' ).json.tmp"
+_append_content_file "$_content_file" 0 '5tn' 'Lorem ipsum'
+_length=$( stat -c%s "$_content_file" )
+assertTrue "Append content file does not work [times+new_lines]" "$_length -eq 60"
+
+_content_file="ws/.content.$( date '+%s.%N' ).json.tmp"
 _append_content_file "$_content_file" 0 '110s' 'Lorem ipsum'
 _length=$( stat -c%s "$_content_file" )
-assertTrue "Append content file does not work" "$_length -ge 110"
+assertTrue "Append content file does not work [size]" "$_length -eq 110"
+
+_content_file="ws/.content.$( date '+%s.%N' ).json.tmp"
+_append_content_file "$_content_file" 0 '110sn' 'Lorem ipsum'
+_length=$( stat -c%s "$_content_file" )
+assertTrue "Append content file does not work [size-new_lines]" "$_length -eq 120"
 
 
 #  -test Notify execution

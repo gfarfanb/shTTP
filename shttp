@@ -1330,7 +1330,7 @@ body() {
 #+ defined by this function.
 #
 #  -param $1 Body filename
-bodyFile() {
+bodyAsFile() {
     local _body_file=${1:-}
     if [ -n "$_body_file" ]; then
         _shttp_body="ws/.body.$( date '+%s.%N' ).json.tmp"
@@ -1363,7 +1363,7 @@ form() {
 #+           in bytes
 #  -param $@ Request body parts
 #  -see _append_content_file
-formFile() {
+formFilePart() {
     local _name=${1:-}
     shift
     local _filename="$_shttp_output.form.field.$_name"

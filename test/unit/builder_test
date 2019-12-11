@@ -115,24 +115,34 @@ _reset_req_vars
 body '{' '"key": "value"' ',' '"name": "test"' '}'
 #  shellcheck disable=SC2154
 _length=$( stat -c%s "$_shttp_body" )
-assertTrue "Set body does not work" "$_length -ge 31"
+assertTrue "Set body does not work" "$_length -eq 31"
 _reset_req_vars
 
 body 0 '5t' 'Lorem ipsum'
 _length=$( stat -c%s "$_shttp_body" )
-assertTrue "Set body does not work" "$_length -ge 55"
+assertTrue "Set body does not work [times]" "$_length -eq 55"
+_reset_req_vars
+
+body 0 '5tn' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_body" )
+assertTrue "Set body does not work [times+new_lines]" "$_length -eq 60"
 _reset_req_vars
 
 body 0 '110s' 'Lorem ipsum'
 _length=$( stat -c%s "$_shttp_body" )
-assertTrue "Set body does not work" "$_length -ge 110"
+assertTrue "Set body does not work [size]" "$_length -eq 110"
+_reset_req_vars
+
+body 0 '110sn' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_body" )
+assertTrue "Set body does not work [size+new_lines]" "$_length -eq 120"
 _reset_req_vars
 
 
 #  -test Set body file
 _shttp_body=""
 echo "{}" > ws/request_body.json
-bodyFile ws/request_body.json
+bodyAsFile ws/request_body.json
 
 assertTrue "Body file not found" "-f \"$_shttp_body\""
 assertTrue "Body file is empty" "-s \"$_shttp_body\""
@@ -149,28 +159,40 @@ _reset_req_vars
 
 
 #  -test Set form file field
-output 'output/form-file-field-1'
-formFile file '{' '"key": "value"' ',' '"name": "test"' '}'
+output "output/form-file-field.$( date '+%s.%N' )"
+formFilePart file '{' '"key": "value"' ',' '"name": "test"' '}'
 #  shellcheck disable=SC2154
 _length=$( stat -c%s "$_shttp_output.form.field.file" )
-assertTrue "Set form-file-field-1 does not work" "$_length -ge 31"
+assertTrue "Set form-file-field-1 does not work" "$_length -eq 31"
 _reset_req_vars
 
-output 'output/form-file-field-2'
-formFile file 0 '5t' 'Lorem ipsum'
+output "output/form-file-field.$( date '+%s.%N' )"
+formFilePart file 0 '5t' 'Lorem ipsum'
 _length=$( stat -c%s "$_shttp_output.form.field.file" )
-assertTrue "Set form-file-field-2 does not work" "$_length -ge 55"
+assertTrue "Set form-file-field does not work [times]" "$_length -eq 55"
 _reset_req_vars
 
-output 'output/form-file-field-3'
-formFile file 0 '110s' 'Lorem ipsum'
+output "output/form-file-field.$( date '+%s.%N' )"
+formFilePart file 0 '5tn' 'Lorem ipsum'
 _length=$( stat -c%s "$_shttp_output.form.field.file" )
-assertTrue "Set form-file-field-3 does not work" "$_length -ge 110"
+assertTrue "Set form-file-field-3 does not work [times+new_line]" "$_length -eq 60"
 _reset_req_vars
 
-output 'output/form-file-field-4'
-formFile "key" "value"
-formFile "name" "test"
+output "output/form-file-field.$( date '+%s.%N' )"
+formFilePart file 0 '110s' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_output.form.field.file" )
+assertTrue "Set form-file-field does not work [size]" "$_length -eq 110"
+_reset_req_vars
+
+output "output/form-file-field.$( date '+%s.%N' )"
+formFilePart file 0 '110sn' 'Lorem ipsum'
+_length=$( stat -c%s "$_shttp_output.form.field.file" )
+assertTrue "Set form-file-field does not work [size+new_line]" "$_length -eq 120"
+_reset_req_vars
+
+output "output/form-file-field.$( date '+%s.%N' )"
+formFilePart "key" "value"
+formFilePart "name" "test"
 #  shellcheck disable=SC2154
 _length=${#_shttp_form_files[@]}
 assertEquals "Set form-file-field-4 does not work" 2 "$_length"

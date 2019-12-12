@@ -82,6 +82,7 @@ readonly _shttp_basename=$( basename "$0" )
 # ---------- Logging functions
 
 SAVED_LOGS=${SAVED_LOGS:-"false"}
+DEBUG_MODE=${DEBUG_MODE:-"false"}
 if [ "$SAVED_LOGS" == "true" ]; then
 
 #  Log filename.
@@ -116,12 +117,37 @@ error() { echo "$( date '+%Y-%m-%d %T.%N' ) ERROR     $*" | tee -a "$_shttp_log_
 #  shellcheck disable=SC2086
 fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" | tee -a "$_shttp_log_file" >&2 ; exit 1 ; }
 
+if [ "$DEBUG_MODE" == "true" ]; then
+
+#  Log a message with the DEBUG level.
+#  No test required.
+#
+#  -param $* Log message
+#  shellcheck disable=SC2086
+error() { echo "$( date '+%Y-%m-%d %T.%N' ) DEBUG     $*" | tee -a "$_shttp_log_file" >&2 ; }
+
+else
+
+debug() { :; }
+
+fi
+
 else
 
 info() { echo "$( date '+%Y-%m-%d %T.%N' ) INFO      $*" ; }
 warn() { echo "$( date '+%Y-%m-%d %T.%N' ) WARNING   $*" ; }
 error() { echo "$( date '+%Y-%m-%d %T.%N' ) ERROR     $*" ; }
 fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" ; exit 1 ; }
+
+if [ "$DEBUG_MODE" == "true" ]; then
+
+debug() { echo "$( date '+%Y-%m-%d %T.%N' ) DEBUG     $*" ; }
+
+else
+
+debug() { :; }
+
+fi
 
 fi
 
@@ -209,9 +235,12 @@ echo '{ }' > "ws/.override.json.tmp"
 str_rev() {
     local _input=${1:-}
     local _rev=""
+    SC2145
+    debug "[str_rev] ${*}"
     for (( _input_idx=${#_input}-1; _input_idx>=0; _input_idx-- )); do
         _rev="$_rev${_input:$_input_idx:1}"
     done
+    debug "[str_rev] $_rev"
     echo "$_rev"
 }
 
@@ -224,9 +253,11 @@ str_rev() {
 str_rnd() {
     local _length=${1:-10}
     local _val=""
+    debug "[str_rnd] ${*}"
     _val=$( < /dev/urandom tr -dc 'a-zA-Z0-9' \
         | fold -w "$_length" \
         | head -n 1 )
+    debug "[str_rnd] $_val"
     echo "$_val"
 }
 
@@ -237,6 +268,7 @@ str_rnd() {
 #  -param $* Elements
 #  -return Single string
 arr_join() {
+    debug "[arr_join] ${*}"
     local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"
 }
 
@@ -251,12 +283,14 @@ arr_join() {
 #+         otherwise 0
 arr_like() {
     local _string="$1"
+    debug "[arr_like] ${*}"
     shift
     local _arr=( $@ )
     local _found=0
     shopt -s nocasematch
     case "${_arr[@]}" in *"$_string"*) _found=1 ;;  esac
     shopt -u nocasematch
+    debug "[arr_like] $_found"
     echo "$_found"
 }
 
@@ -268,7 +302,11 @@ arr_like() {
 arr_rnd() {
     local _arr=( $@ )
     local _length=${#_arr[@]}
-    echo "${_arr[$((0 + RANDOM % _length))]}"
+    local _val=""
+    debug "[arr_rnd] ${*}"
+    _val="${_arr[$((0 + RANDOM % _length))]}"
+    debug "[arr_rnd] $_val"
+    echo "$_val"
 }
 
 #  Gets a random boolean.
@@ -276,7 +314,11 @@ arr_rnd() {
 #  -return true or false
 bool_rnd() {
     local _values=( true false )
-    echo "${_values[$((0 + RANDOM % 2))]}"
+    local _val=""
+    debug "[bool_rnd] ${*}"
+    _val="${_values[$((0 + RANDOM % 2))]}"
+    debug "[bool_rnd] $_val"
+    echo "$_val"
 }
 
 #  Generates a random number.
@@ -294,16 +336,20 @@ num_rnd() {
     local _decimals=${2:-0}
     local _negatives=${3:-0}
     local _sign=""
+    local _val=""
+    debug "[num_rnd] ${*}"
     case "$_negatives" in
         0) ;;
         1) _sign="-" ;;
         *) (( $((0 + RANDOM % 2)) == 1 )) && _sign="-" ;;
     esac
     if (( _decimals > 0 )); then
-        echo "$_sign${RANDOM:0:$_digits}.${RANDOM:0:$_decimals}"
+        _val="$_sign${RANDOM:0:$_digits}.${RANDOM:0:$_decimals}"
     else
-        echo "$_sign${RANDOM:0:$_digits}"
+        _val="$_sign${RANDOM:0:$_digits}"
     fi
+    debug "[num_rnd] $_val"
+    echo "$_val"
 }
 
 #  Addition arithmetic operation.
@@ -311,35 +357,65 @@ num_rnd() {
 #  -param Number A
 #  -param Number B
 #  -return Addition result
-num_add() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] + .[1]" ; }
+num_add() {
+    local _val=""
+    debug "[num_add] ${*}"
+    _val=$( echo "[${1:-0}, ${2:-0}]" | jq ".[0] + .[1]" )
+    debug "[num_add] $_val"
+    echo "$_val"
+}
 
 #  Subtraction arithmetic operation.
 #
 #  -param Minuend
 #  -param Subtrahend
 #  -return Difference result
-num_subtract() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] - .[1]" ; }
+num_subtract() {
+    local _val=""
+    debug "[num_subtract] ${*}"
+    _val=$( echo "[${1:-0}, ${2:-0}]" | jq ".[0] - .[1]" )
+    debug "[num_subtract] $_val"
+    echo "$_val"
+}
 
 #  Multiplication arithmetic operation.
 #
 #  -param Multiplicand
 #  -param Multiplier
 #  -return Multiplication result
-num_multiply() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] * .[1]" ; }
+num_multiply() {
+    local _val=""
+    debug "[num_multiply] ${*}"
+    _val=$( echo "[${1:-0}, ${2:-0}]" | jq ".[0] * .[1]" )
+    debug "[num_multiply] $_val"
+    echo "$_val"
+}
 
 #  Division arithmetic operation.
 #
 #  -param Dividend
 #  -param Divisor
 #  -return Division result
-num_divide() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] / .[1]" ; }
+num_divide() {
+    local _val=""
+    debug "[num_divide] ${*}"
+    _val=$( echo "[${1:-0}, ${2:-0}]" | jq ".[0] / .[1]" )
+    debug "[num_divide] $_val"
+    echo "$_val"
+}
 
 #  Modulo operation.
 # 
 #  -param Dividend
 #  -param Divisor
 #  -return Reminder of division
-num_modulo() { echo "[${1:-0}, ${2:-0}]" | jq ".[0] % .[1]" ; }
+num_modulo() {
+    local _val=""
+    debug "[num_modulo] ${*}"
+    _val=$( echo "[${1:-0}, ${2:-0}]" | jq ".[0] % .[1]" )
+    debug "[num_modulo] $_val"
+    echo "$_val"
+}
 
 #  Gets a now timestamp in milliseconds.
 #+ It is possible the timestamp by using
@@ -359,6 +435,7 @@ now_ms() {
     local _is_subtract=0
     local _extra=0
     local _now=0
+    debug "[now_ms] ${*}"
     if [[ "$_term" == "-*" ]]; then
         _term=${_term:1:${#_term}-1}
         _is_subtract=1
@@ -380,6 +457,7 @@ now_ms() {
     else
         _now=$( num_subtract "$_now" "$_extra" )
     fi
+    debug "[now_ms] $_now"
     echo "$_now"
 }
 
@@ -389,7 +467,13 @@ now_ms() {
 #  -param Value B
 #  -return true if A is less than B
 #+         otherwise false
-lt() { echo "[${1:-}, ${2:-}]" | jq ".[0] < .[1]" ; }
+lt() {
+    local _val=""
+    debug "[lt] ${*}"
+    _val=$( echo "[${1:-}, ${2:-}]" | jq ".[0] < .[1]" )
+    debug "[lt] $_val"
+    echo "$_val"
+}
 
 #  Less than (<) operator for strings.
 # 
@@ -397,7 +481,13 @@ lt() { echo "[${1:-}, ${2:-}]" | jq ".[0] < .[1]" ; }
 #  -param Value B
 #  -return true if A is less than B
 #+         otherwise false
-lt_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] < .[1]" ; }
+lt_str() {
+    local _val=""
+    debug "[lt_str] ${*}"
+    _val=$( echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] < .[1]" )
+    debug "[lt_str] $_val"
+    echo "$_val"
+}
 
 #  Less than or equals to (<=) operator.
 # 
@@ -405,7 +495,13 @@ lt_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] < .[1]" ; }
 #  -param Value B
 #  -return true if A is less than or equals to B
 #+         otherwise false
-lte() { echo "[${1:-}, ${2:-}]" | jq ".[0] <= .[1]" ; }
+lte() {
+    local _val=""
+    debug "[lte] ${*}"
+    _val=$( echo "[${1:-}, ${2:-}]" | jq ".[0] <= .[1]" )
+    debug "[lte] $_val"
+    echo "$_val"
+}
 
 #  Less than or equals to (<=) operator for strings.
 # 
@@ -413,7 +509,13 @@ lte() { echo "[${1:-}, ${2:-}]" | jq ".[0] <= .[1]" ; }
 #  -param Value B
 #  -return true if A is less than or equals to B
 #+         otherwise false
-lte_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] <= .[1]" ; }
+lte_str() {
+    local _val=""
+    debug "[lte_str] ${*}"
+    _val=$( echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] <= .[1]" )
+    debug "[lte_str] $_val"
+    echo "$_val"
+}
 
 #  Greater than (>) operator.
 # 
@@ -421,7 +523,13 @@ lte_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] <= .[1]" ; }
 #  -param Value B
 #  -return true if A is greater than B
 #+         otherwise false
-gt() { echo "[${1:-}, ${2:-}]" | jq ".[0] > .[1]" ; }
+gt() {
+    local _val=""
+    debug "[gt] ${*}"
+    _val=$( echo "[${1:-}, ${2:-}]" | jq ".[0] > .[1]" )
+    debug "[gt] $_val"
+    echo "$_val"
+}
 
 #  Greater than (>) operator for strings.
 # 
@@ -429,7 +537,13 @@ gt() { echo "[${1:-}, ${2:-}]" | jq ".[0] > .[1]" ; }
 #  -param Value B
 #  -return true if A is greater than B
 #+         otherwise false
-gt_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] > .[1]" ; }
+gt_str() {
+    local _val=""
+    debug "[gt_str] ${*}"
+    _val=$( echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] > .[1]" )
+    debug "[gt_str] $_val"
+    echo "$_val"
+}
 
 #  Greater than or equals to (>=) operator.
 # 
@@ -437,7 +551,13 @@ gt_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] > .[1]" ; }
 #  -param Value B
 #  -return true if A is greater than or equals to B
 #+         otherwise false
-gte() { echo "[${1:-}, ${2:-}]" | jq ".[0] >= .[1]" ; }
+gte() {
+    local _val=""
+    debug "[gte] ${*}"
+    _val=$( echo "[${1:-}, ${2:-}]" | jq ".[0] >= .[1]" )
+    debug "[gte] $_val"
+    echo "$_val"
+}
 
 #  Greater than or equals to (>=) operator for strings.
 # 
@@ -445,7 +565,13 @@ gte() { echo "[${1:-}, ${2:-}]" | jq ".[0] >= .[1]" ; }
 #  -param Value B
 #  -return true if A is greater than or equals to B
 #+         otherwise false
-gte_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] >= .[1]" ; }
+gte_str() {
+    local _val=""
+    debug "[gte_str] ${*}"
+    _val=$( echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] >= .[1]" )
+    debug "[gte_str] $_val"
+    echo "$_val"
+}
 
 #  Equals to (==) operator.
 # 
@@ -453,7 +579,13 @@ gte_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] >= .[1]" ; }
 #  -param Value B
 #  -return true if A is equals to B
 #+         otherwise false
-eq() { echo "[${1:-}, ${2:-}]" | jq ".[0] == .[1]" ; }
+eq() {
+    local _val=""
+    debug "[eq] ${*}"
+    _val=$( echo "[${1:-}, ${2:-}]" | jq ".[0] == .[1]" )
+    debug "[eq] $_val"
+    echo "$_val"
+}
 
 #  Equals to (==) operator for strings.
 # 
@@ -461,7 +593,13 @@ eq() { echo "[${1:-}, ${2:-}]" | jq ".[0] == .[1]" ; }
 #  -param Value B
 #  -return true if A is equals to B
 #+         otherwise false
-eq_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] == .[1]" ; }
+eq_str() {
+    local _val=""
+    debug "[eq_str] ${*}"
+    _val=$( echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] == .[1]" )
+    debug "[eq_str] $_val"
+    echo "$_val"
+}
 
 #  Not equals to (!=) operator.
 # 
@@ -469,7 +607,13 @@ eq_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] == .[1]" ; }
 #  -param Value B
 #  -return true if A is not equals to B
 #+         otherwise false
-neq() { echo "[${1:-}, ${2:-}]" | jq ".[0] != .[1]" ; }
+neq() {
+    local _val=""
+    debug "[neq] ${*}"
+    _val=$( echo "[${1:-}, ${2:-}]" | jq ".[0] != .[1]" )
+    debug "[neq] $_val"
+    echo "$_val"
+}
 
 #  Not equals to (!=) operator for strings.
 # 
@@ -477,7 +621,13 @@ neq() { echo "[${1:-}, ${2:-}]" | jq ".[0] != .[1]" ; }
 #  -param Value B
 #  -return true if A is not equals to B
 #+         otherwise false
-neq_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] != .[1]" ; }
+neq_str() {
+    local _val=""
+    debug "[neq_str] ${*}"
+    _val=$( echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] != .[1]" )
+    debug "[neq_str] $_val"
+    echo "$_val"
+}
 
 #  Remove an array element by key (start-with
 #+ of the value). The original array is passed
@@ -489,6 +639,7 @@ neq_str() { echo "[\"${1:-}\", \"${2:-}\"]" | jq ".[0] != .[1]" ; }
 remove_map() {
     local _key=${1:-}
     local _map_name=${2:-}
+    debug "[remove_map] ${*}"
     #  shellcheck disable=SC1087
     eval "local _map_length=\${#$_map_name[@]}"
     #  shellcheck disable=SC2154
@@ -518,6 +669,7 @@ put_map() {
     local _key=${1:-}
     local _value=${2:-}
     local _map_name=${3:-}
+    debug "[put_map] ${*}"
     remove_map "$_key" "$_map_name"
     #  shellcheck disable=SC1087
     eval "$_map_name+=( \"$_key$_value\" )"
@@ -550,6 +702,8 @@ step() {
     local _command=${1:-}
     #  Get the user input params
     local _last_params="$_shttp_input_params"
+    debug "[step] ${*}"
+    debug "[step] Input params: $_shttp_input_params"
     shift
     #  User input params have the priority
     #  If there are no user input params set the step params
@@ -566,6 +720,7 @@ step() {
     else
         _times_rule="BLOCK_TIMES"
     fi
+    debug "[step] Times-rule: $_times_rule"
     _execute_request_opt "$_times_rule"
     echo "$_command" | tee -a "$_shttp_output_flow.steps" > /dev/null
     _execute "$_command" "$_shttp_request_times" STEP
@@ -581,7 +736,9 @@ update() {
     local _json=${1:-}
     local _jq=${2:-}
     local _temp=""
+    debug "[update] ${*}"
     _temp="ws/.pivot.$( date '+%s.%N' ).json.tmp"
+    debug "[update] $_jq $_temp"
     < "$_json" jq "$_jq" > "$_temp"
     mv "$_temp" "$_json"
     info "Updated [$_json] file"
@@ -603,6 +760,7 @@ put() {
     local _val=${2:-}
     local _sec=${3:-"PUBLIC"}
     local _jq=""
+    debug "[put] ${*}"
     if [ -z "$_val" ]; then
         _jq="$_name"
         _name=${_name//[0-9^\[\]]/}
@@ -628,6 +786,7 @@ put() {
         echo "$_entry!$_val" | tee -a "ws/.vlt" > /dev/null
         _val="$_desc"
     fi
+    debug "[update] $_shttp_env . + { \"$_name\": $_val }"
     update "$_shttp_env" ". + { \"$_name\": $_val }"
     info "Saved [$_name] with value [$_val] to workspace config"
 }
@@ -649,6 +808,7 @@ get() {
     local _default=${2:-'null'}
     local _entry=""
     local _val=""
+    debug "[get] ${*}"
     if [ -a "ws/.vlt" ]; then
         _entry="$_shttp_suffix->$_name:="
         _entry=$( echo "$_entry" | base64 )
@@ -671,6 +831,7 @@ get() {
             fi
         fi
     fi
+    debug "[get] $_val"
     echo "$_val"
 }
 
@@ -682,6 +843,7 @@ get() {
 #  -param $1 Name of the entry
 remove() {
     local _name=${1:-}
+    debug "[remove] ${*}"
     if [[ "$_name" = \.* ]]; then
         local _val=""
         _val=$( jq "try $_name catch null" "$_shttp_env" )
@@ -713,6 +875,7 @@ putPart() {
     local _sec=${3:-"PRIVATE"}
     local _credential=${4:-"$_shttp_auth_credential"}
     local _cred_idx=-1
+    debug "[putPart] ${*}"
     _cred_idx=$( < "$_shttp_creds" \
         jq "map(.id==\"$_credential\") | index(true)" )
     if [ "$_cred_idx" = "null" ]; then
@@ -748,6 +911,7 @@ getPart() {
     local _credential=${3:-"$_shttp_auth_credential"}
     local _entry=""
     local _val=""
+    debug "[getPart] ${*}"
     if [ -a "ws/.vlt" ]; then
         _entry="$_shttp_suffix->$_credential->$_part:="
         _entry=$( echo "$_entry" | base64 )
@@ -764,6 +928,7 @@ getPart() {
             _val="$_default"
         fi
     fi
+    debug "[getPart] $_val"
     echo "$_val"
 }
 
@@ -782,11 +947,13 @@ getOutput() {
     local _name=${1:-}
     local _default=${2:-'null'}
     local _val=""
+    debug "[getOutput] ${*}"
     _val=$( < "$_shttp_output.output" jq ".$_name | tostring" )
     _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
     if [ "$_val" = "null" ]; then
         _val="$_default"
     fi
+    debug "[getOutput] $_val"
     echo "$_val"
 }
 
@@ -800,11 +967,13 @@ getOutput() {
 getSetting() {
     local _name=${1:-}
     local _val=""
+    debug "[getSetting] ${*}"
     _val=$( < "ws/settings.json" jq ".$_name | tostring" )
     _val=$( echo "$_val" | sed -e 's/^"//' -e 's/"$//' )
     if [ "$_val" = "null" ]; then
         _val=""
     fi
+    debug "[getSetting] $_val"
     echo "$_val"
 }
 
@@ -818,6 +987,7 @@ getHeader() {
     local _header=${1:-}
     local _default=${2:-'null'}
     local _val=""
+    debug "[getHeader] ${*}"
     _header="$_header:"
     if [ -f "$_shttp_output.trace" ]; then
         _val=$( grep -e "^$_header" "$_shttp_output.trace" | tail -1 )
@@ -830,6 +1000,7 @@ getHeader() {
     else
         _val="$_default"
     fi
+    debug "[getHeader] $_val"
     echo "$_val"
 }
 
@@ -840,7 +1011,11 @@ getHeader() {
 #  shellcheck disable=SC2120
 getStatus() {
     local _default=${1:-'null'}
-    getHeader http_code "$_default"
+    local _val=""
+    debug "[getStatus] ${*}"
+    _val=$( getHeader http_code "$_default" )
+    debug "[getStatus] $_val"
+    echo "$_val"
 }
 
 
@@ -856,6 +1031,7 @@ isTrue() {
     local _message=${1:-}
     local _condition=${2:-}
     local _ok=1
+    debug "[isTrue] ${*}"
     eval "if ! [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
@@ -876,6 +1052,7 @@ isFalse() {
     local _message=${1:-}
     local _condition=${2:-}
     local _ok=1
+    debug "[isFalse] ${*}"
     eval "if [ $_condition ]; then _ok=0 ; fi"
     if [ $_ok = 0 ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
@@ -896,6 +1073,7 @@ areEquals() {
     local _message=${1:-}
     local _expected=${2:-}
     local _actual=${3:-}
+    debug "[areEquals] ${*}"
     if [ "$_expected" != "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
@@ -915,6 +1093,7 @@ areNotEquals() {
     local _message=${1:-}
     local _expected=${2:-}
     local _actual=${3:-}
+    debug "[areNotEquals] ${*}"
     if [ "$_expected" = "$_actual" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
@@ -934,6 +1113,7 @@ isLike() {
     local _message=${1:-}
     local _expected=${2:-}
     local _actual=${3:-}
+    debug "[isLike] ${*}"
     if ! [[ "$_actual" =~ $_expected ]]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
@@ -953,6 +1133,7 @@ isNotLike() {
     local _message=${1:-}
     local _expected=${2:-}
     local _actual=${3:-}
+    debug "[isNotLike] ${*}"
     if [[ "$_actual" =~ $_expected ]]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
@@ -970,6 +1151,7 @@ isNotLike() {
 isNull() {
     local _message=${1:-}
     local _actual=${2:-}
+    debug "[isNull] ${*}"
     if [ "$_actual" != "null" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))
@@ -987,6 +1169,7 @@ isNull() {
 isNotNull() {
     local _message=${1:-}
     local _actual=${2:-}
+    debug "[isNotNull] ${*}"
     if [ "$_actual" = "null" ]; then
         _shttp_failures=$(( _shttp_failures+1 ))
         _shttp_failures_flow=$(( _shttp_failures_flow+1 ))

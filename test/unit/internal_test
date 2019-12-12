@@ -150,7 +150,9 @@ assertEquals "Incorrect number of executions" 5 "$_execution_count"
 assertEquals "Request index was not reset" 0 "$_shttp_request_index"
 assertEquals "Option callback not was called expected times" 4 "$_callback_custom_opt_counter"
 
+#  shellcheck disable=SC2034
 _shttp_input_params=""
+#  shellcheck disable=SC2034
 _shttp_request_opts=()
 unset _shttp_registered_opts["--opt"]
 

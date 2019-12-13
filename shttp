@@ -2479,10 +2479,7 @@ _save_history() {
     fi
     local _failed=""
     if [ -f "$_output.failed" ]; then
-        cat "$_output.failed"
         while read _line; do
-            info "Line: $_line"
-            info "Line (replaced): ${_line//\"/\'}"
             _failed+="\"${_line//\"/\'}\","
         done < "$_output.failed"
         if [ -n "$_failed" ]; then
@@ -2903,8 +2900,9 @@ _register_opt() {
 _execute_request_opt() {
     local _rule=${1:-"BLOCK_TIMES"}
     local _params=( $( echo "$_shttp_input_params" | tr " " "\n" ) )
-    local _length=${#_params[@]}
-    if (( _length > 0 )); then
+    local _length_params=${#_params[@]}
+    local _length_opts=${#_shttp_request_opts[@]}
+    if (( _length_params > 0 )) && (( _length_opts > 0 )); then
         for _opt in "${_shttp_request_opts[@]}"; do
             [ "$_opt" = '--times' ] && [ "$_rule" = "BLOCK_TIMES" ] && continue
             _look_for_params "$_opt" "${_params[@]}" || continue

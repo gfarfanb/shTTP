@@ -2480,8 +2480,7 @@ _save_history() {
     local _failed=""
     if [ -f "$_output.failed" ]; then
         while read -r _line; do
-            _line=${_line//\"/' '}
-            _failed+="\"$_line\","
+            _failed+="\"${_line//\"/' '}\","
         done < "$_output.failed"
         if [ -n "$_failed" ]; then
             _failed=${_failed::-1}

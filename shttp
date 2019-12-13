@@ -742,7 +742,7 @@ update() {
     local _temp=""
     debug "[update] ${*}"
     _temp="ws/.pivot.$( date '+%s.%N' ).json.tmp"
-    info "[update] $_jq $_temp"
+    debug "[update] $_jq $_temp"
     ( < "$_json" jq -r "$_jq" ) > "$_temp"
     mv "$_temp" "$_json"
     info "Updated [$_json] file"
@@ -2480,6 +2480,7 @@ _save_history() {
     local _failed=""
     if [ -f "$_output.failed" ]; then
         while read -r _line; do
+            _line=${_line//\"/' '}
             _failed+="\"$_line\","
         done < "$_output.failed"
         if [ -n "$_failed" ]; then

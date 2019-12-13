@@ -195,9 +195,10 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
         eval ". ./${_single}_test"
     else
         declare -a _tests=(
-            $( find . -name "*_test" -type f )
+            $( find . -name "*_test" -type f  | sort -z )
         )
         _length=${#_tests[@]}
+        info "+++ Test sources: ${_tests[*]}"
         if (( _length > 0 )); then
             for _test in "${_tests[@]}"; do
                 info "+++ Test [$_test] sourced"

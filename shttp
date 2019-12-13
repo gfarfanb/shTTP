@@ -724,8 +724,12 @@ step() {
     else
         _times_rule="BLOCK_TIMES"
     fi
-    debug "[step] Times-rule: $_times_rule"
+    info "[step] $_command"
+    info "[step] input params: ${_shttp_input_params[*]}"
+    info "[step] request opts: ${_shttp_request_opts[*]}"
+    info "[step] Times-rule: $_times_rule"
     _execute_request_opt "$_times_rule"
+    info "[step] Times: $_shttp_request_times"
     echo "$_command" | tee -a "$_shttp_output_flow.steps" > /dev/null
     _execute "$_command" "$_shttp_request_times" STEP
     #  Set again the user input params

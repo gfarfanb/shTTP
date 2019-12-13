@@ -16,7 +16,7 @@ before-script:
 
 script:
   - docker exec shttp-test-env ./lint
-  - docker exec -e DEBUG_MODE='$DEBUG_MODE' shttp-test-env ./runtests
+  - docker exec shttp-test-env ./runtests
 
 after_script:
   - docker rm -f shttp-test-env

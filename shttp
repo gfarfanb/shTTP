@@ -158,6 +158,8 @@ fi
 readonly _curl_version=$( curl --version )
 if [ -z "$_curl_version" ]; then
     fatal "'curl' is not installed yet"
+else
+    info "Installed 'curl': $_curl_version"
 fi
 
 #  'jq' (command-line JSON processor)
@@ -166,6 +168,8 @@ fi
 readonly _jq_version=$( jq --version )
 if [ -z "$_jq_version" ]; then
     warn "'jq' is not installed yet, JSON processing will not work"
+else
+    info "Installed 'jq': $_jq_version"
 fi
 
 #  Output directory for trace and
@@ -739,7 +743,7 @@ update() {
     debug "[update] ${*}"
     _temp="ws/.pivot.$( date '+%s.%N' ).json.tmp"
     debug "[update] $_jq $_temp"
-    < "$_json" jq "$_jq" > "$_temp"
+    < "$_json" jq -r "$_jq" > "$_temp"
     mv "$_temp" "$_json"
     info "Updated [$_json] file"
 }

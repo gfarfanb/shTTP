@@ -742,8 +742,8 @@ update() {
     local _temp=""
     debug "[update] ${*}"
     _temp="ws/.pivot.$( date '+%s.%N' ).json.tmp"
-    debug "[update] $_jq $_temp"
-    < "$_json" jq -r "$_jq" > "$_temp"
+    info "[update] $_jq $_temp"
+    ( < "$_json" jq -r "$_jq" ) > "$_temp"
     mv "$_temp" "$_json"
     info "Updated [$_json] file"
 }

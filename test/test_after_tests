@@ -7,7 +7,7 @@
 #  Clean-up generated directories
 #+ because 'shttp'
 rm -rf output
-rm -rf hist
+#rm -rf hist
 rm -rf ws
 
 

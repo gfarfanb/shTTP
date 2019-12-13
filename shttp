@@ -239,7 +239,7 @@ echo '{ }' > "ws/.override.json.tmp"
 str_rev() {
     local _input=${1:-}
     local _rev=""
-    SC2145
+    #  shellcheck disable=SC2145
     debug "[str_rev] ${*}"
     for (( _input_idx=${#_input}-1; _input_idx>=0; _input_idx-- )); do
         _rev="$_rev${_input:$_input_idx:1}"

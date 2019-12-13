@@ -2479,10 +2479,9 @@ _save_history() {
     fi
     local _failed=""
     if [ -f "$_output.failed" ]; then
+        cat "$_output.failed"
         while read -r _line; do
-            #  shellcheck disable=SC2001
-            _line=$( echo "$_line" | sed "s/\"/'/g" )
-            _failed+="\"$_line\","
+            _failed+="\"${_line//\"/\'}\","
         done < "$_output.failed"
         if [ -n "$_failed" ]; then
             _failed=${_failed::-1}

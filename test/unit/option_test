@@ -46,12 +46,12 @@ _callback_function_opt() {
 
 _shttp_input_params="--test arg1 args2 --param val1"
 _shttp_registered_opts["--test"]="_callback_function_opt"
-_shttp_request_opts=( "--test" )
+_shttp_request_opts+=( "--test" )
 
 _execute_request_opt
 assertEquals "Option not executed" "changed" "$_callback_function_opt_value"
 
-_shttp_request_opts=()
+remove_map "--test" _shttp_request_opts
 unset _shttp_registered_opts["--test"]
 _shttp_input_params="${*}"
 _callback_function_opt_value=""
@@ -59,40 +59,37 @@ _callback_function_opt_value=""
 
 _shttp_input_params="--test arg1 args2 --param val1"
 _shttp_registered_opts["--test"]="_callback_function_opt"
-_shttp_request_opts=( "--not-exist" )
+_shttp_request_opts+=( "--not-exist" )
 
 _execute_request_opt
 assertTrue "Option was executed" "-z \"$_callback_function_opt_value\""
 
-_shttp_request_opts=()
+remove_map "--not-exist" _shttp_request_opts
 unset _shttp_registered_opts["--test"]
 _shttp_input_params="${*}"
 _callback_function_opt_value=""
 
 
 _shttp_input_params="--times 5 --param val1"
+_previous_callback_times="${_shttp_registered_opts['--times']}"
 _shttp_registered_opts["--times"]="_callback_function_opt"
-_shttp_request_opts=( "--times" )
 
 _execute_request_opt BLOCK_TIMES
 assertTrue "Times must not be executed for request" "-z \"$_callback_function_opt_value\""
 
-_shttp_request_opts=()
-unset _shttp_registered_opts["--times"]
+_shttp_registered_opts["--times"]="$_previous_callback_times"
 _shttp_input_params="${*}"
 _callback_function_opt_value=""
 
 
 _shttp_input_params="--times 5 --param val1"
+_previous_callback_times="${_shttp_registered_opts['--times']}"
 _shttp_registered_opts["--times"]="_callback_function_opt"
-_shttp_request_opts=( "--times" )
 
 _execute_request_opt ALLOW_TIMES
 assertFalse "Times must be executed for request" "-z \"$_callback_function_opt_value\""
 
-#  shellcheck disable=SC2034
-_shttp_request_opts=()
-unset _shttp_registered_opts["--times"]
+_shttp_registered_opts["--times"]="$_previous_callback_times"
 #  shellcheck disable=SC2034
 _shttp_input_params="${*}"
 _callback_function_opt_value=""

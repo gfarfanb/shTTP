@@ -42,7 +42,6 @@ assertEquals "'complete_check' function not found" 1 "$_check_exist"
 
 #  -test Flow lifecycle
 
-_shttp_input_params=""
 #  shellcheck disable=SC2034
 _shttp_execution_type="FLOW"
 _before_every_flow_var="Not executed yet"
@@ -153,8 +152,7 @@ assertEquals "Option callback not was called expected times" 4 "$_callback_custo
 
 #  shellcheck disable=SC2034
 _shttp_input_params=""
-#  shellcheck disable=SC2034
-_shttp_request_opts=()
+remove_map "--opt" _shttp_request_opts
 unset _shttp_registered_opts["--opt"]
 
 

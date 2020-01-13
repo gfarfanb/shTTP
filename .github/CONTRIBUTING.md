@@ -145,7 +145,7 @@ cd shTTP/test/ && ./test_runner unit/[test-suite-name*]
 ```
 > *test-suite-name*: Name of the script file without prefix **_test** e.g. `builder_test` => `builder`
 
-Execute Integration Tests:
+Execute Integration Tests (calling Gist API for [shTTP Samples][gist_samples]):
 ```
 # Just samples execution
 cd shTTP/ && ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SAMPLE_KEY $SAMPLE_SECRET
@@ -206,3 +206,4 @@ will be rejected. Contributions under [MIT][mit_license]-compatible licenses
 may be also rejected if they are not ultimately necessary.
 
 [mit_license]: https://opensource.org/licenses/MIT
+[gist_samples]: https://gist.github.com/gfarfanb/fc33b868bb597c71c272d9b7f2815df7

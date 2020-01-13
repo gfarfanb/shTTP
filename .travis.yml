@@ -1,5 +1,4 @@
 language: bash
-sudo: required
 
 services:
   - docker
@@ -16,9 +15,9 @@ before-script:
   - docker ps -a
 
 script:
-  - sudo docker exec shttp-test-env ./lint
-  - sudo docker exec shttp-test-env ./runtests
-  - sudo docker exec shttp-test-env ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SAMPLE_KEY $SAMPLE_SECRET
+  - docker exec shttp-test-env ./lint
+  - docker exec shttp-test-env ./runtests
+  - docker exec shttp-test-env ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SAMPLE_KEY $SAMPLE_SECRET
 
 after_script:
   - docker rm -f shttp-test-env

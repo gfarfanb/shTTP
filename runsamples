@@ -6,7 +6,7 @@
 #  -param $2 Sample password
 #  -param $3 Sample key
 #  -param $4 Sample secret
-#  -param $5 (Optional) Slack service path
+#  -param $5 (Optional) Slack webhook path
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -40,7 +40,7 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
             --part -k "$3" \
             --part -s "$4"
 
-        #  Setting Slack service path
+        #  Setting Slack webhook path
         _slack_srv=${5:-}
         if [ -n "$_slack_srv" ]; then
             ./github_oauth --add slackSrv "$_slack_srv" -h

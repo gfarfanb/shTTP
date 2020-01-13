@@ -130,11 +130,13 @@ Conventions:
     1. Identifiers: -param, -return, -test, -beforeTests, -afterTests, -author
     1. Identation
 
-Execute Lint and Tests:
+Execute Linter:
 ```
-# Execute linter
 cd shTTP/ && ./lint
+```
 
+Execute Unit Tests:
+```
 # Execute all tests
 cd shTTP/ && ./runtests
 
@@ -142,6 +144,24 @@ cd shTTP/ && ./runtests
 cd shTTP/test/ && ./test_runner unit/[test-suite-name*]
 ```
 > *test-suite-name*: Name of the script file without prefix **_test** e.g. `builder_test` => `builder`
+
+Execute Integration Tests:
+```
+# Just samples execution
+cd shTTP/ && ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SAMPLE_KEY $SAMPLE_SECRET
+
+# Samples execution with Slack notifications
+cd shTTP/ && ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SAMPLE_KEY $SAMPLE_SECRET $SLACK_SRV
+```
+> *SAMPLE_USER*: GitHub username
+
+> *SAMPLE_PASSWORD*: GitHub password/personal access token
+
+> *SAMPLE_KEY*: GitHub OAuth Client ID
+
+> *SAMPLE_SECRET*: GitHub OAuth Client Secret
+
+> *SLACK_SRV*: Slack Incoming WebHook
 
 
 ## How can I contribute in a different way?

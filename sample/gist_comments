@@ -56,7 +56,7 @@ after_patch_comment() {
     areEquals "Unexpected status" "200" "$( getStatus )"
 }
 
-#  ./gist_comments patch_comment --auth-header sample
+#  ./gist_comments delete_comment --auth-header sample
 delete_comment() {
     endpoint "/$( get commentId )"
 }

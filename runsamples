@@ -6,10 +6,15 @@
 #  -param $2 Sample password
 #  -param $3 Sample key
 #  -param $4 Sample secret
+#  -param $5 (Optional) Slack service path
 set -euo pipefail
 IFS=$'\n\t'
 
 echo "Running Integration Tests..."
+
+#  Slack option '--slack' if $5 is not empty
+#+ otherwise empty
+_slack_opt=""
 
 _finally_run_samples() {
     local _code=$?
@@ -17,7 +22,7 @@ _finally_run_samples() {
         cd sample
 
         #  Delete authentication
-        ./github_oauth delete_auth
+        ./github_oauth delete_auth "$_slack_opt"
     ) &
     exit $_code
 }
@@ -35,11 +40,18 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
             --part -k "$3" \
             --part -s "$4"
 
+        #  Setting Slack service path
+        _slack_srv=${5:-}
+        if [ -n "$_slack_srv" ]; then
+            ./github_oauth --add slackSrv "$_slack_srv" -h
+            _slack_opt="--slack"
+        fi
+
         #  GitHub authentication
-        ./github_oauth put_auth
-        ./github_oauth check_auth
+        ./github_oauth put_auth "$_slack_opt"
+        ./github_oauth check_auth "$_slack_opt"
 
         #  Executing samples
-        ./gist_comments flow_comment
+        ./gist_comments flow_comment "$_slack_opt"
     )
 fi

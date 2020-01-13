@@ -55,5 +55,5 @@ proceed_notif() {
             \"username\":\"${_shttp_basename%.*}\",
             \"icon_emoji\":\":slack:\"
             }" \
- 		"$_slack"
+        "$_slack"
 }

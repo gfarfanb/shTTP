@@ -79,10 +79,13 @@ _shttp_help_content=(
 readonly _shttp_basename=$( basename "$0" )
 
 
-# ---------- Logging functions
-
+# ---------- External configuration
 SAVED_LOGS=${SAVED_LOGS:-"false"}
 DEBUG_MODE=${DEBUG_MODE:-"false"}
+CHECK_DEPENDENCIES=${CHECK_DEPENDENCIES:-"false"}
+
+
+# ---------- Logging functions
 if [ "$SAVED_LOGS" == "true" ]; then
 
 #  Log filename.
@@ -154,6 +157,8 @@ fi
 
 # ---------- Initialization
 
+if [ "$CHECK_DEPENDENCIES" == "true" ]; then
+
 # 'cURL' is required
 readonly _curl_version=$( curl --version )
 if [ -z "$_curl_version" ]; then
@@ -170,6 +175,8 @@ if [ -z "$_jq_version" ]; then
     warn "'jq' is not installed yet, JSON processing will not work"
 else
     info "Installed 'jq': $_jq_version"
+fi
+
 fi
 
 #  Output directory for trace and
@@ -2772,7 +2779,7 @@ _notify_log() {
 #  No test required.
 #
 #  -param $? Exit code
-_finally_http_api() {
+_finally_shttp() {
     local _code=$?
     (
         if [ -d ws ]; then
@@ -2799,7 +2806,7 @@ _finally_http_api() {
 #+ exit the program.
 #  No test required.
 _exit() {
-    _finally_http_api
+    _finally_shttp
     exit 0
 }
 
@@ -3540,7 +3547,7 @@ readonly _shttp_skip=${SKIP_HTTP_API:-}
 #+      execute request lifecycle: '_execute'.
 #    5. Finally function is executed.
 if [ "$_shttp_skip" != "true" ]; then
-    trap _finally_http_api EXIT
+    trap _finally_shttp EXIT
     _shttp_command=${1:-}
     _has_shttp_main=$( _has_func main )
     if [[ "$_shttp_command" == "--"* ]]; then

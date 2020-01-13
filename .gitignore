@@ -6,6 +6,7 @@ hist/
 /sample/ws/
 !/sample/ws/config*.json
 !/sample/ws/credentials*.json
+!/sample/ws/settings*.json
 
 tmp/
 log/

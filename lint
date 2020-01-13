@@ -8,6 +8,7 @@ IFS=$'\n\t'
 shellcheck shttp
 shellcheck lint
 shellcheck runtests
+shellcheck runsamples
 shellcheck mkexec
 shellcheck incver
 shellcheck test/test_*

@@ -35,20 +35,20 @@ proceed_notif() {
     local _slack=""
     _slack="https://hooks.slack.com/services/$( get slackSrv )"
     case "$_level" in
-		INFO) 
-			local _icon=":information_source:"
-		;;
-    	WARNING)
-      		local _icon=":warning:"
-      	;;
-    	ERROR)
-      		local _icon=":rotating_light:"
-      	;;
-    	*)
-      		local _icon=":grey_exclamation:"
-      	;;
-  	esac
-  	#  shellcheck disable=SC2154
+        INFO) 
+            local _icon=":information_source:"
+        ;;
+        WARNING)
+            local _icon=":warning:"
+        ;;
+        ERROR)
+            local _icon=":rotating_light:"
+        ;;
+        *)
+            local _icon=":grey_exclamation:"
+        ;;
+    esac
+    #  shellcheck disable=SC2154
     curl -X POST -s -H "Content-type: application/json" \
         --data "{
             \"text\":\"$_icon $_message\",

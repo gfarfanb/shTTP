@@ -1,0 +1,45 @@
+#! /usr/bin/env bash
+#  Run all integration tests of the project.
+#  -author Giovanni Farfan B.
+#
+#  -param $1 Sample username
+#  -param $2 Sample password
+#  -param $3 Sample key
+#  -param $4 Sample secret
+set -euo pipefail
+IFS=$'\n\t'
+
+echo "Running Integration Tests..."
+
+_finally_run_samples() {
+    local _code=$?
+    (
+        cd sample
+
+        #  Delete authentication
+        ./github_oauth delete_auth
+    ) &
+    exit $_code
+}
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    trap _finally_run_samples EXIT
+
+    (
+        cd sample
+
+        #  Setting credential
+        ./github_oauth --cred sample \
+            --part -u "$1" \
+            --part -p "$2" \
+            --part -k "$3" \
+            --part -s "$4"
+
+        #  GitHub authentication
+        ./github_oauth put_auth
+        ./github_oauth check_auth
+
+        #  Executing samples
+        ./gist_comments flow_comment
+    )
+fi

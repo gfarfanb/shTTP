@@ -17,6 +17,7 @@ before-script:
 script:
   - docker exec shttp-test-env ./lint
   - docker exec shttp-test-env ./runtests
+  - docker exec shttp-test-env ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SAMPLE_KEY $SAMPLE_SECRET
 
 after_script:
   - docker rm -f shttp-test-env

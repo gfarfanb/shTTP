@@ -6,10 +6,18 @@ before_api() {
     basePath "/authorizations"
 }
 
+#  ./github_oauth get_user
+get_user() {
+    authMode BASIC
+    credential sample
+    basePath "/user"
+}
+
 #  ./github_oauth get_auths --auth-basic sample --set otp <2fa-token>
+#  ./github_oauth get_auths --auth-basic sample
 get_auths() {
     protocol https
-    hd "X-GitHub-OTP" "$( get otp )"
+    # hd "X-GitHub-OTP" "$( get otp )"
 }
 
 before_put_auth() {
@@ -20,11 +28,12 @@ before_put_auth() {
 }
 
 #  ./github_oauth put_auth --set otp <2fa-token>
+#  ./github_oauth put_auth
 put_auth() {
     authMode BASIC
     credential sample
     endpoint "/clients/$( getPart key )"
-    hd "X-GitHub-OTP" "$( get otp )"
+    # hd "X-GitHub-OTP" "$( get otp )"
     body "{
             \"scopes\": [
                 \"gist\"
@@ -72,11 +81,12 @@ after_check_auth() {
 }
 
 #  ./github_oauth delete_auth --set otp <2fa-token>
+#  ./github_oauth delete_auth
 delete_auth() {
     authMode BASIC
     credential sample
     endpoint "/$( get authId )"
-    hd "X-GitHub-OTP" "$( get otp )"
+    # hd "X-GitHub-OTP" "$( get otp )"
 }
 
 after_delete_auth() {

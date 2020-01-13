@@ -1,7 +1,8 @@
 #! /usr/bin/env bash
-#  Run all tests of the project.
+#  Run all unit tests of the project.
 #  -author Giovanni Farfan B.
 set -euo pipefail
 IFS=$'\n\t'
 
+echo "Running Unit Tests..."
 cd test && ./test_runner

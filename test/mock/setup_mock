@@ -19,6 +19,9 @@ if ! [ -d "${_nginx_share}shttp_mock" ]; then
 fi
 cp srv/* "${_nginx_share}shttp_mock/"
 
+#  Set default permissions.
+chmod 755 "${_nginx_share}shttp_mock/" -v -R
+
 
 #  Set-up Nginx server
 readonly _srv_location="${_nginx_share}shttp_mock"

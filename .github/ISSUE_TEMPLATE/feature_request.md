@@ -7,7 +7,7 @@ about: Suggest an idea for this project
 **Before submitting your feature, please review the following checklist:**
 
 - [ ] Did you read the [contributing guidelines](./CONTRIBUTING.md)?
-- [ ] Support questions of help? Better ask in [out chat](https://gitter.im/shTTP/api-dev)
+- [ ] Support questions of help? Better ask in [out chat](https://gitter.im/shTTP/dev)
 - [ ] Did you ensure the feature haven't already reported?
 - [ ] Is this feature compatible with the latest version?
 

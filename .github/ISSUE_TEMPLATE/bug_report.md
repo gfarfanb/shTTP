@@ -7,7 +7,7 @@ about: Create a report to help us improve
 **Before submitting your issue, please review the following checklist:**
 
 - [ ] Did you read the [contributing guidelines](./CONTRIBUTING.md)?
-- [ ] Support questions of help? Better ask in [out chat](https://gitter.im/shTTP/api-dev)
+- [ ] Support questions of help? Better ask in [out chat](https://gitter.im/shTTP/dev)
 - [ ] Did you ensure the issue haven't already reported?
 - [ ] Is this issue reproducible in the latest version?
 

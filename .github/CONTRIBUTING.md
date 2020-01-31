@@ -173,7 +173,7 @@ cd shTTP/ && ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SAMPLE_KEY $SAMPLE_SECR
 - The description must be concise.
 - It is important the indicate environment you are testing.
 - Do not make support questions or comments, there are specific
-channels for [this chat room](https://gitter.im/shTTP/api-dev)
+channels for [this chat room](https://gitter.im/shTTP/dev)
 or post discussion (at the end of posts).
 - Include screenshots and animated GIFs in your pull request whenever possible.
 

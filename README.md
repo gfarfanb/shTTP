@@ -1,6 +1,6 @@
 # shTTP
 
-[![Build Status](https://travis-ci.org/gfarfanb/shTTP.svg?branch=master)](https://travis-ci.org/gfarfanb/shTTP)
+[![Build Status](https://travis-ci.com/gfarfanb/shTTP.svg?branch=master)](https://travis-ci.com/gfarfanb/shTTP)
 [![Join the chat at https://gitter.im/shTTP/dev](https://badges.gitter.im/shTTP/dev.svg)](https://gitter.im/shTTP/dev?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 > **shTTP** pronounced `shell-ttp`

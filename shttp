@@ -676,19 +676,27 @@ put_map() {
     eval "$_map_name+=( \"$_key$_value\" )"
 }
 
+#  Get and element fro the array. The original array
+#+ is passed by the name of the array, so the function
+#+ must be able to evaluate that name as a variable.
+#
+#  - param Key (stsrt-with) of the map
+#  -return Value (string part) of the map
 get_map() {
     local _key=${1:-}
     local _map_name=${2:-}
     local _element=""
     debug "[get_map] ${*}"
+    #  shellcheck disable=SC1087
     eval "local _map_length=\${#$_map_name[@]}"
     #  shellcheck disable=SC2154
     if (( _map_length > 0 )); then
+        #  shellcheck disable=SC1087
         eval "local _map_src=( \${$_map_name[@]} )"
         shopt -s nocasematch
         for _element in "${_map_src[@]}"; do
             if [[ "$_element" == "$_key"* ]]; then
-                _element=${_element/"$_key"/}
+                _element=${_element:${#_key}}
                 break
             fi
         done
@@ -884,29 +892,64 @@ remove() {
     fi
 }
 
+#  Get the method setted in '_shttp_method'. This value
+#+ is only available after processing any 'before'
+#+ function like 'before_api' and 'before_[command]'
+#+ besides after '[command]' function execution. It is
+#+ recomendable use this method only in the context
+#+ of 'before_execution' function.
+#
+#  -return Request method
 getRequestMethod() {
     local _method="$_shttp_method"
     debug "[getRequestMethod] $_method"
     echo "$_method"
 }
 
+#  Get the body setted in '_shttp_body' (file) as
+#+ string value. This value is only available after
+#+ processing any 'before' function like 'before_api'
+#+ and 'before_[command]' besides after '[command]' function
+#+ execution. It is recomendable use this method only
+#+ in the context of 'before_execution' function.
+#
+#  -return Request body (as string)
 getRequestBody() {
     local _body=""
     if [ -f "$_shttp_body" ]; then
-        _body="$( cat $_shttp_body )"
+        _body="$( cat "$_shttp_body" )"
     fi
     debug "[getRequestBody] $_body"
     echo "$_body"
 }
 
+#  Get a header value setted in '_shttp_headers'.
+#+ This value is only available after processing any
+#+ 'before' function like 'before_api' and 'before_[command]'
+#+ besides after '[command]' function execution. It is
+#+ recomendable use this method only in the context of
+#+ 'before_execution' function.
+#
+#  -param $1 Header key
+#  -return Request header value
 getRequestHeader() {
     local _header=${1:-}
+    local _value=""
+    _value=$( get_map "$_header: " "_shttp_headers" )
     debug "[getRequestHeader] ${*}"
-    local _value=$( get_map "$_header: " "_shttp_headers" )
     debug "[getRequestHeader] $_value"
     echo "$_value"
 }
 
+#  Get the path built with '_shttp_endpoint' and
+#+ '_shttp_query_params'. This value is only available
+#+ after processing any 'before' function like 'before_api'
+#+ and 'before_[command]' besides after '[command]'
+#+ function execution. It is recomendable use this
+#+ method only in the context of 'before_execution'
+#+ function.
+#
+#  -return Request path
 getRequestPath() {
     local _length=0
     local _path="$_shttp_endpoint"
@@ -917,6 +960,27 @@ getRequestPath() {
     fi
     debug "[getRequestPath] $_path"
     echo "$_path"
+}
+
+#  Get the URL built with '_shttp_url' and
+#+ '_shttp_query_params'. This value is only available
+#+ after processing any 'before' function like 'before_api'
+#+ and 'before_[command]' besides after '[command]'
+#+ function execution. It is recomendable use this
+#+ method only in the context of 'before_execution'
+#+ function.
+#
+#  -return Request URL
+getRequestUrl() {
+    local _length=0
+    local _url="$_shttp_url"
+    _length=${#_shttp_query_params[@]}
+    if (( _length > 0 )); then
+        _url+="?"
+        _url+=$( arr_join "&" "${_shttp_query_params[@]}" )
+    fi
+    debug "[getRequestUrl] $_url"
+    echo "$_url"
 }
 
 #  Save credential part for
@@ -1800,6 +1864,11 @@ mockHeaders() {
 
 # ---------- Internal functions
 
+#  Get the index of a credential
+#+ in the 'ws/credentials[.<env>].json'.
+#
+#  -param Credential identifier
+#  -return Credential index
 _get_cred_idx() {
     local _cred=${1:-}
     local _cred_idx=""
@@ -2138,7 +2207,7 @@ _request() {
     _default_vars "$_command"
     _execute_if_exist "before_${_command}"
     _append_default_content_type
-    _execute_if_exist "before_request"
+    _execute_if_exist "before_execution"
     _append_auth
     _curl=$( _build_curl BODY_FILE EXECUTABLE )
     if (( _shttp_mock_enabled == 1 )); then
@@ -2156,7 +2225,7 @@ _request() {
         eval "$_curl"
     fi
     _clean_trace "$_curl"
-    _execute_if_exist "after_request"
+    _execute_if_exist "after_execution"
     _execute_if_exist "after_${_command}"
     printf '\n' ; cat "$_shttp_output.trace"
     printf '\n' ; cat "$_shttp_output.output"

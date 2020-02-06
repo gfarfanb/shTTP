@@ -3,6 +3,19 @@
 #  -author Giovanni Farfan B.
 
 
+#  -test Get credential index
+update "ws/credentials.json" '. + [{
+        "id": "indexable"
+    }]'
+_cred_idx=$( _get_cred_idx indexable )
+
+assertTrue "Credential not found" "$_cred_idx > 0"
+
+_cred_idx=$( _get_cred_idx not-found )
+
+assertEquals "Credential found" null "$_cred_idx"
+
+
 #  -test Is key function
 _is_key=$( _is_keyword 'before_api' )
 assertEquals "'before_api' is not key" 1 "$_is_key"
@@ -228,12 +241,22 @@ assertTrue "Output directory for request not found" "-d \"$_output_directory\""
 #  -test Request execution
 _before_request_var="Not executed yet"
 _after_request_var="Not executed yet"
+_before_execution_var="Not executed yet"
+_after_execution_var="Not executed yet"
 
 url "http://127.0.0.1:5555/info"
 method "GET"
 
 before_command() {
     _before_request_var="Executed"
+}
+
+before_execution() {
+    _before_execution_var="Executed"
+}
+
+after_execution() {
+    _after_execution_var="Executed"
 }
 
 after_command() {
@@ -243,10 +266,12 @@ after_command() {
 _request command
 
 assertEquals "'before_<command>' chain not executed" "Executed" "$_before_request_var"
+assertEquals "'before_execution' chain not executed" "Executed" "$_before_execution_var"
 #  shellcheck disable=SC2154
 assertTrue "Trace file does not exist" "-f \"$_shttp_output.trace\""
 #  shellcheck disable=SC2154
 assertTrue "JSON file does not exist" "-f \"$_shttp_output.output\""
+assertEquals "'after_execution' not executed" "Executed" "$_after_execution_var"
 assertEquals "'after_<command>' not executed" "Executed" "$_after_request_var"
 
 _info_pronounced=$( < "$_shttp_output.output" jq ".pronounced" )
@@ -390,10 +415,7 @@ update "ws/credentials.json" '. + [{
         "token": "uqweq8u23j23e",
         "type": "Bearer",
         "key": "j77qwj",
-        "secret": "uqweq8u23j23e",
-        "tokenParam": "api_token",
-        "keyParam": "clientId",
-        "secretParam": "clientSecret"
+        "secret": "uqweq8u23j23e"
     }]'
 
 credential "auth"
@@ -418,7 +440,7 @@ assertEquals "'BASIC' mode not set" 2 "$_found"
 
 _reset_req_vars
 credential "auth"
-authMode "HEADER"
+authMode "TOKEN"
 
 _append_auth
 
@@ -429,46 +451,7 @@ for _header in "${_shttp_headers[@]}"; do
     fi
 done
 
-assertEquals "'HEADER' mode not set" 1 "$_found"
-
-_reset_req_vars
-credential "auth"
-authMode "QTOKEN"
-
-_append_auth
-
-_found=0
-
-#  shellcheck disable=SC2154
-for _param in "${_shttp_query_params[@]}"; do
-    if [ "$_param" = "api_token=uqweq8u23j23e" ]; then
-        _found=1
-    fi
-done
-
-assertEquals "'QTOKEN' mode not set" 1 "$_found"
-
-_reset_req_vars
-credential "auth"
-authMode "QKEYSEC"
-
-_append_auth
-
-_found=0
-
-#  shellcheck disable=SC2154
-for _param in "${_shttp_query_params[@]}"; do
-    case "$_param" in
-        clientId=j77qwj)
-            _found=$(( _found+1 ))
-        ;;
-        clientSecret=uqweq8u23j23e)
-            _found=$(( _found+1 ))
-        ;;
-    esac
-done
-
-assertEquals "'QKEYSEC' mode not set" 2 "$_found"
+assertEquals "'TOKEN' mode not set" 1 "$_found"
 
 _reset_req_vars
 credential "auth"

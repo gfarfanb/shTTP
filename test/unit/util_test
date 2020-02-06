@@ -382,3 +382,19 @@ put_map "Content-Type" ": application/json" "_test_map_array"
 _length=${#_test_map_array[@]}
 
 assertEquals "Map is empty after put operation" "1" "$_length"
+
+
+#  -test Get map entry
+_test_map_array=(
+    "Content-Type: application/xml"
+)
+_content="$( get_map "Content-Type: " "_test_map_array" )"
+
+assertEquals "Entry is not found in the map" "application/xml" "$_content"
+
+_test_map_array=(
+    "Content-Type: application/xml"
+)
+_content="$( get_map "content-type: " "_test_map_array" )"
+
+assertEquals "Entry is not found in the map (ignore-case)" "application/xml" "$_content"

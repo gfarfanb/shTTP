@@ -18,12 +18,6 @@ _slack_opt=""
 
 _finally_run_samples() {
     local _code=$?
-    (
-        cd sample
-
-        #  Delete authentication
-        ./github_oauth delete_auth "$_slack_opt"
-    ) &
     exit $_code
 }
 
@@ -48,6 +42,7 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
         fi
 
         #  GitHub authentication
+        ./github_oauth delete_auth "$_slack_opt"
         ./github_oauth put_auth "$_slack_opt"
         ./github_oauth check_auth "$_slack_opt"
 

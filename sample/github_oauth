@@ -89,10 +89,6 @@ delete_auth() {
     # hd "X-GitHub-OTP" "$( get otp )"
 }
 
-after_delete_auth() {
-    areEquals "Unexpected status" "204" "$( getStatus )"
-}
-
 after_api() {
     info "This will be executed after every request call"
 }

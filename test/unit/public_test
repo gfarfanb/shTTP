@@ -149,6 +149,70 @@ _unknown=$( get unknown )
 assertIsNull "'unknown' found" "$_unknown"
 
 
+#  -test Get request method
+_shttp_method="OPTIONS"
+_request_method=$( getRequestMethod )
+assertEquals "Request method is incorrect" "OPTIONS" "$_request_method"
+
+#  shellcheck disable=SC2034
+_shttp_method=""
+_request_method=$( getRequestMethod )
+assertTrue "Request method is setted" "-z $_request_method"
+
+
+#  -test Get request body
+_shttp_body="ws/request_body.json"
+echo "{}" > "$_shttp_body"
+_request_body=$( getRequestBody )
+assertEquals "Request body is incorrect" "{}" "$_request_body"
+
+#  shellcheck disable=SC2034
+_shttp_body=""
+_request_body=$( getRequestBody )
+assertTrue "Request body is setted" "-z $_request_body"
+
+
+#  -test Get request header
+_shttp_headers=( "Content-Type: application/json" )
+_request_header=$( getRequestHeader Content-Type )
+assertEquals "Request header is incorrect" "application/json" "$_request_header"
+
+_request_header=$( getRequestHeader content-type )
+assertEquals "Request header is incorrect (ignore-case)" "application/json" "$_request_header"
+
+#  shellcheck disable=SC2034
+_shttp_headers=()
+_request_header=$( getRequestHeader Content-Type )
+assertTrue "Request header is setted" "-z $_request_header"
+
+
+#  -test Get request path
+_shttp_endpoint="/request/path"
+_shttp_query_params=( "q1=1" )
+_request_path=$( getRequestPath )
+assertEquals "Request path is incorrect" "/request/path?q1=1" "$_request_path"
+
+#  shellcheck disable=SC2034
+_shttp_endpoint=""
+_shttp_query_params=()
+_request_path=$( getRequestPath )
+assertTrue "Request path is setted" "-z $_request_path"
+
+
+#  -test Get request URL
+_shttp_url="https://domain.test.com/base/request/path"
+_shttp_query_params=( "q1=1" )
+_request_url=$( getRequestUrl )
+assertEquals "Request URL is incorrect" "https://domain.test.com/base/request/path?q1=1" "$_request_url"
+
+#  shellcheck disable=SC2034
+_shttp_url=""
+#  shellcheck disable=SC2034
+_shttp_query_params=()
+_request_url=$( getRequestUrl )
+assertTrue "Request URL is setted" "-z $_request_url"
+
+
 #  -test Put credential part
 _shttp_auth_credential="put-part-test"
 update "ws/credentials.json" '. + [{
@@ -164,7 +228,7 @@ _hidden_val=$( < "ws/credentials.json" jq ".[$_put_part_idx].secret" )
 _visible_val=$( < "ws/credentials.json" jq ".[$_put_part_idx].visible" )
 
 assertTrue "Credential parts not found" "-f ws/.vlt"
-assertIsNull "Hidden credential part not found" "$_hidden_val"
+assertEquals "Hidden credential part not found" "$_hidden_val" "\"secret\""
 assertEquals "Visible credential part not found" "\"shown\"" "$_visible_val"
 
 #  shellcheck disable=SC2154
@@ -188,10 +252,7 @@ update "ws/credentials.json" '. + [{
         "token": "Hidden value",
         "type": "token",
         "key": "12345",
-        "secret": "Hidden value",
-        "tokenParam": "access_token",
-        "keyParam": "clientId",
-        "secretParam": "clientSecret",
+        "secret": "Hidden value"
     }]'
 echo "ZGVmYXVsdC0+Z2V0LXBhcnQtdGVzdC0+cGFzc3dvcmQ6PQo=!dDM1dAo=" \
     | tee -a "ws/.vlt" > /dev/null
@@ -206,9 +267,6 @@ _credential_token=""
 _credential_type=""
 _credential_token=""
 _credential_secret=""
-_credential_token_param=""
-_credential_key_param=""
-_credential_secret_param=""
 
 _credential_username=$( getPart username )
 assertEquals "Username part not found" "test" "$_credential_username"
@@ -227,15 +285,6 @@ assertEquals "Key part not found" "12345" "$_credential_key"
 
 _credential_secret=$( getPart secret )
 assertEquals "Secret part not found" "1234567890" "$_credential_secret"
-
-_credential_token_param=$( getPart tokenParam )
-assertEquals "Token parameter part not found" "access_token" "$_credential_token_param"
-
-_credential_key_param=$( getPart keyParam )
-assertEquals "Key parameter part not found" "clientId" "$_credential_key_param"
-
-_credential_secret_param=$( getPart secretParam )
-assertEquals "Secret parameter part not found" "clientSecret" "$_credential_secret_param"
 
 _credential_unknown=$( getPart unknown "apiToken" )
 assertEquals "Unknown part found" "apiToken" "$_credential_unknown"

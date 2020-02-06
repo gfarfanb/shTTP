@@ -7,6 +7,7 @@ hist/
 !/sample/ws/config*.json
 !/sample/ws/credentials*.json
 !/sample/ws/settings*.json
+/api/ws/.vlt
 
 tmp/
 log/

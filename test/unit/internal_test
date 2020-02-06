@@ -8,11 +8,9 @@ update "ws/credentials.json" '. + [{
         "id": "indexable"
     }]'
 _cred_idx=$( _get_cred_idx indexable )
-
-assertTrue "Credential not found" "$_cred_idx > 0"
+assertTrue "Credential not found" "$_cred_idx -gt 0"
 
 _cred_idx=$( _get_cred_idx not-found )
-
 assertEquals "Credential found" null "$_cred_idx"
 
 

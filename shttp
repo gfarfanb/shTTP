@@ -29,18 +29,18 @@ _shttp_help_content=(
     "                                         -s: public mode, in 'ws/config[.<env>].json'"
     "   --remove <key-name>:              Remove the key-value from 'ws/config[.<env>].json'"
     "   --keys:                           Display all keys from 'ws/config[.<env>].json' file"
-    "   --part <part> <value> <sec>:      Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt'. Credential"
-    "                                       option is required ('--cred') to be defined."
+    "   --part <part> <value> <desc>:     Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt' (hidden)."
+    "                                       Credential option is required ('--cred') to be defined."
     "                                       <part>:"
-    "                                         -u: username alias"
-    "                                         -p: password alias"
-    "                                         -k: key alias"
-    "                                         -s: secret alias"
-    "                                         -t: token alias"
-    "                                         -i: pin alias"
-    "                                       <sec>:"
-    "                                         -h: hidden mode, in 'ws/.vlt'"
-    "                                         -s: public mode, in 'ws/credentials[.<env>].json'"
+    "                                         -u: 'username' alias"
+    "                                         -p: 'password' alias"
+    "                                         -e: 'type' alias"
+    "                                         -t: 'token' alias"
+    "                                         -k: 'key' alias"
+    "                                         -c: 'client' alias"
+    "                                         -s: 'secret' alias"
+    "                                         -i: 'pin' alias"
+    "                                       <desc>: (optional) Description of the credential part"
     "   --creds:                          Display all credentials ids from 'ws/credentials[.<env>].json'"
     "   --cred-keys <credential>:         Display all keys from 'ws/credentials[.<env>].json' file for a specific credential"
     "   --curl <body-opt>                 Display the related cURL command for the input <command>"
@@ -59,10 +59,8 @@ _shttp_help_content=(
     "                                       _shttp_domain: localhost:<port> (default 8080)"
     "   --port <port>:                    Set value to port variable"
     "   --auth-basic <credential>:        Set 'BASIC' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-header <credential>:       Set 'HEADER' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-qtoken <credential>:       Set 'QTOKEN' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-qkeysec <credential>:      Set 'QKEYSEC' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-skip <credential>:         Set 'SKIP' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-token <credential>:        Set 'TOKEN' mode to '_shttp_auth_mode' and assign the credential"
+    "   --auth-skip:                      Set 'SKIP' mode to '_shttp_auth_mode' when authorization mode is not required"
     "   --times <value>:                  Set the number of executions required for the request into '_shttp_request_times'"
     "   --open:                           Set '_shttp_editor_command' with value defined on 'editorCommand'"
     "                                       from 'ws/settings.json'. This causes to execute '_shttp_editor_command'"
@@ -210,23 +208,15 @@ fi
 #  Default credentials JSON file
 if ! [ -f "ws/credentials.json" ]; then
     echo '[{
-        "id": "basic",
-        "username": "Mandatory. Evaluated it during request.",
-        "password": "Optional. Evaluated it during request."
-    }, {
-        "id": "header",
-        "token": "Mandatory. Evaluated it during request.",
-        "type": "[Basic | token | Bearer]"
-    }, {
-        "id": "qtoken",
-        "token": "Mandatory. Evaluated it during request.",
-        "tokenParam": "Optional. Default: access_token."
-    }, {
-        "id": "qkeysecret",
-        "key": "Mandatory. Evaluated it during request.",
-        "secret": "Mandatory. Evaluated it during request.",
-        "keyParam": "Optional. Default: key.",
-        "secretParam": "Optional. Default: secret."
+        "id": "credential-identifier",
+        "username": "Field for credential [username]",
+        "password": "Field for credential [password]",
+        "type": "Field for credential [type], possible values: Basic, token, Bearer, HMAC, ...",
+        "token": "Field for credential [token]",
+        "key": "Field for credential [key]",
+        "client": "Field for credential [client]",
+        "secret": "Field for credential [secret]",
+        "pin": "Field for credential [pin]"
     }]' > "ws/credentials.json"
 fi
 
@@ -686,6 +676,28 @@ put_map() {
     eval "$_map_name+=( \"$_key$_value\" )"
 }
 
+get_map() {
+    local _key=${1:-}
+    local _map_name=${2:-}
+    local _element=""
+    debug "[get_map] ${*}"
+    eval "local _map_length=\${#$_map_name[@]}"
+    #  shellcheck disable=SC2154
+    if (( _map_length > 0 )); then
+        eval "local _map_src=( \${$_map_name[@]} )"
+        shopt -s nocasematch
+        for _element in "${_map_src[@]}"; do
+            if [[ "$_element" == "$_key"* ]]; then
+                _element=${_element/"$_key"/}
+                break
+            fi
+        done
+        shopt -u nocasematch
+    fi
+    debug "[get_map] $_element"
+    echo "$_element"
+}
+
 
 # ---------- Public functions
 
@@ -872,6 +884,41 @@ remove() {
     fi
 }
 
+getRequestMethod() {
+    local _method="$_shttp_method"
+    debug "[getRequestMethod] $_method"
+    echo "$_method"
+}
+
+getRequestBody() {
+    local _body=""
+    if [ -f "$_shttp_body" ]; then
+        _body="$( cat $_shttp_body )"
+    fi
+    debug "[getRequestBody] $_body"
+    echo "$_body"
+}
+
+getRequestHeader() {
+    local _header=${1:-}
+    debug "[getRequestHeader] ${*}"
+    local _value=$( get_map "$_header: " "_shttp_headers" )
+    debug "[getRequestHeader] $_value"
+    echo "$_value"
+}
+
+getRequestPath() {
+    local _length=0
+    local _path="$_shttp_endpoint"
+    _length=${#_shttp_query_params[@]}
+    if (( _length > 0 )); then
+        _path+="?"
+        _path+=$( arr_join "&" "${_shttp_query_params[@]}" )
+    fi
+    debug "[getRequestPath] $_path"
+    echo "$_path"
+}
+
 #  Save credential part for
 #+ '_shttp_auth_credential'.
 # 
@@ -879,34 +926,34 @@ remove() {
 #  -param $2 Part value
 #  -param $3 Secure type:
 #+           [PRIVATE | PUBLIC]
-#  -param $4 Credential
+#  -param $4 Part description
 putPart() {
     local _part=${1:-}
     local _val=${2:-}
     local _sec=${3:-"PRIVATE"}
-    local _credential=${4:-"$_shttp_auth_credential"}
+    local _desc=${4:-}
     local _cred_idx=-1
     debug "[putPart] ${*}"
-    _cred_idx=$( < "$_shttp_creds" \
-        jq "map(.id==\"$_credential\") | index(true)" )
+    _cred_idx=$( _get_cred_idx "$_shttp_auth_credential" )
     if [ "$_cred_idx" = "null" ]; then
-        fatal "Credential [$_credential] not found"
+        update "$_shttp_creds" ".+=[{ \"id\": \"$_shttp_auth_credential\" }]"
+        _cred_idx=$( _get_cred_idx "$_shttp_auth_credential" )
     fi
     if [ "$_sec" = "PRIVATE" ]; then
-        local _entry="$_shttp_suffix->$_credential->$_part:="
-        local _desc=""
-        _desc=$( < "$_shttp_creds" \
-            jq ".[] | select(.id==\"$_credential\") | .$_part")
+        local _entry="$_shttp_suffix->$_shttp_auth_credential->$_part:="
         _entry=$( echo "$_entry" | base64 )
-        _val=$( echo "$_val" | base64 )
+        _val=$( echo "$_val" | base64 | tr -d " \t\n\r" )
         if [ -a "ws/.vlt" ]; then
             sed -i "/^$_entry/d" "ws/.vlt"
         fi
         echo "$_entry!$_val" | tee -a "ws/.vlt" > /dev/null
+        if [ -z "$_desc" ]; then
+            _desc="\"$_part\""
+        fi
         _val="$_desc"
     fi
     update "$_shttp_creds" ".[$_cred_idx].$_part=$_val"
-    info "Saved [$_part] with value [$_val] to credential [$_credential]"
+    info "Saved [$_part] with value [$_val] to credential [$_shttp_auth_credential]"
 }
 
 #  Get the credential part for
@@ -1258,12 +1305,10 @@ _shttp_query_params=()
 _shttp_curl_opts=()
 
 #  Authorization mode. Allowed values:
-#+ [BASIC, HEADER, QPARAM, SKIP].
-#    1. BASIC: HTTP Basic Authentication
-#    2. HEADER: Header Authorization
-#    3. QPARAM: Authorization via Query
-#+      Parameters
-#    4. SKIP: No authorization mode
+#+ [BASIC, TOKEN, DEFAULT, SKIP].
+#    a) BASIC: HTTP Basic Authentication
+#    b) TOKEN: Header Authorization
+#    c) SKIP: No authorization mode
 _shttp_auth_mode=""
 
 #  Authentication credential identifier.
@@ -1272,11 +1317,8 @@ _shttp_auth_mode=""
 #  Regarding to '_shttp_auth_mode'
 #+ credential must have the
 #+ following fields:
-#    1. BASIC: 'username', 'password'
-#    2. HEADER: 'token', 'type'
-#    3. QTOKEN: 'token', 'tokenParam'
-#    3. QKEYSEC: 'key', 'secret',
-#+      'keyParam', 'secretParam'
+#    a) BASIC: 'username', 'password'
+#    b) HEADER: 'token', 'type'
 _shttp_auth_credential=""
 
 #  Current request command.
@@ -1758,6 +1800,14 @@ mockHeaders() {
 
 # ---------- Internal functions
 
+_get_cred_idx() {
+    local _cred=${1:-}
+    local _cred_idx=""
+    _cred_idx=$( < "$_shttp_creds" \
+        jq "map(.id==\"$_cred\") | index(true)" )
+    echo "$_cred_idx"
+}
+
 #  Check if word exists is a
 #+ key-words:
 #    1. Start with 'before_'
@@ -2069,12 +2119,16 @@ _output_dir() {
 #+      if it is declared
 #    3. Append default 'Content-Type' to
 #+      headers
-#    4. Append authentication to request.
-#    5. Build 'cURL' command
-#    6. Execute 'cURL' command
-#    7. Clean and append details into
+#    4. Execute 'before_request' function
+#+      if it is declared
+#    5. Append authentication to request.
+#    6. Build 'cURL' command
+#    7. Execute 'cURL' command
+#    8. Clean and append details into
 #+      '_shttp_output.trace' file
-#    8. Execute 'after_<command>' function
+#    9. Execute 'after_request' function
+#+      if it is declared
+#    10. Execute 'after_<command>' function
 #+      if it is declared
 #
 #  -param $1 Request command
@@ -2084,6 +2138,7 @@ _request() {
     _default_vars "$_command"
     _execute_if_exist "before_${_command}"
     _append_default_content_type
+    _execute_if_exist "before_request"
     _append_auth
     _curl=$( _build_curl BODY_FILE EXECUTABLE )
     if (( _shttp_mock_enabled == 1 )); then
@@ -2101,6 +2156,7 @@ _request() {
         eval "$_curl"
     fi
     _clean_trace "$_curl"
+    _execute_if_exist "after_request"
     _execute_if_exist "after_${_command}"
     printf '\n' ; cat "$_shttp_output.trace"
     printf '\n' ; cat "$_shttp_output.output"
@@ -2199,43 +2255,24 @@ _append_default_content_type() {
 
 #  Setup the authorization mode based
 #+ on '_shttp_auth_mode':
-#    1. BASIC: Set basic authentication
+#    a) BASIC: Set basic authentication
 #+      type by 'cURL' options.
 #+      Use from credential: 'username',
 #+      'password'.
-#    2. HEADER: Set authentication
+#    b) TOKEN: Set authentication
 #+      token by request header.
 #+      Use from credential: 'token',
 #+      'type'. If 'type' is not
 #+      found, default value will be
 #+      'token'.
-#    3. QTOKEN: Set to 'URL' a
-#+      token as query parameter.
-#+      Use from credential: 'token',
-#+      'tokenParam'. If 'tokenParam'
-#+      is not found or empty, default
-#+      value will be 'access_token'.
-#    4. QKEYSEC: Set to 'URL' a
-#+      key and secret as query parameter.
-#+      Use from credential: 'key',
-#+      'secret', 'keyParam' and
-#+      'secretParam'. If 'keyParam' and
-#+      'secretParam' are not found or
-#+      empty, default value will be
-#+      'key' and 'secret'.
-#    5. SKIP: Skip authorization setup.
-#    6. Another value: Exit script using
+#    c) SKIP: Skip authorization setup.
+#    d) Another value: Exit script using
 #+      'fatal' logging function.
 _append_auth() {
     local _username=""
     local _password=""
-    local _token=""
     local _type=""
-    local _key=""
-    local _secret=""
-    local _token_param=""
-    local _key_param=""
-    local _secret_param=""
+    local _token=""
     case "$_shttp_auth_mode" in
         BASIC)
             _username=$( getPart username )
@@ -2247,27 +2284,10 @@ _append_auth() {
                 curlOpts "--basic" "-u $_username:$_password"
             fi
         ;;
-        HEADER)
-            _type=$( getPart type "token" )
+        TOKEN)
+            _type=$( getPart type token )
             _token=$( getPart token )
-            eval "_token=\"$_token\""
             _append_if_missing_header "Authorization" "$_type $_token"
-        ;;
-        QTOKEN)
-            _token=$( getPart token )
-            _token_param=$( getPart tokenParam "access_token" )
-            eval "_token=\"$_token\""
-            qp "$_token_param" "$_token"
-        ;;
-        QKEYSEC)
-            _key=$( getPart key )
-            _secret=$( getPart secret )
-            _key_param=$( getPart keyParam "key" )
-            _secret_param=$( getPart secretParam "secret" )
-            eval "_key=\"$_key\""
-            eval "_secret=\"$_secret\""
-            qp "$_key_param" "$_key"
-            qp "$_secret_param" "$_secret"
         ;;
         SKIP)
             :
@@ -3031,19 +3051,9 @@ if expr "$*" : ".*--auth-basic\s" > /dev/null; then
     _look_for_params --auth-basic "$@"
 fi
 
-_register_opt --auth-header _set_auth_mode REQUEST
-if expr "$*" : ".*--auth-header\s" > /dev/null; then
-    _look_for_params --auth-header "$@"
-fi
-
-_register_opt --auth-qtoken _set_auth_mode REQUEST
-if expr "$*" : ".*--auth-qtoken\s" > /dev/null; then
-    _look_for_params --auth-qtoken "$@"
-fi
-
-_register_opt --auth-qkeysec _set_auth_mode REQUEST
-if expr "$*" : ".*--auth-qkeysec\s" > /dev/null; then
-    _look_for_params --auth-qkeysec "$@"
+_register_opt --auth-token _set_auth_mode REQUEST
+if expr "$*" : ".*--auth-token\s" > /dev/null; then
+    _look_for_params --auth-token "$@"
 fi
 
 _register_opt --auth-skip _set_auth_mode REQUEST
@@ -3330,19 +3340,21 @@ fi
 #  -param $2 Part name or value
 #            -u: username
 #            -p: password
-#            -k: key
-#            -s: secret
+#            -e: type
 #            -t: token
+#            -k: key
+#            -c: client
+#            -s: secret
 #            -i: pin
+
 #  -param $3 Part value
-#  -param $4 Secure type:
-#            -h: hidden mode
-#            -s: public mode
+#  -param $4 Part description
 _add_part() {
     local _opt=${1:-}
     local _part=${2:-}
     local _val=${3:-}
-    local _sec_type=${4:-}
+    local _desc=${4:-}
+    local _sec="PRIVATE"
     case "$_part" in
         -u)
             _part="username"
@@ -3350,28 +3362,32 @@ _add_part() {
         -p)
             _part="password"
         ;;
-        -k)
-            _part="key"
-        ;;
-        -s)
-            _part="secret"
+        -e)
+            _part="type"
+            _sec="PUBLIC"
         ;;
         -t)
             _part="token"
+        ;;
+        -k)
+            _part="key"
+        ;;
+        -c)
+            _part="client"
+        ;;
+        -s)
+            _part="secret"
         ;;
         -i)
             _part="pin"
         ;;
     esac
-    case "$_sec_type" in
-        -s)
-            _sec_type="PUBLIC"
-        ;;
-        *)
-            _sec_type="PRIVATE"
-        ;;
-    esac
-    putPart "$_part" "$_val" "$_sec_type"
+    if [ -z "$_desc" ]; then
+        _desc=$( < "$_shttp_creds" \
+                jq ".[] | select(.id==\"$_shttp_auth_credential\") | .$_part")
+        [ "$_desc" = "null" ] && _desc=""
+    fi
+    putPart "$_part" "$_val" "$_sec" "$_desc"
 }
 _register_opt --part _add_part MANAGE
 if expr "$*" : ".*--part\s" > /dev/null; then

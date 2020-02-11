@@ -169,26 +169,31 @@ unset _shttp_registered_opts["--opt"]
 
 #  -test Initialize request variables
 _shttp_url="not-empty"
-_shttp_protocol="not-empty"
-_shttp_domain="not-empty"
 _shttp_method="not-empty"
 _shttp_base_path="not-empty"
 _shttp_endpoint="not-empty"
 _shttp_headers=( "not-empty" )
 _shttp_body="not-empty"
 _shttp_form=( "not-empty" )
+_shttp_form_files=( "not-empty" )
 _shttp_query_params=( "not-empty" )
 _shttp_curl_opts=( "not-empty" )
-_shttp_auth_mode="not-empty"
-_shttp_auth_credential="not-empty"
-_shttp_editor_command="not-empty"
 _shttp_output="not-empty"
+_shttp_protocol="not-empty"
+_shttp_domain="not-empty"
+_shttp_port="not-empty"
+_shttp_local=1
+_shttp_auth_credential="not-empty"
+_shttp_auth_mode="not-empty"
+_shttp_editor_command="not-empty"
+_shttp_open_editor=1
+_shttp_mock_enabled=1
+_shttp_mock_output="not-empty"
+_shttp_mock_trace="not-empty"
 
 _reset_req_vars
 
 assertTrue "'_shttp_url' is not empty" "-z \"$_shttp_url\""
-assertTrue "'_shttp_protocol' is not empty" "-z \"$_shttp_protocol\""
-assertTrue "'_shttp_domain' is not empty" "-z \"$_shttp_domain\""
 assertTrue "'_shttp_method' is not empty" "-z \"$_shttp_method\""
 assertTrue "'_shttp_base_path' is not empty" "-z \"$_shttp_base_path\""
 assertTrue "'_shttp_endpoint' is not empty" "-z \"$_shttp_endpoint\""
@@ -196,11 +201,13 @@ assertTrue "'_shttp_endpoint' is not empty" "-z \"$_shttp_endpoint\""
 _length=${#_shttp_headers[@]}
 assertEquals "'_shttp_headers' is not empty" 0 "$_length"
 
-_length=${#_shttp_body}
-assertEquals "'_shttp_body' is not empty" 0 "$_length"
+assertTrue "'_shttp_body' is not empty" "-z \"$_shttp_body\""
 
 _length=${#_shttp_form[@]}
 assertEquals "'_shttp_form' is not empty" 0 "$_length"
+
+_length=${#_shttp_form_files[@]}
+assertEquals "'_shttp_form_files' is not empty" 0 "$_length"
 
 _length=${#_shttp_query_params[@]}
 assertEquals "'_shttp_query_params' is not empty" 0 "$_length"
@@ -208,17 +215,24 @@ assertEquals "'_shttp_query_params' is not empty" 0 "$_length"
 _length=${#_shttp_curl_opts[@]}
 assertEquals "'_shttp_curl_opts' is not empty" 0 "$_length"
 
-assertTrue "'_shttp_auth_mode' is not empty" "-z \"$_shttp_auth_mode\""
-assertTrue "'_shttp_auth_credential' is not empty" "-z \"$_shttp_auth_credential\""
-assertTrue "'_shttp_editor_command' is not empty" "-z \"$_shttp_editor_command\""
 assertTrue "'_shttp_output' is not empty" "-z \"$_shttp_output\""
+assertTrue "'_shttp_protocol' is not empty" "-z \"$_shttp_protocol\""
+assertTrue "'_shttp_domain' is not empty" "-z \"$_shttp_domain\""
+assertTrue "'_shttp_port' is not empty" "-z \"$_shttp_port\""
+assertTrue "'_shttp_local' is not valid" "\"$_shttp_local\" -eq \"0\""
+assertTrue "'_shttp_auth_credential' is not empty" "-z \"$_shttp_auth_credential\""
+assertTrue "'_shttp_auth_mode' is not empty" "-z \"$_shttp_auth_mode\""
+assertTrue "'_shttp_editor_command' is not empty" "-z \"$_shttp_editor_command\""
+assertTrue "'_shttp_open_editor' is not valid" "\"$_shttp_open_editor\" -eq \"0\""
+assertTrue "'_shttp_mock_enabled' is not valid" "\"$_shttp_mock_enabled\" -eq \"0\""
+assertTrue "'_shttp_mock_output' is not empty" "-z \"$_shttp_mock_output\""
+assertTrue "'_shttp_mock_trace' is not empty" "-z \"$_shttp_mock_trace\""
 
 
 #  -test Default values to request variables
 _default_vars
 
 assertEquals "'_shttp_protocol' is not empty" "https" "$_shttp_protocol"
-assertEquals "'_shttp_url' is not empty" "https://" "$_shttp_url"
 assertEquals "'_shttp_auth_mode' is not empty" "SKIP" "$_shttp_auth_mode"
 assertTrue "'_shttp_output' is not empty" "-n \"$_shttp_output\""
 
@@ -467,6 +481,43 @@ remove apiToken
 _reset_req_vars
 
 
+#  -test Build URL
+protocol "ftp"
+domain "any.host"
+port "8787"
+basePath "/base"
+endpoint "/endpoint"
+queryParam "param" "value"
+_build_url
+assertEquals "'URL' value is wrong" "ftp://any.host:8787/base/endpoint?param=value" "$_shttp_url"
+_reset_req_vars
+
+protocol "ftp"
+domain "any.host"
+basePath "/base"
+endpoint "/endpoint"
+queryParam "param" "value"
+_build_url
+assertEquals "'URL' value is wrong (without port)" "ftp://any.host/base/endpoint?param=value" "$_shttp_url"
+_reset_req_vars
+
+protocol "ftp"
+domain "any.host"
+basePath "/base"
+endpoint "/endpoint"
+_build_url
+assertEquals "'URL' value is wrong (without query params)" "ftp://any.host/base/endpoint" "$_shttp_url"
+_reset_req_vars
+
+protocol "ftp"
+localPort 8080
+basePath "/base"
+endpoint "/endpoint"
+_build_url
+assertEquals "'URL' value is wrong (local)" "ftp://localhost:8080/base/endpoint" "$_shttp_url"
+_reset_req_vars
+
+
 #  -test Build cURL
 url "https://any.host/any/endpoint"
 method "POST"
@@ -488,6 +539,7 @@ _expected+=" -w \"@output/result.format\""
 _expected+=" \"https://any.host/any/endpoint?param=value\""
 _expected+=" > \"output/result.trace\" 2>&1"
 
+_build_url
 _curl=$( _build_curl )
 
 assertEquals "'cURL' command bad" "$_expected" "$_curl"

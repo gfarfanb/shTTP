@@ -307,19 +307,20 @@ assertEquals "Unexpected 'setConfig' value" "value" "$_priority_val"
 
 
 #  -test Local option
-_set_localhost --local "5555"
+_set_localhost --local 5555
 #  shellcheck disable=SC2154
 assertEquals "Protocol not assigned" "http" "$_shttp_protocol"
 #  shellcheck disable=SC2154
-assertEquals "Localhost not assigned" "localhost" "$_shttp_domain"
-#  shellcheck disable=SC2154
-assertEquals "Port not assigned" "5555" "$_shttp_port"
+assertEquals "Port not assigned" "5555" "$_shttp_local"
+_shttp_protocol=""
+_shttp_local=0
 
 
 #  -test Port option
 _set_port --port "5555"
 #  shellcheck disable=SC2154
 assertEquals "Port not assigned" "5555" "$_shttp_port"
+_shttp_port=""
 
 
 #  -test Set authentication credential option

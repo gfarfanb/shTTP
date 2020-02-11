@@ -70,6 +70,10 @@ _shttp_help_content=(
     " Environment variables:"
     "   SAVED_LOGS:                       'true' for saved logs on '/tmp/_shttp_basename.yyyy-mm-dd.log'"
     "                                       otherwise logs only will print by 'echo' function"
+    "   DEBUG_MODE:                       'true' for show default debug logs for internal functions"
+    "                                       otherwise debug log is skipped"
+    "   CHECK_DEPENDENCIES:               'true' for check if 'cURL' or 'jq' are already installed"
+    "                                       otherwise check is skipped"
     " Add-on options: "
 )
 
@@ -1322,6 +1326,9 @@ _shttp_domain=""
 #+ 'https://any.domain<:port>/any/endpoint'
 _shttp_port=""
 
+#  Local request port (URL will be built for local):
+_shttp_local=0
+
 #  Request base path:
 #+ 'https://any.host/<base-path>/endpoint'
 _shttp_base_path=""
@@ -1540,6 +1547,18 @@ port() {
     local _port=${1:-}
     _shttp_port="$_port"
     info "Set [Port] with [$_shttp_port]"
+}
+
+#  Setter for '_shttp_local'.
+#
+#  -param $1 Request port
+localPort() {
+    local _port=${1:-80}
+    if [ "$_port" -lt "0" ]; then
+        fatal "Local-port must not be negative [$_port]"
+    fi
+    _shttp_local="$_port"
+    info "Set [Local-port] with [$_shttp_local]"
 }
 
 #  Setter for '_shttp_base_path'.
@@ -2100,6 +2119,7 @@ _reset_req_vars() {
     _shttp_protocol=""
     _shttp_domain=""
     _shttp_port=""
+    _shttp_local=0
     _shttp_auth_credential=""
     _shttp_auth_mode=""
     _shttp_editor_command=""
@@ -2124,13 +2144,6 @@ _default_vars() {
     local _command=${1:-}
     if [ -z "$_shttp_protocol" ]; then
         protocol "https"
-    fi
-    if [ -z "$_shttp_url" ]; then
-        if [ -z "$_shttp_port" ]; then
-            url "${_shttp_protocol}://${_shttp_domain}${_shttp_base_path}${_shttp_endpoint}"
-        else
-            url "${_shttp_protocol}://${_shttp_domain}:${_shttp_port}${_shttp_base_path}${_shttp_endpoint}"
-        fi
     fi
     if [ -z "$_shttp_auth_mode" ]; then
         authMode "SKIP"
@@ -2191,13 +2204,14 @@ _output_dir() {
 #    4. Execute 'before_request' function
 #+      if it is declared
 #    5. Append authentication to request.
-#    6. Build 'cURL' command
-#    7. Execute 'cURL' command
-#    8. Clean and append details into
+#    6. Build URL
+#    7. Build 'cURL' command
+#    8. Execute 'cURL' command
+#    9. Clean and append details into
 #+      '_shttp_output.trace' file
-#    9. Execute 'after_request' function
+#    10. Execute 'after_request' function
 #+      if it is declared
-#    10. Execute 'after_<command>' function
+#    11. Execute 'after_<command>' function
 #+      if it is declared
 #
 #  -param $1 Request command
@@ -2209,6 +2223,7 @@ _request() {
     _append_default_content_type
     _execute_if_exist "before_execution"
     _append_auth
+    _build_url
     _curl=$( _build_curl BODY_FILE EXECUTABLE )
     if (( _shttp_mock_enabled == 1 )); then
         if [ -f "$_shttp_mock_output" ]; then
@@ -2373,12 +2388,39 @@ _append_auth() {
     esac
 }
 
+#  Build request URL by using the following
+#+ structure and set the value to '_shttp_url':
+#+ <protocol>://<domain><:port><base><endpoint><?query_params>
+#  If '_shttp_local' has a valid port the URL
+#+ will be built for local:
+#+ <protocol>://localhost:<port><base><endpoint><?query_params>
+_build_url() {
+    local _url=""
+    local _length=${#_shttp_query_params[@]}
+    if [ -z "$_shttp_url" ]; then
+        _url="${_shttp_protocol}://${_shttp_domain}"
+        if [ -n "$_shttp_port" ]; then
+            _url="${_url}:${_shttp_port}"
+        fi
+        _url="${_url}${_shttp_base_path}${_shttp_endpoint}"
+    else 
+        _url="$_shttp_url"
+    fi
+    if [ "$_shttp_local" -gt "0" ]; then
+        _url="${_shttp_protocol}://localhost:${_shttp_local}${_shttp_base_path}${_shttp_endpoint}"
+    fi
+    if (( _length > 0 )); then
+        _url+="?"
+        _url+=$( arr_join "&" "${_shttp_query_params[@]}" )
+    fi
+    url "$_url"
+}
+
 #  Build 'cURL' command. This
 #+ uses the following template:
 #    'curl -X <_shttp_method> -s -v \
 #+       -o "<_shttp_output>.output" \
 #+       -H "<_shttp_headers[1..n]>" \
-#+       -d "<_shttp_query_params[1..n]>" \
 #+       -F "<_shttp_form[1..n]>" \
 #+       -F "<_shttp_form_files[1..n]>" \
 #+       --data-binary "@<:_shttp_body>" \
@@ -2405,11 +2447,6 @@ _build_curl() {
         _curl_src+=" -H \""
         _curl_src+=$( arr_join "\" -H \"" "${_shttp_headers[@]}" ) 
         _curl_src+="\""
-    fi
-    _length=${#_shttp_query_params[@]}
-    if (( _length > 0 )); then
-        _url+="?"
-        _url+=$( arr_join "&" "${_shttp_query_params[@]}" )
     fi
     _length=${#_shttp_form[@]}
     if (( _length > 0 )); then
@@ -3068,21 +3105,18 @@ if expr "$*" : ".*--set\s" > /dev/null; then
     _look_for_params --set "$@"
 fi
 
-#  Set '_shttp_domain' to 'localhost'.
-#+ Default port is 8080 but it can be
-#+ specified as first parameter and
-#+ will override default port.
-#  Protocol is changed as well and takes
-#+ 'http' as value.
+#  Set '_shttp_local' port and '_shttp_protocol'
+#+ 80 and 'http' values respectively. On building
+#+ URL the first part of the URL looks like:
+#+ 'http://localhost:<port>'.
 #
 #  -param $1 Option
 #  -param $2 Port value
 _set_localhost() {
     local _opt=${1:-}
-    local _port=${2:-"8080"}
+    local _port=${2:-80}
     protocol "http"
-    domain "localhost"
-    port "$_port"
+    localPort "$_port"
 }
 _register_opt --local _set_localhost REQUEST
 if expr "$*" : ".*--local" > /dev/null; then
@@ -3582,7 +3616,9 @@ _show_curl() {
     _default_vars "$_shttp_command"
     _execute_if_exist "before_${_shttp_command}"
     _append_default_content_type
+    _execute_if_exist "before_execution"
     _append_auth
+    _build_url
     _shttp_output="output/curl.tmp"
     _curl_value=$( _build_curl $_body_opt PRINTABLE )
     if [ -n "$_return_var" ]; then

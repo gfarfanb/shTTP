@@ -31,6 +31,13 @@ assertEquals "Set port does not work" "0000" "$_shttp_port"
 _reset_req_vars
 
 
+#  -test Set local
+localPort "8080"
+#  shellcheck disable=SC2154
+assertEquals "Set local does not work" "8080" "$_shttp_local"
+_reset_req_vars
+
+
 #  -test Set endpoint
 basePath "api/path"
 #  shellcheck disable=SC2154

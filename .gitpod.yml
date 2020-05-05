@@ -1,7 +1,6 @@
 image: gfarfanb/shttp:1.0.0
 
 tasks:
-  - init: Nginx permissions
-    command: chmod 777 /usr/share/nginx/ \
+  - command: chmod 777 /usr/share/nginx/ \
         && chmod 777 /etc/nginx/sites-available/ \
         && chmod 777 /etc/nginx/sites-enabled/

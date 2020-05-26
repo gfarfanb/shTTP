@@ -3,10 +3,8 @@
 #  -author Giovanni Farfan B.
 #
 #  -param $1 Sample username
-#  -param $2 Sample password
-#  -param $3 Sample key
-#  -param $4 Sample secret
-#  -param $5 (Optional) Slack webhook path
+#  -param $2 Sample token
+#  -param $3 (Optional) Slack webhook path
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -28,23 +26,16 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
         cd sample
 
         #  Setting credential
-        ./github_oauth --cred sample \
+        ./gist_comments --cred sample \
             --part -u "$1" \
-            --part -p "$2" \
-            --part -k "$3" \
-            --part -s "$4"
+            --part -p "$2"
 
         #  Setting Slack webhook path
-        _slack_srv=${5:-}
+        _slack_srv=${3:-}
         if [ -n "$_slack_srv" ]; then
-            ./github_oauth --add slackSrv "$_slack_srv" -h
+            ./gist_comments --add slackSrv "$_slack_srv" -h
             _slack_opt="--slack"
         fi
-
-        #  GitHub authentication
-        ./github_oauth delete_auth "$_slack_opt"
-        ./github_oauth put_auth "$_slack_opt"
-        ./github_oauth check_auth "$_slack_opt"
 
         #  Executing samples
         ./gist_comments flow_comment "$_slack_opt"

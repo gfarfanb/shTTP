@@ -20,7 +20,7 @@ get_comment() {
 }
 
 before_post_comment() {
-    authMode TOKEN
+    authMode BASIC
     credential sample
 }
 
@@ -41,7 +41,7 @@ get_comments() {
 
 #  ./gist_comments patch_comment
 patch_comment() {
-    authMode TOKEN
+    authMode BASIC
     credential sample
     endpoint "/$( get commentId )"
     body '{ "body": "'
@@ -56,7 +56,7 @@ after_patch_comment() {
     areEquals "Unexpected status" "200" "$( getStatus )"
 }
 
-#  ./gist_comments delete_comment --auth-token sample
+#  ./gist_comments delete_comment --auth-basic sample
 delete_comment() {
     endpoint "/$( get commentId )"
 }
@@ -90,16 +90,16 @@ before_flow() {
 }
 
 before_flow_comment() {
-    mainOpts --auth-token sample
+    mainOpts --auth-basic sample
 }
 
 #  ./gist_comments flow_comment
 flow_comment() {
     step post_comment
     step get_comment
-    step patch_comment --auth-token sample
+    step patch_comment --auth-basic sample
     step get_comment
-    step delete_comment --auth-token sample
+    step delete_comment --auth-basic sample
     step get_only_def
 }
 

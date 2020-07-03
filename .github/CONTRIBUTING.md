@@ -130,6 +130,9 @@ Conventions:
     1. Identifiers: -param, -return, -test, -beforeTests, -afterTests, -author
     1. Identation
 
+
+## Testing execution
+
 Execute Linter:
 ```
 cd shTTP/ && ./lint
@@ -148,18 +151,14 @@ cd shTTP/test/ && ./test_runner unit/[test-suite-name*]
 Execute Integration Tests (calling Gist API for [shTTP Samples][gist_samples]):
 ```
 # Just samples execution
-cd shTTP/ && ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SAMPLE_KEY $SAMPLE_SECRET
+cd shTTP/ && ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD
 
 # Samples execution with Slack notifications
-cd shTTP/ && ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SAMPLE_KEY $SAMPLE_SECRET $SLACK_SRV
+cd shTTP/ && ./runsamples $SAMPLE_USER $SAMPLE_PASSWORD $SLACK_SRV
 ```
 > *SAMPLE_USER*: GitHub username
 
 > *SAMPLE_PASSWORD*: GitHub password/personal access token
-
-> *SAMPLE_KEY*: GitHub OAuth Client ID
-
-> *SAMPLE_SECRET*: GitHub OAuth Client Secret
 
 > *SLACK_SRV*: Slack Incoming WebHook
 

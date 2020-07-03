@@ -239,10 +239,6 @@ authMode "HEADER"
 #  shellcheck disable=SC2154
 assertEquals "'HEADER' mode not found" "HEADER" "$_shttp_auth_mode"
 
-authMode "QPARAM"
-#  shellcheck disable=SC2154
-assertEquals "'QPARAM' mode not found" "QPARAM" "$_shttp_auth_mode"
-
 authMode "SKIP"
 #  shellcheck disable=SC2154
 assertEquals "'SKIP' mode not found" "SKIP" "$_shttp_auth_mode"

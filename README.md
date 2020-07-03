@@ -7,7 +7,11 @@
 
 Simple HTTP API development environment by command line.
 
+## Documentation
+
+Please see [wiki](https://github.com/gfarfanb/shTTP/wiki) for detailed documentation.
+
 ## License
 
-Copyright © 2018-2019, [Giovanni Farfán B](https://github.com/gfarfanb). Released under the 
+Copyright © 2018-2020, [Giovanni Farfán B](https://github.com/gfarfanb). Released under the 
 [MIT License](https://opensource.org/licenses/MIT).

@@ -9,28 +9,28 @@ _shttp_help_content=(
     ""
     " Simple HTTP API development environment by command line."
     ""
-    " Usage: ./<file>[.sh] <command> [<manage-options>] [<request-options>]"
+    " Usage: ./<file>[.sh] <command> [<manage-option>]* [<request-option>]*"
     ""
-    "                                [--help] [<add-on-options>]"
+    "                                [--help] [<add-on-option>]*"
     ""
     " Manage options:"
-    "   --list:                           Display the <command> list (all functions defined into main script)"
-    "   --envs:                           Display all environments based on configuration files"
-    "   --copy <env-from> <env-to>:       Copy the environment configuration and credentials files. Must exist the 'from'"
+    "   --list:                           Displays the <command> list (all functions defined into main script)"
+    "   --envs:                           Displays all environments based on configuration files"
+    "   --copy <env-from> <env-to>:       Copies the environment configuration and credentials files. Must exist the 'from'"
     "                                       configuration files. If already exist the 'to' files those will be replaced."
     "                                       If is required to copy from 'default' environment, the first parameters must"
     "                                       contain 'default'"
-    "   --del <env>:                      Remove the selected environment: configuration and credentials files. If is"
+    "   --del <env>:                      Removes the selected environment: configuration and credentials files. If is"
     "                                       required to remove 'default' environment, the parameter must contain 'default'"
-    "   --get <key-name>:                 Display the value for key from 'ws/config[.<env>].json'"
-    "   --add <key-name> <value> <sec>:   Add new key-value to 'ws/config[.<env>].json'"
+    "   --get <key-name>:                 Displays the config value by key from 'ws/config[.<env>].json'"
+    "   --add <key-name> <value> <sec>:   Adds new key-value to 'ws/config[.<env>].json'"
     "                                       <sec>:"
     "                                         -h: hidden mode, in 'ws/.vlt'"
     "                                         -s: public mode, in 'ws/config[.<env>].json'"
-    "   --remove <key-name>:              Remove the key-value from 'ws/config[.<env>].json'"
-    "   --keys:                           Display all keys from 'ws/config[.<env>].json' file"
-    "   --part <part> <value> <desc>:     Add new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt' (hidden)."
-    "                                       Credential option is required ('--cred') to be defined."
+    "   --remove <key-name>:              Removes the key-value from 'ws/config[.<env>].json'"
+    "   --keys:                           Displays all keys from 'ws/config[.<env>].json' file"
+    "   --part <part> <value> <desc>:     Adds new credential part to 'ws/credentials[.<env>].json' and 'ws/.vlt' (hidden)."
+    "                                       Credential option is required ('--cred') to execute correctly."
     "                                       <part>:"
     "                                         -u: 'username' alias"
     "                                         -p: 'password' alias"
@@ -41,31 +41,32 @@ _shttp_help_content=(
     "                                         -s: 'secret' alias"
     "                                         -i: 'pin' alias"
     "                                       <desc>: (optional) Description of the credential part"
-    "   --creds:                          Display all credentials ids from 'ws/credentials[.<env>].json'"
-    "   --cred-keys <credential>:         Display all keys from 'ws/credentials[.<env>].json' file for a specific credential"
-    "   --curl <body-opt>                 Display the related cURL command for the input <command>"
+    "   --creds:                          Displays all credentials ids from 'ws/credentials[.<env>].json'"
+    "   --cred-keys <credential>:         Displays all keys from 'ws/credentials[.<env>].json' file for a specific credential"
+    "   --clean:                          Cleans up all output files 'output/*'"
+    ""
+    " Request options:"
+    "   --env <env>:                      Sets the environment for script by changing configuration and credentials files:"
+    "                                       'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
+    "   --cred <credential>:              Set the credential for script by updating '_shttp_auth_credential"
+    "   --curl <body-opt>                 Displays the related cURL command for the input <command>"
     "                                       <body-opt>:"
     "                                         -f: show the body as filename only"
     "                                         -c: show the body as content"
-    "   --clean:                          Clean up all output files 'output/*'"
-    ""
-    " Request options:"
-    "   --env <env>:                      Set the environment for script by changing configuration and credentials files:"
-    "                                       'ws/config[.<env>].json' and 'ws/credentials[.<env>].json'"
-    "   --cred <credential>:              Set the credential for script by updating '_shttp_auth_credential"
-    "   --set <key-name> <value>:         Set a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
-    "   --local <port>:                   Set variables to local execution:"
-    "                                       _shttp_protocol: http"
-    "                                       _shttp_domain: localhost:<port> (default 8080)"
-    "   --port <port>:                    Set value to port variable"
-    "   --auth-basic <credential>:        Set 'BASIC' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-token <credential>:        Set 'TOKEN' mode to '_shttp_auth_mode' and assign the credential"
-    "   --auth-skip:                      Set 'SKIP' mode to '_shttp_auth_mode' when authorization mode is not required"
-    "   --times <value>:                  Set the number of executions required for the request into '_shttp_request_times'"
-    "   --open:                           Set '_shttp_editor_command' with value defined on 'editorCommand'"
+    "   --set <key-name> <value>:         Sets a temporal key-value config. This won't saved to 'ws/config[.<env>].json'"
+    "   --local <port>:                   Sets variables to local execution:"
+    "                                       '_shttp_protocol=http'"
+    "                                       '_shttp_domain=localhost:<port>' (default 80)"
+    "   --port <port>:                    Sets value to port variable"
+    "   --auth-basic <credential>:        Sets mode to '_shttp_auth_mode=BASIC' and assign the credential"
+    "   --auth-token <credential>:        Sets mode to '_shttp_auth_mode=TOKEN' and assign the credential"
+    "   --auth-skip:                      Sets mode to '_shttp_auth_mode=SKIP' when authorization mode is not required"
+    "   --times <value>:                  Sets the number of executions required for the request in '_shttp_request_times'"
+    "   --open:                           Sets '_shttp_editor_command' with value defined on 'editorCommand'"
     "                                       from 'ws/settings.json'. This causes to execute '_shttp_editor_command'"
+    "   --mock:                           Sets to enable the mock flag '_shttp_mock_enabled'"
     " Manual options:"
-    "   --help:                           Display this help message"
+    "   --help:                           Displays this help message"
     ""
     " Environment variables:"
     "   SAVED_LOGS:                       'true' for saved logs on '/tmp/_shttp_basename.yyyy-mm-dd.log'"
@@ -93,28 +94,28 @@ if [ "$SAVED_LOGS" == "true" ]; then
 #  Log filename.
 readonly _shttp_log_file="/tmp/shTTP_${_shttp_basename%.*}.$( date '+%Y-%m-%d' ).log"
 
-#  Log a message with the INFO level.
+#  Logs a message with the INFO level.
 #  No test required.
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
 info() { echo "$( date '+%Y-%m-%d %T.%N' ) INFO      $*" | tee -a "$_shttp_log_file" >&2 ; }
 
-#  Log a message with the WARNING level.
+#  Logs a message with the WARNING level.
 #  No test required.
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
 warn() { echo "$( date '+%Y-%m-%d %T.%N' ) WARNING   $*" | tee -a "$_shttp_log_file" >&2 ; }
 
-#  Log a message with the ERROR level.
+#  Logs a message with the ERROR level.
 #  No test required.
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
 error() { echo "$( date '+%Y-%m-%d %T.%N' ) ERROR     $*" | tee -a "$_shttp_log_file" >&2 ; }
 
-#  Log a message with the FATAL level, 
+#  Logs a message with the FATAL level, 
 #+ exit execution with 1.
 #  No test required.
 #
@@ -124,12 +125,12 @@ fatal() { echo "$( date '+%Y-%m-%d %T.%N' ) FATAL     $*" | tee -a "$_shttp_log_
 
 if [ "$DEBUG_MODE" == "true" ]; then
 
-#  Log a message with the DEBUG level.
+#  Logs a message with the DEBUG level.
 #  No test required.
 #
 #  -param $* Log message
 #  shellcheck disable=SC2086
-error() { echo "$( date '+%Y-%m-%d %T.%N' ) DEBUG     $*" | tee -a "$_shttp_log_file" >&2 ; }
+debug() { echo "$( date '+%Y-%m-%d %T.%N' ) DEBUG     $*" | tee -a "$_shttp_log_file" >&2 ; }
 
 else
 
@@ -233,7 +234,7 @@ echo '{ }' > "ws/.override.json.tmp"
 
 # ---------- Util functions
 
-#  Reverse the string input.
+#  Reverses the string input.
 #
 #  -param $1 String input
 #  -return Reversed string
@@ -277,12 +278,12 @@ arr_join() {
     local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"
 }
 
-#  Return 1 if the argument string is
+#  Returns 1 if the argument string is
 #+ contained in the array. The evaluation
 #+ is by the pattern: '*string*'.
 #  The evaluation ignores case sensitivity.
 #
-#  -param $1 String
+#  -param $1 Search input
 #  -param $* Elements
 #  -return 1 if string exists
 #+         otherwise 0
@@ -303,7 +304,7 @@ arr_like() {
 #+ an array.
 #
 #  -param $* Elements
-#  -return Random value
+#  -return Random element
 arr_rnd() {
     local _arr=( $@ )
     local _length=${#_arr[@]}
@@ -359,8 +360,8 @@ num_rnd() {
 
 #  Addition arithmetic operation.
 #
-#  -param Number A
-#  -param Number B
+#  -param $1 Number A
+#  -param $2 Number B
 #  -return Addition result
 num_add() {
     local _val=""
@@ -372,8 +373,8 @@ num_add() {
 
 #  Subtraction arithmetic operation.
 #
-#  -param Minuend
-#  -param Subtrahend
+#  -param $1 Minuend
+#  -param $2 Subtrahend
 #  -return Difference result
 num_subtract() {
     local _val=""
@@ -385,8 +386,8 @@ num_subtract() {
 
 #  Multiplication arithmetic operation.
 #
-#  -param Multiplicand
-#  -param Multiplier
+#  -param $1 Multiplicand
+#  -param $2 Multiplier
 #  -return Multiplication result
 num_multiply() {
     local _val=""
@@ -398,8 +399,8 @@ num_multiply() {
 
 #  Division arithmetic operation.
 #
-#  -param Dividend
-#  -param Divisor
+#  -param $1 Dividend
+#  -param $2 Divisor
 #  -return Division result
 num_divide() {
     local _val=""
@@ -411,8 +412,8 @@ num_divide() {
 
 #  Modulo operation.
 # 
-#  -param Dividend
-#  -param Divisor
+#  -param $1 Dividend
+#  -param $2 Divisor
 #  -return Reminder of division
 num_modulo() {
     local _val=""
@@ -424,9 +425,9 @@ num_modulo() {
 
 #  Gets a now timestamp in milliseconds.
 #+ It is possible the timestamp by using
-#+ terms tags, e.g.: +5d (adds 5 days)
+#+ terms tags, e.g.: +5D (adds 5 days)
 #
-#  -param Addition/Subtraction term '[+|-]<num>[s|m|h|D|W|M|Y]':
+#  -param $1 Addition/Subtraction term '[+|-]<num>[s|m|h|D|W|M|Y]':
 #         s: seconds
 #         m: minutes
 #         h: hours
@@ -468,8 +469,8 @@ now_ms() {
 
 #  Less than (<) operator.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is less than B
 #+         otherwise false
 lt() {
@@ -482,8 +483,8 @@ lt() {
 
 #  Less than (<) operator for strings.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is less than B
 #+         otherwise false
 lt_str() {
@@ -496,8 +497,8 @@ lt_str() {
 
 #  Less than or equals to (<=) operator.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is less than or equals to B
 #+         otherwise false
 lte() {
@@ -510,8 +511,8 @@ lte() {
 
 #  Less than or equals to (<=) operator for strings.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is less than or equals to B
 #+         otherwise false
 lte_str() {
@@ -524,8 +525,8 @@ lte_str() {
 
 #  Greater than (>) operator.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is greater than B
 #+         otherwise false
 gt() {
@@ -538,8 +539,8 @@ gt() {
 
 #  Greater than (>) operator for strings.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is greater than B
 #+         otherwise false
 gt_str() {
@@ -552,8 +553,8 @@ gt_str() {
 
 #  Greater than or equals to (>=) operator.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is greater than or equals to B
 #+         otherwise false
 gte() {
@@ -566,8 +567,8 @@ gte() {
 
 #  Greater than or equals to (>=) operator for strings.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is greater than or equals to B
 #+         otherwise false
 gte_str() {
@@ -580,8 +581,8 @@ gte_str() {
 
 #  Equals to (==) operator.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is equals to B
 #+         otherwise false
 eq() {
@@ -594,8 +595,8 @@ eq() {
 
 #  Equals to (==) operator for strings.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is equals to B
 #+         otherwise false
 eq_str() {
@@ -608,8 +609,8 @@ eq_str() {
 
 #  Not equals to (!=) operator.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is not equals to B
 #+         otherwise false
 neq() {
@@ -622,8 +623,8 @@ neq() {
 
 #  Not equals to (!=) operator for strings.
 # 
-#  -param Value A
-#  -param Value B
+#  -param $1 Value A
+#  -param $2 Value B
 #  -return true if A is not equals to B
 #+         otherwise false
 neq_str() {
@@ -634,13 +635,13 @@ neq_str() {
     echo "$_val"
 }
 
-#  Remove an array element by key (start-with
+#  Removes an array element by key (start-with
 #+ of the value). The original array is passed
 #+ by the name of the array, so the function
-#+ must be able to evaluate that name as a variable.
+#+ is able to evaluate that name as a variable.
 #
-#  -param Key (start-with) of the map (case sensitive)
-#  -param Name of the array variable
+#  -param $1 Key (start-with) of the map (case sensitive)
+#  -param $2 Name of the array variable
 remove_map() {
     local _key=${1:-}
     local _map_name=${2:-}
@@ -661,15 +662,15 @@ remove_map() {
     fi
 }
 
-#  Put an array element by key-value. The original array
+#  Puts an array element by key-value. The original array
 #+ is passed by the name of the array, so the function
-#+ must be able to evaluate that name as a variable. There
+#+ is able to evaluate that name as a variable. There
 #+ is no separator for key-value because a concatenated
 #+ string ('key'+'value') is saved as an array element.
 #
-#  -param Key (start-with) of the map
-#  -param Value (string part) of the map
-#  -param Name of the array variable
+#  -param $1 Key (start-with) of the map
+#  -param $2 Value (string part) of the map
+#  -param $3 Name of the array variable
 put_map() {
     local _key=${1:-}
     local _value=${2:-}
@@ -680,11 +681,12 @@ put_map() {
     eval "$_map_name+=( \"$_key$_value\" )"
 }
 
-#  Get and element fro the array. The original array
+#  Gets an element from an array. The original array
 #+ is passed by the name of the array, so the function
-#+ must be able to evaluate that name as a variable.
+#+ is able to evaluate that name as a variable.
 #
-#  - param Key (stsrt-with) of the map
+#  -param $1 Key (start-with) of the map
+#  -param $2 Name of the array variable
 #  -return Value (string part) of the map
 get_map() {
     local _key=${1:-}
@@ -713,11 +715,11 @@ get_map() {
 
 # ---------- Public functions
 
-#  Request flow step. Simulate
-#+ and external request call:
+#  In request flow step this is
+#+ an external request call:
 #+ input parameters processing,
 #+ and request execution.
-#  In a flow execution contex
+#  In a flow execution context
 #+ the '--times' option
 #+ does not work for steps
 #+ because it is used for repeat
@@ -763,10 +765,10 @@ step() {
     _shttp_input_params="$_last_params"
 }
 
-#  Update a JSON file using 'jq'.
+#  Updates a JSON file using 'jq'.
 #
 #  -param $1 JSON file
-#  -param $2 Change by 'jq'
+#  -param $2 Change by 'jq' syntax
 update() {
     local _json=${1:-}
     local _jq=${2:-}
@@ -779,7 +781,7 @@ update() {
     info "Updated [$_json] file"
 }
 
-#  Save key-value config to 'ws/config[.<env>].json'.
+#  Saves key-value config to 'ws/config[.<env>].json'.
 #  This function has three different forms:
 #    1. Only 'jq' query: put '.jq'
 #    2. Name and 'jq' query: put 'name' '.jq'
@@ -826,17 +828,16 @@ put() {
     info "Saved [$_name] with value [$_val] to workspace config"
 }
 
-#  Get key-value config in the following
-#+ order: script variables and then from
-#+ 'ws/config[.<env>].json'.
+#  Gets key-value config in the following
+#+ order: 
+#+   1. script variables and
+#+   2. from 'ws/config[.<env>].json'.
 #
 #  -param $1 Name of the entry or 'jq'
 #+           query (without '.' at the
 #+           beginning of the query)
 #  -param $2 Default value if required
-#+           is not found. If it is not
-#+           specified 'null' will be
-#+           default value.
+#+           is not found
 #  -return Config value
 get() {
     local _name=${1:-}
@@ -870,7 +871,7 @@ get() {
     echo "$_val"
 }
 
-#  Remove key-value from 'ws/config[.<env>].json'.
+#  Removes key-value from 'ws/config[.<env>].json'.
 #  This function has two different forms:
 #    1. 'jq' query: remove '.jq'
 #    2. Field name: remove 'name'
@@ -896,12 +897,13 @@ remove() {
     fi
 }
 
-#  Get the method setted in '_shttp_method'. This value
+#  Gets the method setted in '_shttp_method'. This value
 #+ is only available after processing any 'before'
 #+ function like 'before_api' and 'before_[command]'
 #+ besides after '[command]' function execution. It is
 #+ recomendable use this method only in the context
-#+ of 'before_execution' function.
+#+ of the 'request': 'before_[command]' and
+#+ 'after_[command]'.
 #
 #  -return Request method
 getRequestMethod() {
@@ -910,12 +912,13 @@ getRequestMethod() {
     echo "$_method"
 }
 
-#  Get the body setted in '_shttp_body' (file) as
+#  Gets the body setted in '_shttp_body' (file) as
 #+ string value. This value is only available after
 #+ processing any 'before' function like 'before_api'
-#+ and 'before_[command]' besides after '[command]' function
-#+ execution. It is recomendable use this method only
-#+ in the context of 'before_execution' function.
+#+ and 'before_[command]' besides after '[command]'
+#+ function execution. It is recomendable use this
+#+ method only in the context of the 'request':
+#+ 'before_[command]' and 'after_[command]'.
 #
 #  -return Request body (as string)
 getRequestBody() {
@@ -927,12 +930,12 @@ getRequestBody() {
     echo "$_body"
 }
 
-#  Get a header value setted in '_shttp_headers'.
+#  Gets a header value setted in '_shttp_headers'.
 #+ This value is only available after processing any
 #+ 'before' function like 'before_api' and 'before_[command]'
 #+ besides after '[command]' function execution. It is
-#+ recomendable use this method only in the context of
-#+ 'before_execution' function.
+#+ recomendable use this method only in the context
+#+ of the 'request': 'before_[command]' and 'after_[command]'.
 #
 #  -param $1 Header key
 #  -return Request header value
@@ -945,13 +948,13 @@ getRequestHeader() {
     echo "$_value"
 }
 
-#  Get the path built with '_shttp_endpoint' and
+#  Gets the path built with '_shttp_endpoint' and
 #+ '_shttp_query_params'. This value is only available
 #+ after processing any 'before' function like 'before_api'
 #+ and 'before_[command]' besides after '[command]'
 #+ function execution. It is recomendable use this
-#+ method only in the context of 'before_execution'
-#+ function.
+#+ method only in the context of the 'request':
+#+ 'before_[command]' and 'after_[command]'.
 #
 #  -return Request path
 getRequestPath() {
@@ -966,13 +969,13 @@ getRequestPath() {
     echo "$_path"
 }
 
-#  Get the URL built with '_shttp_url' and
+#  Gets the URL built with '_shttp_url' and
 #+ '_shttp_query_params'. This value is only available
 #+ after processing any 'before' function like 'before_api'
 #+ and 'before_[command]' besides after '[command]'
 #+ function execution. It is recomendable use this
-#+ method only in the context of 'before_execution'
-#+ function.
+#+ method only in the context of the 'request':
+#+ 'before_[command]' and 'after_[command]'.
 #
 #  -return Request URL
 getRequestUrl() {
@@ -987,8 +990,8 @@ getRequestUrl() {
     echo "$_url"
 }
 
-#  Save credential part for
-#+ '_shttp_auth_credential'.
+#  Saves credential part for '_shttp_auth_credential'
+#+ so this variable have to be set preiously.
 # 
 #  -param $1 Part name
 #  -param $2 Part value
@@ -1024,12 +1027,13 @@ putPart() {
     info "Saved [$_part] with value [$_val] to credential [$_shttp_auth_credential]"
 }
 
-#  Get the credential part for
+#  Gets the credential part for a
+#+ specified credential. Default credential
 #+ '_shttp_auth_credential'.
 #
 #  -param $1 Part name
 #  -param $2 Default value
-#  -param $3 Credential
+#  -param $3 Credential name
 #  -return Credential part value
 getPart() {
     local _part=${1:-}
@@ -1058,16 +1062,14 @@ getPart() {
     echo "$_val"
 }
 
-#  Get JSON value from
-#+ '$_shttp.output.output'.
+#  Gets JSON value from
+#+ '$_shttp_output.output'.
 #
 #  -param $1 Name of the entry or 'jq'
 #+           query (without '.' at the
 #+           beginning of the query)
 #  -param $2 Default value if required
-#+           is not found. If it is not
-#+           specified 'null' will be
-#+           default value.
+#+           is not found
 #  -return JSON value
 getOutput() {
     local _name=${1:-}
@@ -1083,7 +1085,7 @@ getOutput() {
     echo "$_val"
 }
 
-#  Get a setting value from
+#  Gets a setting value from
 #+ 'ws/settings.json'.
 #
 #  -param $1 Name of the entry or 'jq'
@@ -1103,12 +1105,12 @@ getSetting() {
     echo "$_val"
 }
 
-#  Get the Header value
-#+ from response
-#+ 'shttp_output.trace'.
+#  Gets the Header value
+#+ from response 'shttp_output.trace'.
 #
 #  -param $1 Response header name
 #  -param $2 Default value
+#  -return Header value
 getHeader() {
     local _header=${1:-}
     local _default=${2:-'null'}
@@ -1130,10 +1132,11 @@ getHeader() {
     echo "$_val"
 }
 
-#  Get HTTP status code
+#  Gets HTTP status code
 #+ from 'shttp_output.trace'.
 #
 #  -param $1 Default value
+#  -return Status value
 #  shellcheck disable=SC2120
 getStatus() {
     local _default=${1:-'null'}
@@ -1148,11 +1151,15 @@ getStatus() {
 # ---------- Assertion functions
 
 #  Assert that a given 'Bash Conditional
-#+ Expressions' is true.
+#+ Expressions' is true. If assertion is
+#+ true it increases the assertion count
+#+ '_shttp_assertions' and '_shttp_assertions_flow'.
+#+ Otherwise increase '_shttp_failures' and
+#+ '_shttp_failures_flow'
 #
 #  -param $1 Fail message
-#  -param $2 Condition content:
-#+           '[ <$2> ]'
+#  -param $2 Condition content. This will
+#+           formatted as '[ <$2> ]'
 isTrue() {
     local _message=${1:-}
     local _condition=${2:-}
@@ -1169,11 +1176,15 @@ isTrue() {
 }
 
 #  Assert that a given 'Bash Conditional
-#+ Expressions' is false.
+#+ Expressions' is false. If assertion is
+#+ true it increases the assertion count
+#+ '_shttp_assertions' and '_shttp_assertions_flow'.
+#+ Otherwise increase '_shttp_failures' and
+#+ '_shttp_failures_flow'
 #
 #  -param $1 Fail message
-#  -param $2 Condition content:
-#+           '! [ <$2> ]'
+#  -param $2 Condition content. This will
+#+           formatted as '! [ <$2> ]'
 isFalse() {
     local _message=${1:-}
     local _condition=${2:-}
@@ -1190,7 +1201,11 @@ isFalse() {
 }
 
 #  Assert that expected and actual
-#+ are equal to one another.
+#+ are equal to one another. If assertion is
+#+ true it increases the assertion count
+#+ '_shttp_assertions' and '_shttp_assertions_flow'.
+#+ Otherwise increase '_shttp_failures' and
+#+ '_shttp_failures_flow'
 #
 #  -param $1 Fail message
 #  -param $2 Expected value
@@ -1210,7 +1225,11 @@ areEquals() {
 }
 
 #  Assert that unexpected and actual
-#+ are not equal to one another.
+#+ are not equal to one another. If assertion is
+#+ true it increases the assertion count
+#+ '_shttp_assertions' and '_shttp_assertions_flow'.
+#+ Otherwise increase '_shttp_failures' and
+#+ '_shttp_failures_flow'
 #
 #  -param $1 Fail message
 #  -param $2 Expected value
@@ -1230,7 +1249,11 @@ areNotEquals() {
 }
 
 #  Assert that expected and actual
-#+ are like to one another.
+#+ are like to one another. If assertion is
+#+ true it increases the assertion count
+#+ '_shttp_assertions' and '_shttp_assertions_flow'.
+#+ Otherwise increase '_shttp_failures' and
+#+ '_shttp_failures_flow'
 #
 #  -param $1 Fail message
 #  -param $2 Like regex
@@ -1250,7 +1273,11 @@ isLike() {
 }
 
 #  Assert that unexpected and actual
-#+ are not like to one another.
+#+ are not like to one another. If assertion is
+#+ true it increases the assertion count
+#+ '_shttp_assertions' and '_shttp_assertions_flow'.
+#+ Otherwise increase '_shttp_failures' and
+#+ '_shttp_failures_flow'
 #
 #  -param $1 Fail message
 #  -param $2 Like regex
@@ -1270,7 +1297,11 @@ isNotLike() {
 }
 
 #  Assert that actual is
-#+ equals to null.
+#+ equals to null. If assertion is
+#+ true it increases the assertion count
+#+ '_shttp_assertions' and '_shttp_assertions_flow'.
+#+ Otherwise increase '_shttp_failures' and
+#+ '_shttp_failures_flow'
 #
 #  -param $1 Fail message
 #  -param $2 Actual value
@@ -1288,7 +1319,11 @@ isNull() {
 }
 
 #  Assert that actual is
-#+ not equals to null.
+#+ not equals to null. If assertion is
+#+ true it increases the assertion count
+#+ '_shttp_assertions' and '_shttp_assertions_flow'.
+#+ Otherwise increase '_shttp_failures' and
+#+ '_shttp_failures_flow'
 #
 #  -param $1 Fail message
 #  -param $2 Actual value
@@ -1326,7 +1361,9 @@ _shttp_domain=""
 #+ 'https://any.domain<:port>/any/endpoint'
 _shttp_port=""
 
-#  Local request port (URL will be built for local):
+#  Local request port (if this is different
+#+ to '0' URL will be built for local
+#+ environment):
 _shttp_local=0
 
 #  Request base path:
@@ -1339,8 +1376,8 @@ _shttp_endpoint=""
 
 #  Request method.
 #  Allowed values:
-#+   [GET, POST, PUT, PATCH,
-#+   DELETE, HEAD, OPTIONS]
+#+   [GET | POST | PUT | PATCH,
+#+   DELETE | HEAD | OPTIONS]
 _shttp_method=""
 
 #  Request headers. Default values
@@ -1351,7 +1388,7 @@ _shttp_headers=()
 
 #  Request body filename. During
 #+ request execution will be
-#+ appended to 'cURL'.
+#+ appended to 'cURL' command.
 _shttp_body=""
 
 #  Request key-value entries for
@@ -1376,7 +1413,7 @@ _shttp_query_params=()
 _shttp_curl_opts=()
 
 #  Authorization mode. Allowed values:
-#+ [BASIC, TOKEN, DEFAULT, SKIP].
+#+ [BASIC, TOKEN, SKIP].
 #    a) BASIC: HTTP Basic Authentication
 #    b) TOKEN: Header Authorization
 #    c) SKIP: No authorization mode
@@ -1634,11 +1671,12 @@ header() {
 #  -param $2 Repeat option:
 #            '[0-9]+t' 't' for times
 #            '[0-9]+tn' 't' for times
-#+           and new lines
+#+           and new lines per part
 #            '[0-9]+s' 's' for size
 #+           in bytes
 #            '[0-9]+sn' 'sn' for size
 #+           in bytes and new lines
+#+           per part
 #  -param $@ Request body parts
 #  -see _append_content_file
 body() {
@@ -1683,12 +1721,13 @@ form() {
 #  -param $3 Repeat option:
 #            '[0-9]+t' 't' for times
 #            '[0-9]+tn' 't' for times
-#+           and new lines
+#+           and new lines per part
 #            '[0-9]+s' 's' for size
 #+           in bytes
 #            '[0-9]+sn' 'sn' for size
 #+           in bytes and new lines
-#  -param $@ Request body parts
+#+           per part
+#  -param $@ Request file parts
 #  -see _append_content_file
 formFilePart() {
     local _name=${1:-}
@@ -1720,7 +1759,7 @@ queryParam() {
 
 #  Setter for '_shttp_curl_opts'.
 #
-#  -param $@ Additional cURL options
+#  -param $@ cURL options
 curlOpts() {
     if (( $# > 0 )); then
         local _length=${#_shttp_curl_opts[@]}
@@ -1762,6 +1801,7 @@ times() {
 }
 
 #  Setter for '_shttp_editor_command'.
+#  For specify the output file just add ':OUTPUT'
 #
 #  -param $1 Editor command
 editor() {
@@ -1812,8 +1852,7 @@ env() {
 #  Explicitly sets parameters to 
 #+ '_shttp_input_params' only if
 #+ there are no input parameters
-#+ (command is discarded in the
-#+ parameters count).
+#+ (options from command execution).
 #
 #  -param $* Defined input parameters
 mainOpts() {
@@ -1828,7 +1867,7 @@ mainOpts() {
 
 # ---------- Mock functions
 
-#  Set to enabled '_shttp_mock_enabled'.
+#  Sets to enabled '_shttp_mock_enabled'.
 mockEnabled() {
     _shttp_mock_enabled=1
     info "Set [Mock-Enabled] with [true]"
@@ -1841,11 +1880,12 @@ mockEnabled() {
 #  -param $2 Repeat option:
 #            '[0-9]+t' 't' for times
 #            '[0-9]+tn' 't' for times
-#+           and new lines
+#+           and new lines per part
 #            '[0-9]+s' 's' for size
 #+           in bytes
 #            '[0-9]+sn' 'sn' for size
 #+           in bytes and new lines
+#+           per part
 #  -param $@ Mock output parts
 #  -see _append_content_file
 mockOutput() {
@@ -1856,7 +1896,8 @@ mockOutput() {
 }
 
 #  Setter for response HTTP
-#+ status for mocked request.
+#+ status for mocked request in
+#+ '_shttp_mock_trace'.
 #
 #  -param $1 HTTP Status
 mockStatus() {
@@ -1868,8 +1909,9 @@ mockStatus() {
 }
 
 #  Setter for response HTTP
-#+ headers for mocked request.
-#_requ
+#+ headers for mocked request in
+#+ '_shttp_mock_trace'.
+#
 #  -param $@ HTTP Headers
 mockHeaders() {
     if ! [ -f "$_shttp_mock_trace" ]; then
